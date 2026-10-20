@@ -29,8 +29,11 @@
   <p>
     <a href="https://strandsagents.com/">Documentation</a>
     ◆ <a href="https://github.com/strands-agents/samples">Samples</a>
-    ◆ <a href="https://github.com/strands-agents/tools">Tools</a>
-    ◆ <a href="https://github.com/strands-agents/harness-sdk/tree/main/strands-mcp">MCP Server</a>
+    ◆ <a href="https://github.com/strands-agents/harness-sdk">Harness SDK</a>
+    ◆ <a href="https://github.com/strands-agents/shell">Shell</a>
+    ◆ <a href="https://github.com/strands-agents/evals">Evals</a>
+    ◆ <a href="https://github.com/strands-labs">Labs</a>
+    ◆ <a href="https://discord.gg/strands">Discord</a>
   </p>
 </div>
 
@@ -47,13 +50,22 @@ Strands Agents is a simple yet powerful SDK that takes a model-driven approach t
 
 ```bash
 # Install Strands Agents
-pip install strands-agents strands-agents-tools
+pip install strands-agents
 ```
 
 ```python
-from strands import Agent
-from strands_tools import calculator
-agent = Agent(tools=[calculator])
+import math
+
+from strands import Agent, tool
+
+
+@tool
+def square_root(number: float) -> float:
+    """Return the square root of a number."""
+    return math.sqrt(number)
+
+
+agent = Agent(tools=[square_root])
 agent("What is the square root of 1764")
 ```
 
@@ -68,8 +80,8 @@ Ensure you have Python 3.10+ installed, then:
 python -m venv .venv
 source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
 
-# Install Strands and tools
-pip install strands-agents strands-agents-tools
+# Install Strands
+pip install strands-agents
 ```
 
 ## Features at a Glance
@@ -189,18 +201,19 @@ Built-in providers:
 
 Custom providers can be implemented using [Custom Providers](https://strandsagents.com/docs/user-guide/concepts/model-providers/custom_model_provider/)
 
-### Example tools
+### Vended tools
 
-Strands offers an optional strands-agents-tools package with pre-built tools for quick experimentation:
+The SDK ships pre-built tools for common agent tasks such as running shell commands, editing files, and making HTTP requests. Import them from `strands.vended_tools`:
 
 ```python
 from strands import Agent
-from strands_tools import calculator
-agent = Agent(tools=[calculator])
-agent("What is the square root of 1764")
+from strands.vended_tools import file_editor, http_request, shell
+
+agent = Agent(tools=[file_editor, http_request, shell])
+agent("Fetch https://strandsagents.com and save a one-paragraph summary to summary.md")
 ```
 
-It's also available on GitHub via [strands-agents/tools](https://github.com/strands-agents/tools).
+`shell` and `file_editor` run on the host unless you pass a `sandbox` to `Agent`. See [Vended tools](https://strandsagents.com/docs/user-guide/sdk/tools/vended-tools/) for the full list, including `python_repl`, `swarm`, `stop`, `sleep`, and `handoff_to_user`.
 
 ### Bidirectional Streaming
 

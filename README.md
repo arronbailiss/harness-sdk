@@ -31,7 +31,9 @@
   <p>
     <a href="https://strandsagents.com/">Documentation</a>
     ◆ <a href="https://github.com/strands-agents/samples">Samples</a>
-    ◆ <a href="https://github.com/strands-agents/harness-sdk/tree/main/strands-mcp">MCP Server</a>
+    ◆ <a href="https://github.com/strands-agents/shell">Shell</a>
+    ◆ <a href="https://github.com/strands-agents/evals">Evals</a>
+    ◆ <a href="https://github.com/strands-labs">Labs</a>
     ◆ <a href="https://discord.gg/strands">Discord</a>
   </p>
 </div>
@@ -112,14 +114,22 @@ The Strands Harness SDK lets you go deeper and control every part of the agent: 
 Requires Python 3.10+:
 
 ```bash
-pip install strands-agents strands-agents-tools
+pip install strands-agents
 ```
 
 ```python
-from strands import Agent
-from strands_tools import calculator
+import math
 
-agent = Agent(tools=[calculator])
+from strands import Agent, tool
+
+
+@tool
+def square_root(number: float) -> float:
+    """Return the square root of a number."""
+    return math.sqrt(number)
+
+
+agent = Agent(tools=[square_root])
 agent("What is the square root of 1764")
 ```
 
