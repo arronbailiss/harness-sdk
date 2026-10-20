@@ -1,4 +1,4 @@
-export type Sdk = 'sdk' | 'harness' | 'cli' | 'evals' | 'box'
+export type Sdk = 'sdk' | 'harness' | 'cli' | 'evals' | 'box' | 'shell' | 'mcp' | 'agent-sop'
 export type Language = 'python' | 'typescript'
 
 export const LANGUAGE_META: Record<Language, { label: string; short: string }> = {
@@ -14,6 +14,9 @@ export const SDK_META: Record<Sdk, { label: string; languages: Language[] }> = {
   cli: { label: 'Harness CLI', languages: [] },
   evals: { label: 'Evals', languages: ['python'] },
   box: { label: 'Box', languages: [] },
+  shell: { label: 'Shell', languages: [] },
+  mcp: { label: 'MCP Server', languages: [] },
+  'agent-sop': { label: 'Agent SOPs', languages: [] },
 }
 
 /** Products released as separate per-language streams; only these carry `language`. */

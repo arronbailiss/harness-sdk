@@ -8,15 +8,14 @@
 import { streamKey } from './tag-meta'
 import type { PrData, Enrichment } from './types'
 
-// Monorepo top-level dirs mapped to the release stream (see streamKey) they
-// ship in. `mcp` has no changelog stream, so its PRs drop from every stream.
+// Monorepo top-level dirs mapped to the release stream (see streamKey) they ship in.
 const STREAM_DIRS = new Map([
   ['strands-py', streamKey('sdk', 'python')],
   ['strands-ts', streamKey('sdk', 'typescript')],
   ['harness-py', streamKey('harness', 'python')],
   ['harness-ts', streamKey('harness', 'typescript')],
   ['strands-cli', streamKey('cli')],
-  ['strands-mcp', 'mcp'],
+  ['strands-mcp', streamKey('mcp')],
 ])
 
 // The repo-root npm lockfile resolves the strands-ts workspace (root

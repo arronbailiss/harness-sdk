@@ -82,8 +82,26 @@ describe('tag-meta', () => {
     expect(tagToMeta('strands-agents/harness-sdk', 'harness-cli/v0.2.1')).toEqual({ sdk: 'cli', version: '0.2.1' })
   })
 
-  it('mcp tags have no stream (null)', () => {
-    expect(tagToMeta('strands-agents/harness-sdk', 'mcp/v0.3.0')).toBe(null)
+  it('mcp package tags map to the mcp stream', () => {
+    expect(tagToMeta('strands-agents/harness-sdk', 'mcp/v0.3.0')).toEqual({ sdk: 'mcp', version: '0.3.0' })
+  })
+
+  it('archived mcp-server repo bare v tags map to mcp', () => {
+    expect(tagToMeta('strands-agents/mcp-server', 'v0.2.7')).toEqual({
+      sdk: 'mcp',
+      language: undefined,
+      version: '0.2.7',
+    })
+  })
+
+  it('shell and agent-sop bare v tags have no language', () => {
+    expect(tagToMeta('strands-agents/shell', 'v0.5.0')).toEqual({ sdk: 'shell', language: undefined, version: '0.5.0' })
+    expect(tagToMeta('strands-agents/agent-sop', 'v1.1.4')).toEqual({
+      sdk: 'agent-sop',
+      language: undefined,
+      version: '1.1.4',
+    })
+    expect(tagToMeta('strands-agents/agent-sop', '0.0.2')).toBe(null)
   })
 
   it('box bare v tag has no language', () => {
@@ -103,5 +121,10 @@ describe('tag-meta', () => {
     )
     expect(getPackageUrl('cli', undefined, '0.2.1')).toBe('https://www.npmjs.com/package/@strands-agents/cli/v/0.2.1')
     expect(getPackageUrl('box', undefined, '0.1.0')).toBe('https://github.com/strands-agents/box/releases/tag/v0.1.0')
+    expect(getPackageUrl('shell', undefined, '0.5.0')).toBe(
+      'https://github.com/strands-agents/shell/releases/tag/v0.5.0'
+    )
+    expect(getPackageUrl('mcp', undefined, '0.3.0')).toBe('https://pypi.org/project/strands-agents-mcp-server/0.3.0/')
+    expect(getPackageUrl('agent-sop', undefined, '1.1.4')).toBe('https://pypi.org/project/strands-agents-sops/1.1.4/')
   })
 })

@@ -1,8 +1,8 @@
 # Changelog Sync — operations
 
 `changelog-sync.yml` keeps `site/src/content/changelog/**` current. Every run
-generates the files still missing from main for harness-sdk, evals, and box,
-and opens or updates one rolling data-only PR (branch `changelog/sync` on the
+generates the files still missing from main for harness-sdk, evals, box,
+shell, and agent-sop, and opens or updates one rolling data-only PR (branch `changelog/sync` on the
 `strands-agent` bot fork). Release workflows dispatch it directly after
 creating a GitHub release (a `GITHUB_TOKEN`-created release does not emit a
 `release` event), and a cron backstops every 2 hours.

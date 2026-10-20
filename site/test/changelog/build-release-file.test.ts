@@ -166,7 +166,7 @@ describe('build-release-file', () => {
     expect(ts!.contents).not.toMatch(/site thing/)
   })
 
-  it('harness, cli, and mcp PRs stay out of the sdk streams', async () => {
+  it('harness, cli, and mcp PRs land only on their own streams', async () => {
     const body = [
       '* feat: sdk thing by @a in https://github.com/strands-agents/harness-sdk/pull/1',
       '* feat: harness py thing by @b in https://github.com/strands-agents/harness-sdk/pull/2',
@@ -212,6 +212,12 @@ describe('build-release-file', () => {
     expect(cli!.contents).not.toMatch(/language:/)
     expect(cli!.contents).toMatch(/cli thing/)
     expect(cli!.contents).not.toMatch(/sdk thing|harness py thing|mcp server thing/)
+
+    const mcp = await build('mcp/v0.3.0')
+    expect(mcp!.path).toBe('site/src/content/changelog/mcp/v0.3.0.md')
+    expect(mcp!.contents).not.toMatch(/language:/)
+    expect(mcp!.contents).toMatch(/mcp server thing/)
+    expect(mcp!.contents).not.toMatch(/sdk thing|harness py thing|cli thing/)
   })
 
   it('box releases are written without a language and are not stream-gated', async () => {

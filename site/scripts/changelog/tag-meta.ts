@@ -14,7 +14,17 @@ const MONOREPO_STREAMS: Record<string, { sdk: Sdk; language?: Language }> = {
   'harness-python/': { sdk: 'harness', language: 'python' },
   'harness-typescript/': { sdk: 'harness', language: 'typescript' },
   'harness-cli/': { sdk: 'cli' },
+  'mcp/': { sdk: 'mcp' },
 }
+
+// Repos that release one stream under bare `v` tags. `mcp-server` is the
+// archived pre-monorepo MCP server repo (used only by the one-time backfill).
+const BARE_TAG_REPOS = new Map<string, Sdk>([
+  ['box', 'box'],
+  ['shell', 'shell'],
+  ['agent-sop', 'agent-sop'],
+  ['mcp-server', 'mcp'],
+])
 
 function monorepoPrefix(tag: string): string | undefined {
   return Object.keys(MONOREPO_STREAMS).find((p) => tag.startsWith(p))
@@ -31,7 +41,7 @@ export function streamKey(sdk: Sdk, language?: Language): string {
 }
 
 /**
- * @param repo  e.g. 'strands-agents/harness-sdk' | 'strands-agents/evals' | 'strands-agents/box'
+ * @param repo  e.g. 'strands-agents/harness-sdk' | 'strands-agents/evals' | 'strands-agents/shell'
  * @param tag   the release tag
  */
 export function tagToMeta(repo: string, tag: string): TagMeta | null {
@@ -48,9 +58,10 @@ export function tagToMeta(repo: string, tag: string): TagMeta | null {
     if (!/^v\.?\d/.test(tag)) return null
     return { sdk: 'sdk', language: 'typescript', version: cleanVersion(tag) }
   }
-  if (repo.endsWith('/box')) {
+  const bareTagSdk = BARE_TAG_REPOS.get(repo.split('/')[1])
+  if (bareTagSdk) {
     if (!/^v\.?\d/.test(tag)) return null
-    return { sdk: 'box', language: undefined, version: cleanVersion(tag) }
+    return { sdk: bareTagSdk, language: undefined, version: cleanVersion(tag) }
   }
   // harness-sdk
   const prefix = monorepoPrefix(tag)
@@ -67,6 +78,10 @@ const npm = (name: string, v: string) => `https://www.npmjs.com/package/${name}/
 export function getPackageUrl(sdk: Sdk, language: Language | undefined, version: string): string {
   if (sdk === 'evals') return pypi('strands-agents-evals', version)
   if (sdk === 'box') return `https://github.com/strands-agents/box/releases/tag/v${version}`
+  // Shell publishes to both PyPI and npm from one tag, so link the release itself.
+  if (sdk === 'shell') return `https://github.com/strands-agents/shell/releases/tag/v${version}`
+  if (sdk === 'mcp') return pypi('strands-agents-mcp-server', version)
+  if (sdk === 'agent-sop') return pypi('strands-agents-sops', version)
   if (sdk === 'cli') return npm('@strands-agents/cli', version)
   if (sdk === 'harness') {
     return language === 'typescript' ? npm('@strands-agents/harness', version) : pypi('strands-harness', version)
