@@ -127,27 +127,36 @@ async function toolBasedConfigUpdate() {
 }
 
 // Reasoning support
-async function reasoningSupport() {
+async function reasoningAdaptive() {
   // --8<-- [start:reasoning]
-  // Create a Bedrock model with reasoning configuration
   const bedrockModel = new BedrockModel({
     modelId: 'global.anthropic.claude-sonnet-5',
     additionalRequestFields: {
-      thinking: {
-        type: 'enabled',
-        budget_tokens: 4096, // Minimum of 1,024
-      },
+      thinking: { type: 'adaptive', display: 'summarized' },
+      output_config: { effort: 'medium' },
     },
   })
 
-  // Create an agent with the reasoning-enabled model
   const agent = new Agent({ model: bedrockModel })
 
-  // Ask a question that requires reasoning
-  const response = await agent.invoke(
-    'If a train travels at 120 km/h and needs to cover 450 km, how long will the journey take?'
-  )
+  const response = await agent.invoke('How long does a 450 km trip take at 120 km/h?')
   // --8<-- [end:reasoning]
+}
+
+async function reasoningExtended() {
+  // --8<-- [start:reasoning_extended]
+  const bedrockModel = new BedrockModel({
+    modelId: 'global.anthropic.claude-haiku-4-5-20251001-v1:0',
+    maxTokens: 8192,
+    additionalRequestFields: {
+      thinking: { type: 'enabled', budget_tokens: 4096 },
+    },
+  })
+
+  const agent = new Agent({ model: bedrockModel })
+
+  const response = await agent.invoke('How long does a 450 km trip take at 120 km/h?')
+  // --8<-- [end:reasoning_extended]
 }
 
 // Custom credentials configuration

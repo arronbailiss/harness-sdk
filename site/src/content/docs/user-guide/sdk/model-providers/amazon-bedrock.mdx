@@ -617,48 +617,138 @@ def update_temperature(temperature: float, agent: Agent) -> str:
 </Tab>
 </Tabs>
 
-### Reasoning Support
+### Reasoning support
 
-Amazon Bedrock models can provide detailed reasoning steps when generating responses. For detailed information about supported models and reasoning token configuration, see the [Amazon Bedrock documentation on inference reasoning](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-reasoning.html).
+To have Claude reason before it answers, pass a `thinking` configuration through
+<Syntax py="additional_request_fields" ts="additionalRequestFields" />. `BedrockModel`
+forwards these fields unchanged to the Converse API as `additionalModelRequestFields`,
+so they take the same shape Amazon Bedrock documents for each model.
+
+Which configuration to send depends on the model. Current Claude models use adaptive
+thinking, and older Claude models only accept extended thinking with a fixed token budget.
+
+#### Adaptive thinking
+
+With adaptive thinking, Claude decides on each request whether to think and how much.
+Steer the depth with `output_config.effort` rather than a token budget. Set `effort`
+in its own `output_config` object, not inside `thinking`, or Amazon Bedrock rejects
+the request with a `ValidationException`.
 
 <Tabs>
 <Tab label="Python">
-
-Enable reasoning on your [`BedrockModel`](@api/python/strands.models.bedrock):
 
 ```python
 from strands import Agent
 from strands.models import BedrockModel
 
-# Create a Bedrock model with reasoning configuration
 bedrock_model = BedrockModel(
     model_id="global.anthropic.claude-sonnet-5",
     additional_request_fields={
-        "thinking": {
-            "type": "enabled",
-            "budget_tokens": 4096 # Minimum of 1,024
-        }
-    }
+        "thinking": {"type": "adaptive", "display": "summarized"},
+        "output_config": {"effort": "medium"},
+    },
 )
 
-# Create an agent with the reasoning-enabled model
 agent = Agent(model=bedrock_model)
 
-# Ask a question that requires reasoning
-response = agent("If a train travels at 120 km/h and needs to cover 450 km, how long will the journey take?")
+response = agent("How long does a 450 km trip take at 120 km/h?")
 ```
 </Tab>
 <Tab label="TypeScript">
 
-Enable reasoning on your [`BedrockModel`](@api/typescript/BedrockModel):
-
 ```typescript
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock_imports.ts:reasoning_imports"
+
 --8<-- "user-guide/sdk/model-providers/amazon-bedrock.ts:reasoning"
 ```
 </Tab>
 </Tabs>
 
-> **Note**: Not all models support structured reasoning output. Check the [inference reasoning documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-reasoning.html) for details on supported models.
+`effort` accepts `low`, `medium`, `high`, `xhigh`, and `max`, but not every model
+supports every level. See
+[effort](https://platform.claude.com/docs/en/build-with-claude/effort)
+for the levels and defaults on each model.
+
+`display: "summarized"` returns a readable summary of Claude's reasoning. Claude Opus 4.7
+and later models, including Claude Sonnet 5, default to `display: "omitted"`: the response
+still contains reasoning blocks, but their text is empty. If your application doesn't show
+reasoning to users, keep `omitted`. The reasoning text isn't streamed, so the response
+text starts sooner.
+
+#### Extended thinking for older models
+
+Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, and earlier Claude 4 models don't
+support adaptive thinking. Enable extended thinking on them with `type: "enabled"` and a
+`budget_tokens` value of at least 1,024. The budget must be less than `max_tokens`,
+because thinking tokens count toward that limit.
+
+<Tabs>
+<Tab label="Python">
+
+```python
+from strands import Agent
+from strands.models import BedrockModel
+
+bedrock_model = BedrockModel(
+    model_id="global.anthropic.claude-haiku-4-5-20251001-v1:0",
+    max_tokens=8192,
+    additional_request_fields={
+        "thinking": {"type": "enabled", "budget_tokens": 4096},
+    },
+)
+
+agent = Agent(model=bedrock_model)
+
+response = agent("How long does a 450 km trip take at 120 km/h?")
+```
+</Tab>
+<Tab label="TypeScript">
+
+```typescript
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock_imports.ts:reasoning_imports"
+
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.ts:reasoning_extended"
+```
+</Tab>
+</Tabs>
+
+Extended thinking is deprecated on Claude Opus 4.6 and Claude Sonnet 4.6, and Claude
+Opus 4.7 and later models reject it with a 400 error. To migrate, replace the `thinking` object
+with `{"type": "adaptive"}` and move depth control to `output_config.effort`.
+
+#### Reasoning parameters by model
+
+| Model | `thinking` values | Reasoning when `thinking` is omitted |
+|-------|-------------------|--------------------------------------|
+| Claude Opus 5.5, Claude Fable 5.1, Claude Fable 5, Claude Mythos 5.1, Claude Mythos 5 | `adaptive` only. Thinking can't be turned off | Adaptive |
+| Claude Sonnet 5.5 | `adaptive`. `enabled` and `disabled` return a 400 error | Adaptive |
+| Claude Opus 5, Claude Sonnet 5, Claude Haiku 5.5 | `adaptive`, or `disabled` to turn thinking off. Claude Opus 5 and Claude Haiku 5.5 accept `disabled` only at effort `high` or below | Adaptive |
+| Claude Opus 4.8, Claude Opus 4.7 | `adaptive` or `disabled` | None |
+| Claude Opus 4.6, Claude Sonnet 4.6 | `adaptive`, or `enabled` with `budget_tokens` (deprecated) | None |
+| Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, earlier Claude 4 models | `enabled` with `budget_tokens` only. `adaptive` returns a 400 error | None |
+
+`output_config.effort` applies to every model that supports adaptive thinking, and to
+Claude Opus 4.5, where it works alongside `budget_tokens`. For the full per-model
+reference, see
+[adaptive thinking](https://docs.aws.amazon.com/bedrock/latest/userguide/claude-messages-adaptive-thinking.html)
+and
+[extended thinking](https://docs.aws.amazon.com/bedrock/latest/userguide/claude-messages-extended-thinking.html)
+in the Amazon Bedrock documentation. For models from other providers, see
+[model reasoning](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-reasoning.html).
+
+#### Reading reasoning output
+
+Reasoning arrives as `reasoningContent` blocks in the model response, separate from the
+response text. When you stream, each reasoning delta surfaces as its own event: Python
+callback handlers receive `reasoning=True` with `reasoningText`, and TypeScript emits a
+`reasoningContentDelta` inside a `ModelContentBlockDeltaEvent`, then a `ContentBlockEvent`
+with the assembled `ReasoningBlock`. See [streaming events](../streaming/events.md) for
+the full event list.
+
+Read Claude's reasoning from these blocks instead of prompting it to write its reasoning
+into the response text, for example inside `<thinking>` tags. Claude Opus 5.5, Claude
+Opus 5, Claude Sonnet 5.5, Claude Fable 5.1, and Claude Fable 5 may refuse requests that
+try to pull their internal reasoning into the response.
 
 ### Structured Output
 
