@@ -1,9 +1,10 @@
 // @ts-nocheck
 // NOTE: Type-checking is disabled because the interrupt feature is not yet published in the installed SDK.
 
-import { Agent, tool, SessionManager, FileStorage } from '@strands-agents/sdk'
+import { Agent, tool, SessionManager } from '@strands-agents/sdk'
 import { BeforeToolCallEvent, BeforeToolsEvent } from '@strands-agents/sdk'
 import { InterruptError } from '@strands-agents/sdk'
+import { LocalFileStorage } from '@strands-agents/sdk/storage'
 import { z } from 'zod'
 
 // =====================
@@ -200,7 +201,7 @@ async function sessionManagementExample() {
       tools: [deleteFiles, inspectFiles],
       sessionManager: new SessionManager({
         sessionId: 'myapp',
-        storage: { snapshot: new FileStorage('/path/to/storage') },
+        storage: new LocalFileStorage('/path/to/storage'),
       }),
     })
 

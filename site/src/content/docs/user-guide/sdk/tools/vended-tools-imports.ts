@@ -35,7 +35,8 @@ import { makeNotebook } from '@strands-agents/sdk/vended-tools/notebook'
 // --8<-- [end:notebook_custom_import]
 
 // --8<-- [start:notebook_persistence_import]
-import { Agent, SessionManager, FileStorage } from '@strands-agents/sdk'
+import { Agent, SessionManager } from '@strands-agents/sdk'
+import { LocalFileStorage } from '@strands-agents/sdk/storage'
 import { notebook } from '@strands-agents/sdk/vended-tools/notebook'
 // --8<-- [end:notebook_persistence_import]
 

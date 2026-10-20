@@ -5,11 +5,8 @@ import { fileEditor } from '@strands-agents/sdk/vended-tools/file-editor'
 import { httpRequest } from '@strands-agents/sdk/vended-tools/http-request'
 import { notebook, makeNotebook } from '@strands-agents/sdk/vended-tools/notebook'
 // --8<-- [end:basic_import]
-import {
-  SessionManager,
-  FileStorage,
-  InterruptResponseContent,
-} from '@strands-agents/sdk'
+import { SessionManager, InterruptResponseContent } from '@strands-agents/sdk'
+import { LocalFileStorage } from '@strands-agents/sdk/storage'
 import { handoffToUser, HANDOFF_INTERRUPT_NAME } from '@strands-agents/sdk/vended-tools/handoff-to-user'
 import { sleep, makeSleep } from '@strands-agents/sdk/vended-tools/sleep'
 import { stop } from '@strands-agents/sdk/experimental/vended-tools/stop'
@@ -122,7 +119,7 @@ async function notebookStatePersistenceExample() {
   // --8<-- [start:notebook_state_persistence]
   const session = new SessionManager({
     sessionId: 'my-session',
-    storage: { snapshot: new FileStorage('./sessions') },
+    storage: new LocalFileStorage('./sessions'),
   })
 
   const agent = new Agent({ tools: [notebook], sessionManager: session })

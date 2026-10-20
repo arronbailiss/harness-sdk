@@ -135,7 +135,7 @@ Your custom tools coexist with the auto-vended ones. The sandbox routes all exec
 The following vended plugins route their file I/O through the agent's sandbox when one is configured:
 
 - **[Agent Skills](../plugins/skills.mdx)**: Skill files loaded from filesystem paths are read through the agent's sandbox. Skills stored inside a container or on a remote host are accessible without copying them to the host. URL and inline skill sources are sandbox-independent.
-- **[Context Offloader](../plugins/context-offloader.mdx)**: When using `FileStorage` as the storage backend, offloaded artifacts are written to and read from the sandbox's filesystem rather than the host. The plugin binds to the agent's sandbox during initialization; no explicit wiring is needed.
+- **[Context Offloader](../plugins/context-offloader.mdx)**: When using `LocalFileStorage` as the storage backend, offloaded artifacts are written to and read from the sandbox's filesystem rather than the host. The plugin binds to the agent's sandbox during initialization; no explicit wiring is needed.
 
 ## Next steps
 

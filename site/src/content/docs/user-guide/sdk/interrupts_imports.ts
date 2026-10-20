@@ -21,12 +21,7 @@ import { z } from 'zod'
 // --8<-- [end:tools_rethrow_imports]
 
 // --8<-- [start:session_management_imports]
-import {
-  Agent,
-  tool,
-  SessionManager,
-  FileStorage,
-  BeforeToolCallEvent,
-} from '@strands-agents/sdk'
+import { Agent, tool, SessionManager, BeforeToolCallEvent } from '@strands-agents/sdk'
+import { LocalFileStorage } from '@strands-agents/sdk/storage'
 import { z } from 'zod'
 // --8<-- [end:session_management_imports]
