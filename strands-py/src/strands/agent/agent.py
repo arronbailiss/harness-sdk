@@ -269,7 +269,7 @@ class Agent(AgentBase, LocalAgent):
 
                 - String tool names (e.g., "retrieve")
                 - File paths (e.g., "/path/to/tool.py")
-                - Imported Python modules (e.g., from strands_tools import current_time)
+                - Imported Python modules (e.g., import my_tools)
                 - Dictionaries with name/path keys (e.g., {"name": "tool_name", "path": "/path/to/tool.py"})
                 - ToolProvider instances for managed tool collections
                 - Functions decorated with `@strands.tool` decorator
