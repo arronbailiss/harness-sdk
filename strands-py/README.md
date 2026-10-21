@@ -203,17 +203,33 @@ Custom providers can be implemented using [Custom Providers](https://strandsagen
 
 ### Vended tools
 
-The SDK ships pre-built tools for common agent tasks such as running shell commands, editing files, and making HTTP requests. Import them from `strands.vended_tools`:
+The SDK ships pre-built tools for common agent tasks. Import them from `strands.vended_tools`:
 
 ```python
 from strands import Agent
 from strands.vended_tools import file_editor, http_request, shell
 
 agent = Agent(tools=[file_editor, http_request, shell])
-agent("Fetch https://strandsagents.com and save a one-paragraph summary to summary.md")
+agent("Fetch https://strandsagents.com and save a one-paragraph summary to /tmp/summary.md")
 ```
 
-`shell` and `file_editor` run on the host unless you pass a `sandbox` to `Agent`. See [Vended tools](https://strandsagents.com/docs/user-guide/sdk/tools/vended-tools/) for the full list, including `python_repl`, `swarm`, `stop`, `sleep`, and `handoff_to_user`.
+| Tool | Exports | Description |
+| --- | --- | --- |
+| Shell | `shell`, `make_shell` | Run shell commands |
+| File editor | `file_editor`, `make_file_editor` | View, create, and edit files |
+| HTTP request | `http_request`, `make_http_request` | Make HTTP requests to external APIs |
+| Web fetch | `web_fetch`, `make_web_fetch` | Fetch a web page for the model to read. Requires the `web-fetch` extra |
+| Notebook | `notebook`, `make_notebook` | Keep persistent text notes |
+| Python REPL | `python_repl`, `make_python_repl` | Run Python code |
+| Sleep | `sleep`, `make_sleep` | Pause for a bounded, cancellable duration |
+| Handoff to user | `handoff_to_user`, `make_handoff_to_user` | Pause the agent loop and ask the user for input |
+| Stop | `stop`, `make_stop` | End the agent loop when the task is done |
+| Subagent | `subagent`, `make_subagent` | Delegate a self-contained task to a child agent |
+| Swarm | `swarm`, `make_swarm` | Run a team of agents that hand off work to each other |
+| MCP router | `make_mcp_router` | Connect to MCP servers on an allowlist you set |
+| A2A client | `make_a2a_client` | Discover and message remote A2A agents. Requires the `a2a` extra |
+
+Use the `make_*` factories to customize a tool, for example to bind a sandbox or change its name. `shell`, `file_editor`, and `python_repl` run on the host unless you pass a `sandbox` to `Agent`. See [Vended tools](https://strandsagents.com/docs/user-guide/sdk/tools/vended-tools/) for details on each tool.
 
 ### Bidirectional Streaming
 
