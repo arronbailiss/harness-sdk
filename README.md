@@ -21,7 +21,6 @@
     <a href="https://github.com/strands-agents/harness-sdk/issues"><img alt="GitHub open issues" src="https://img.shields.io/github/issues/strands-agents/harness-sdk"/></a>
     <a href="https://github.com/strands-agents/harness-sdk/pulls"><img alt="GitHub open pull requests" src="https://img.shields.io/github/issues-pr/strands-agents/harness-sdk"/></a>
     <a href="https://github.com/strands-agents/harness-sdk/blob/main/LICENSE.APACHE"><img alt="License" src="https://img.shields.io/github/license/strands-agents/harness-sdk"/></a>
-    <a href="https://www.npmjs.com/package/@strands-agents/cli"><img alt="CLI version" src="https://img.shields.io/npm/v/%40strands-agents%2Fcli?label=CLI"/></a>
   </div>
   
   <p>
