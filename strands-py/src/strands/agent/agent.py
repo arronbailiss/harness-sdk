@@ -812,8 +812,8 @@ class Agent(AgentBase, LocalAgent):
 
         Example:
             ```
-            agent = Agent(tools=[calculator])
-            agent.tool.calculator(...)
+            agent = Agent(tools=[square_root])
+            agent.tool.square_root(number=1764)
             ```
         """
         return self.tool_caller
