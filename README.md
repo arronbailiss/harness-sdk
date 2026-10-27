@@ -119,19 +119,11 @@ pip install strands-agents
 ```
 
 ```python
-import math
+from strands import Agent
+from strands.vended_tools import http_request
 
-from strands import Agent, tool
-
-
-@tool
-def square_root(number: float) -> float:
-    """Return the square root of a number."""
-    return math.sqrt(number)
-
-
-agent = Agent(tools=[square_root])
-agent("What is the square root of 1764")
+agent = Agent(tools=[http_request])
+agent("Tell me about the Strands harness features: https://strandsagents.com/docs/user-guide/harness/index.md")
 ```
 
 The [Python SDK README](strands-py/) covers tools, model providers, MCP, and bidirectional streaming.
@@ -146,13 +138,13 @@ npm install @strands-agents/sdk
 
 ```typescript
 import { Agent } from '@strands-agents/sdk'
+import { httpRequest } from '@strands-agents/sdk/vended-tools/http-request'
 
-const agent = new Agent()
-const result = await agent.invoke('What is the square root of 1764?')
-console.log(result)
+const agent = new Agent({ tools: [httpRequest] })
+await agent.invoke('Tell me about the Strands harness features: https://strandsagents.com/docs/user-guide/harness/index.md')
 ```
 
-`new Agent()` uses Amazon Bedrock by default, so configure AWS credentials or pass another model.
+The agent uses Amazon Bedrock by default, so configure AWS credentials or pass another model.
 Start with the [TypeScript quickstart](https://strandsagents.com/docs/user-guide/sdk/quickstart/typescript/)
 to configure a model provider, run your first agent, and add tools. Use the
 [TypeScript API reference](https://strandsagents.com/docs/api/typescript/) for the full

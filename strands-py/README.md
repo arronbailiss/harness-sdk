@@ -58,19 +58,11 @@ pip install strands-agents
 ```
 
 ```python
-import math
+from strands import Agent
+from strands.vended_tools import http_request
 
-from strands import Agent, tool
-
-
-@tool
-def square_root(number: float) -> float:
-    """Return the square root of a number."""
-    return math.sqrt(number)
-
-
-agent = Agent(tools=[square_root])
-agent("What is the square root of 1764")
+agent = Agent(tools=[http_request])
+agent("Tell me about the Strands harness features: https://strandsagents.com/docs/user-guide/harness/index.md")
 ```
 
 > **Note**: For the default Amazon Bedrock model provider, you'll need AWS credentials configured and model access enabled for Claude 4 Sonnet in the us-west-2 region. See the [Quickstart Guide](https://strandsagents.com/) for details on configuring other model providers.
