@@ -176,7 +176,7 @@ describe('homepage language interactions', () => {
     expect(filename?.textContent).toBe('lead_router.rs')
     for (const [useCase, expectedFilename, expectedCode] of [
       ['assistants', 'support.rs', '.tools([IssueRefund])'],
-      ['research', 'research_agent.rs', 'compatible models also get web search'],
+      ['research', 'research_agent.rs', 'Research the goal, fetch sources, cite them.'],
     ]) {
       useCases?.querySelector<HTMLButtonElement>(`[data-use-case-btn="${useCase}"]`)?.click()
       expect(useCases?.querySelector<HTMLElement>('.terminal__code:not([hidden])')?.dataset.langCode).toBe('rust')
