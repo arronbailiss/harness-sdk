@@ -1,6 +1,7 @@
 ---
 title: Contributing to documentation
 description: 'Contribute to Strands Agents documentation: run the Astro site locally, use the docs agent skills, and submit anything from typo fixes to new guides.'
+languages: [Python, TypeScript, Rust]
 sidebar:
   label: "Documentation"
 ---
@@ -106,7 +107,8 @@ Keep prose tight and focused. Readers scan documentation looking for answers.
 Code examples show developers exactly what to do, so always test them before submitting.
 
 - Test all code: every example must actually work
-- Include every supported language: provide a variant for each SDK that supports the feature
+- Include every supported language: provide a variant for each SDK that
+  supports the feature
 - Start simple: show the minimal example first, then add complexity
 - Add comments: explain non-obvious parts
 - Use realistic names: avoid foo/bar, use descriptive names
@@ -133,6 +135,12 @@ agent("What's the weather like?")
 
 ```typescript
 --8<-- "contribute/contributing/documentation.ts:basic_agent"
+```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "../../../../strands-rs/strands/examples/docs_quickstart.rs:basic"
 ```
 </Tab>
 </Tabs>

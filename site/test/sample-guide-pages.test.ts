@@ -20,6 +20,7 @@ import {
 } from '../src/util/sample-guides'
 
 let guides: SampleGuideEntry[]
+const examplesPageSource = readFileSync(new URL('../src/pages/examples.astro', import.meta.url), 'utf8')
 
 interface GuideFixtureOptions {
   catalogMode?: 'legacy' | 'curated'
@@ -95,23 +96,78 @@ function inlineScript(html: string, marker: string): string {
   return script
 }
 
-function loadCatalog(preference?: string): JSDOM['window'] {
-  const html = builtPageHtml()
-  const dom = new JSDOM(html, {
-    runScripts: 'outside-only',
-    url: 'https://example.test/examples/',
-  })
-  if (preference) dom.window.localStorage.setItem(LANGUAGE_STORAGE_KEY, preference)
-  const scripts = [...dom.window.document.querySelectorAll<HTMLScriptElement>('script')].filter((script) =>
-    [
-      'SAMPLE_GUIDE_LANGUAGE',
-      '__strandsLanguageToggleInit',
-      '__strandsSampleCatalogInit',
-      'data-sample-guide-redirect',
-    ].some((marker) => script.textContent.includes(marker))
+function sourceInlineScript(marker: string): string {
+  const scripts = [...examplesPageSource.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
+  const script = scripts.find((match) => match[1]?.includes(marker))?.[1] ?? ''
+  if (!script) throw new Error(`Missing source inline script containing ${marker}`)
+  return script
+}
+
+function loadCatalogFixture(preference: string): JSDOM['window'] {
+  const dom = new JSDOM(
+    `
+      <language-toggle>
+        <button class="lang-option" data-lang="TypeScript"></button>
+        <button class="lang-option" data-lang="Python"></button>
+        <button class="lang-option" data-lang="Rust" disabled></button>
+      </language-toggle>
+      <p data-sample-catalog-status></p>
+      <starlight-toc>
+        <ul>
+          <li><a href="#sample-category-learn">Learn</a></li>
+          <li><a href="#sample-category-build">Build</a></li>
+        </ul>
+      </starlight-toc>
+      <section data-sample-category="learn">
+        <h2 id="sample-category-learn">Learn</h2>
+        <article data-sample-language="typescript"></article>
+      </section>
+      <section data-sample-category="build">
+        <h2 id="sample-category-build">Build</h2>
+        <article data-sample-language="python"></article>
+      </section>
+    `,
+    {
+      runScripts: 'outside-only',
+      url: 'https://example.test/examples/',
+    }
   )
-  for (const script of scripts) dom.window.eval(script.textContent)
+  dom.window.localStorage.setItem(LANGUAGE_STORAGE_KEY, preference)
+  dom.window.eval(inlineScript(builtPageHtml(), '__strandsLanguageToggleInit'))
+  dom.window.eval(
+    `
+      var STORAGE_KEY = ${JSON.stringify(LANGUAGE_STORAGE_KEY)}
+      var DEFAULT_LANGUAGE = ${JSON.stringify(DEFAULT_LANGUAGE_LABEL)}
+      ${sourceInlineScript('__strandsSampleCatalogInit')}
+    `
+  )
   dom.window.document.dispatchEvent(new dom.window.Event('DOMContentLoaded'))
+  return dom.window
+}
+
+function loadLegacyRedirectFixture(preference: string): JSDOM['window'] {
+  const dom = new JSDOM(
+    `
+      <div
+        data-sample-guide-redirect
+        data-storage-key="${LANGUAGE_STORAGE_KEY}"
+        data-default-language="${DEFAULT_LANGUAGE_LABEL}"
+        data-default-target="#typescript"
+        data-python-target="#python"
+      >
+        <p data-sample-guide-status>Opening examples for your preferred language.</p>
+        <p data-sample-guide-link>
+          <a href="#typescript">Continue to examples</a>
+        </p>
+      </div>
+    `,
+    {
+      runScripts: 'outside-only',
+      url: 'https://example.test/examples/',
+    }
+  )
+  dom.window.localStorage.setItem(LANGUAGE_STORAGE_KEY, preference)
+  dom.window.eval(sourceInlineScript('data-sample-guide-redirect'))
   return dom.window
 }
 
@@ -375,67 +431,51 @@ describe('generated sample guide pages', () => {
 })
 
 describe('sample catalog language interactions', () => {
-  it('shows only the selected language and hides empty catalog sections', ({ skip }) => {
-    if (guides[0]?.data.catalogMode !== 'curated') skip('requires a curated sample catalog')
-
-    const window = loadCatalog('Python')
+  it('uses the selector effective language when the stored preference is unavailable', () => {
+    const window = loadCatalogFixture('Rust')
     const cards = [...window.document.querySelectorAll<HTMLElement>('[data-sample-language]')]
     const sections = [...window.document.querySelectorAll<HTMLElement>('[data-sample-category]')]
 
-    function expectLanguage(label: string, language: 'python' | 'typescript'): void {
-      const visibleCards = cards.filter((card) => !card.hidden)
-      expect(visibleCards).toHaveLength(guides.filter((guide) => guide.data.language === language).length)
-      for (const card of visibleCards) {
-        expect(card.dataset.sampleLanguage).toBe(language)
-        expect(card.querySelector('.sample-link-card__title')?.getAttribute('href')).toContain(`/examples/${language}/`)
-        expect(card.querySelector('.sample-link-card__language')?.textContent).toBe(label)
-      }
-      expect(window.document.querySelector('[data-sample-catalog-status]')?.textContent).toContain(
-        `Showing ${label} examples`
-      )
-    }
-
-    expectLanguage('Python', 'python')
-
-    window.dispatchEvent(new window.CustomEvent('lang-change', { detail: 'Rust' }))
-    expect(window.document.documentElement.dataset.sdkLanguage).toBe('rust')
-    expect(cards.every((card) => card.hidden)).toBe(true)
-    expect(sections.every((section) => section.hidden)).toBe(true)
+    expect(window.document.documentElement.dataset.sdkLanguage).toBe('typescript')
+    expect(cards.find((card) => card.dataset.sampleLanguage === 'typescript')?.hidden).toBe(false)
+    expect(cards.find((card) => card.dataset.sampleLanguage === 'python')?.hidden).toBe(true)
+    expect(sections.find((section) => section.dataset.sampleCategory === 'learn')?.hidden).toBe(false)
+    expect(sections.find((section) => section.dataset.sampleCategory === 'build')?.hidden).toBe(true)
     expect(window.document.querySelector('[data-sample-catalog-status]')?.textContent).toBe(
-      'No Rust examples are available yet.'
+      'Showing TypeScript examples, organized by what you want to learn or build.'
     )
 
-    const sectionIds = new Set(sections.map((section) => section.querySelector('h2')?.id))
-    const tocEntries = [
-      ...window.document.querySelectorAll<HTMLElement>('starlight-toc a[href], mobile-starlight-toc a[href]'),
-    ]
-      .filter((link) => sectionIds.has(link.getAttribute('href')?.replace(/^.*#/, '')))
-      .map((link) => ({
-        sectionId: link.getAttribute('href')?.replace(/^.*#/, ''),
-        item: link.closest<HTMLElement>('li'),
-      }))
-      .filter((entry): entry is { sectionId: string; item: HTMLElement } => Boolean(entry.sectionId && entry.item))
-    expect(tocEntries.length).toBeGreaterThan(0)
-    expect(tocEntries.every(({ item }) => item.hidden)).toBe(true)
+    window.document.querySelector<HTMLButtonElement>('[data-lang="Python"]')?.click()
 
-    window.dispatchEvent(new window.CustomEvent('lang-change', { detail: 'TypeScript' }))
-    expectLanguage('TypeScript', 'typescript')
-    expect(sections.some((section) => !section.hidden)).toBe(true)
-    for (const { sectionId, item } of tocEntries) {
-      expect(item.hidden).toBe(window.document.getElementById(sectionId)?.closest('section')?.hidden)
-    }
+    expect(window.document.documentElement.dataset.sdkLanguage).toBe('python')
+    expect(cards.find((card) => card.dataset.sampleLanguage === 'typescript')?.hidden).toBe(true)
+    expect(cards.find((card) => card.dataset.sampleLanguage === 'python')?.hidden).toBe(false)
+    expect(sections.find((section) => section.dataset.sampleCategory === 'learn')?.hidden).toBe(true)
+    expect(sections.find((section) => section.dataset.sampleCategory === 'build')?.hidden).toBe(false)
+    expect(window.document.querySelector('[data-sample-catalog-status]')?.textContent).toBe(
+      'Showing Python examples, organized by what you want to learn or build.'
+    )
   })
 
-  it('does not redirect an unavailable Rust preference to TypeScript', ({ skip }) => {
-    if (guides[0]?.data.catalogMode !== 'legacy') skip('requires a legacy sample catalog')
-
-    const window = loadCatalog('Rust')
+  it('recovers an unavailable legacy preference when the effective language resolves', () => {
+    const window = loadLegacyRedirectFixture('Rust')
     const redirect = window.document.querySelector<HTMLElement>('[data-sample-guide-redirect]')
+    const link = redirect?.querySelector<HTMLElement>('[data-sample-guide-link]')
 
     expect(redirect?.querySelector('[data-sample-guide-status]')?.textContent).toBe(
       'No Rust examples are available yet.'
     )
-    expect(redirect?.querySelector<HTMLElement>('[data-sample-guide-link]')?.hidden).toBe(true)
+    expect(link?.hidden).toBe(true)
+    expect(window.location.hash).toBe('')
+
+    window.dispatchEvent(new window.CustomEvent('lang-effective-change', { detail: 'TypeScript' }))
+
+    expect(redirect?.querySelector('[data-sample-guide-status]')?.textContent).toBe(
+      'Opening examples for your preferred language.'
+    )
+    expect(link?.hidden).toBe(false)
+    expect(link?.querySelector('a')?.getAttribute('href')).toBe('#typescript')
+    expect(window.location.hash).toBe('#typescript')
   })
 })
 

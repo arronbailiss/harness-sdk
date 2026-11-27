@@ -65,24 +65,36 @@ const headings = catalogSections.map((section) => ({
             var redirect = document.querySelector('[data-sample-guide-redirect]')
             if (!redirect) return
 
+            function showLanguage(language) {
+              var target = null
+              if (language === 'Python') target = redirect.getAttribute('data-python-target')
+              if (language === 'TypeScript') target = redirect.getAttribute('data-default-target')
+
+              var status = redirect.querySelector('[data-sample-guide-status]')
+              var link = redirect.querySelector('[data-sample-guide-link]')
+              var anchor = link && link.querySelector('a')
+              if (target) {
+                if (status) status.textContent = 'Opening examples for your preferred language.'
+                if (link) link.hidden = false
+                if (anchor) anchor.setAttribute('href', target)
+                window.location.replace(target)
+                return
+              }
+
+              if (status) status.textContent = 'No ' + language + ' examples are available yet.'
+              if (link) link.hidden = true
+            }
+
             var language = redirect.getAttribute('data-default-language')
             var storageKey = redirect.getAttribute('data-storage-key')
             try {
               if (storageKey) language = localStorage.getItem(storageKey) || language
             } catch {}
+            showLanguage(language)
 
-            var target = null
-            if (language === 'Python') target = redirect.getAttribute('data-python-target')
-            if (language === 'TypeScript') target = redirect.getAttribute('data-default-target')
-            if (target) {
-              window.location.replace(target)
-              return
-            }
-
-            var status = redirect.querySelector('[data-sample-guide-status]')
-            if (status) status.textContent = 'No ' + language + ' examples are available yet.'
-            var link = redirect.querySelector('[data-sample-guide-link]')
-            if (link) link.hidden = true
+            window.addEventListener('lang-effective-change', function (event) {
+              if (event && event.detail) showLanguage(event.detail)
+            })
           })()
         </script>
       </>
@@ -167,7 +179,7 @@ const headings = catalogSections.map((section) => ({
 
             showLanguage(getPreference())
 
-            window.addEventListener('lang-change', function (event) {
+            window.addEventListener('lang-effective-change', function (event) {
               if (event && event.detail) showLanguage(event.detail)
             })
           })()

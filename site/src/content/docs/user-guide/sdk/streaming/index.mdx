@@ -15,7 +15,7 @@ import { CardGrid, LinkCard } from '@astrojs/starlight/components'
 
 Stream an agent's output as it happens instead of waiting for the final response:
 text deltas, tool calls, and lifecycle events, as they occur. This is what drives
-responsive user interfaces and real-time monitoring.
+responsive user interfaces and real-time observability.
 
 Strands emits the same set of events regardless of how you consume them; you choose the consumption model that fits your application. Async iterators suit asynchronous server frameworks, and callback handlers suit synchronous Python.
 
@@ -25,7 +25,7 @@ Strands emits the same set of events regardless of how you consume them; you cho
   <LinkCard
     title="Async Iterators"
     href="async-iterators/"
-    description="Consume the event stream with async iterators in asynchronous applications and servers."
+    description="Consume the event stream with async iterators in async applications."
   />
   <LinkCard
     title="Callback Handlers"
@@ -93,12 +93,13 @@ cargo add tokio --features macros,rt-multi-thread
 
 Each emitted text delta is one piece of the model's output. The
 [event reference](./events.md) lists everything else the stream carries: tool
-calls, lifecycle signals, and multi-agent coordination.
+calls, lifecycle signals, and multi-agent events.
 
 :::note[Rust guide coverage]
 This overview and the Rust quickstart include Rust examples. Linked streaming
 guides currently cover Python and TypeScript unless they show a Rust tab. Use
-the [Rust API reference](/docs/api/rust/) for the complete Rust surface.
+the [Rust API reference](../../../api/rust/index.md) for the complete Rust
+surface.
 :::
 
 ## Where to go next

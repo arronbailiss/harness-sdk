@@ -250,14 +250,8 @@ Replace src/main.rs with a typed letter-counting tool:
 
   use strands::{Agent, ToolError, tool};
 
-  /// Count occurrences of a letter in a word.
-  #[tool]
-  async fn letter_counter(
-      /// Word to search.
-      word: String,
-      /// Single letter to count.
-      letter: char,
-  ) -> Result<usize, ToolError> {
+  #[tool(description = "Count occurrences of a letter in a word.")]
+  async fn letter_counter(word: String, letter: char) -> Result<usize, ToolError> {
       Ok(word
           .chars()
           .filter(|candidate| candidate.eq_ignore_ascii_case(&letter))
@@ -273,8 +267,9 @@ Replace src/main.rs with a typed letter-counting tool:
       agent.shutdown().await
   }
 
-Run cargo run again. Explain that #[tool] generates the LetterCounter tool struct and
-its input schema from the function signature and documentation.
+Run cargo run again. Explain that #[tool] uses the signature for the input schema,
+the function name for the LetterCounter struct, and the description attribute for
+the model-facing description.
 
 ${MCP_STEP}
 `.trim()
@@ -332,7 +327,7 @@ credentials or a Bedrock API key in AWS_BEARER_TOKEN_BEDROCK. Python and TypeScr
 also offer Anthropic (ANTHROPIC_API_KEY), OpenAI (OPENAI_API_KEY), Google
 (GEMINI_API_KEY), and Ollama. The Rust preview supports Amazon Bedrock, Anthropic,
 OpenAI, and Amazon Bedrock Mantle. Strands harness picks the provider from a
-"provider/name" model string. Bedrock needs no model argument.
+"provider/name" model string. Amazon Bedrock needs no model argument.
 
 Create agent.py (Python), src/agent.ts (TypeScript), or src/main.rs (Rust) with the
 snippet for my choices. The task exercises web access, file tools, and multi-step
@@ -397,8 +392,8 @@ work; the agent writes api-versioning.md itself.
   let options = HarnessAgentOptions::builder().model("openai/gpt-5.4").build();
   let mut agent = create_harness(options).await?;
 
-For the non-Bedrock providers, keep the same import and the same invoke line as the
-Bedrock snippet; only the create_harness / createHarness call or Rust options change.
+For the non-Amazon Bedrock providers, keep the same import and invoke line as the
+Amazon Bedrock snippet; only the create_harness / createHarness call or Rust options change.
 For Rust, choose exactly one provider block and place it inside main.
 
 Run it with python -u agent.py (Python), npx tsx src/agent.ts (TypeScript), or

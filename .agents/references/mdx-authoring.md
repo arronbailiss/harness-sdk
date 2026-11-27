@@ -105,7 +105,12 @@ Only the code between markers is rendered. Paths inside the `--8<--` directive a
 
 **When to skip the imports file:** the page renders no TypeScript snippets, *or* every snippet body genuinely has zero external imports. Otherwise, write the imports file — relying on the imports at the top of the body `.ts` is wrong, since those lines live above the `[start:...]` marker and never appear in rendered docs.
 
-Rust snippets use sibling `.rs` files and the same named-region markers. Include the `use` declarations required by the rendered block inside its region, and keep each snippet in a module or function so the complete file compiles through `npm run typecheck:snippets`.
+Rust snippets use `.rs` files and the same named-region markers. Keep
+page-specific snippets beside the page. When an example depends on workspace
+crates or Cargo features, include a named region from a registered Cargo example
+under `strands-rs/` or `harness-rs/`. Include the `use` declarations required by
+the rendered block inside its region. Every source file must compile through
+`npm run typecheck:snippets`.
 
 ## Callout Syntax
 

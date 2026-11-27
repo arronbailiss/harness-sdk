@@ -6,8 +6,7 @@ mod agent_anatomy {
     // --8<-- [start:agent_anatomy]
     use strands::{Agent, ToolError, tool};
 
-    /// Count the words in a piece of text.
-    #[tool]
+    #[tool(description = "Count the words in a piece of text.")]
     async fn word_count(text: String) -> Result<String, ToolError> {
         Ok(format!("{} words", text.split_whitespace().count()))
     }
@@ -28,8 +27,7 @@ mod tool_overview {
     // --8<-- [start:tool_overview]
     use strands::{Agent, ToolError, tool};
 
-    /// Get the current weather for a city.
-    #[tool]
+    #[tool(description = "Get the current weather for a city.")]
     async fn get_weather(city: String) -> Result<String, ToolError> {
         Ok(format!("It's sunny in {city}."))
     }

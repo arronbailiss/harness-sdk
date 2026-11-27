@@ -57,8 +57,8 @@ jobs:
             //
             // The same sticky comment also carries a package-provenance
             // section: for each `package:` in an entry a PR touches, the
-            // package's registry metadata (PyPI/npm — data-only fetches, no
-            // PR code is checked out or executed) must declare the same
+            // package's registry metadata (PyPI/npm/crates.io — data-only
+            // fetches, no PR code is checked out or executed) must declare the same
             // github owner/repo the entry links, or reviewers are told to
             // verify ownership manually.
             //
@@ -286,7 +286,7 @@ jobs:
               if (data === null) return { github: undefined, pkgs: [] };
               const github = typeof data.github === 'string' ? data.github : undefined;
               const pkgs = [];
-              for (const lang of ['python', 'typescript']) {
+              for (const lang of ['python', 'typescript', 'rust']) {
                 const pkg = data.languages?.[lang]?.package;
                 if (typeof pkg === 'string' && pkg) pkgs.push({ lang, pkg });
               }
@@ -380,6 +380,16 @@ jobs:
                 const info = (await res.json()).info || {};
                 const urls = [...Object.values(info.project_urls || {}), info.home_page];
                 return urls.map(parseGithubSlug).filter(Boolean);
+              }
+              if (lang === 'rust') {
+                const res = await fetch(`https://crates.io/api/v1/crates/${encodeURIComponent(pkg)}`, {
+                  headers: {
+                    'User-Agent': 'strands-agents/harness-sdk catalog-editorial-review workflow (https://github.com/strands-agents/harness-sdk)',
+                  },
+                });
+                if (!res.ok) throw new Error(`crates.io status=${res.status}`);
+                const data = await res.json();
+                return [parseGithubSlug(data.crate?.repository)].filter(Boolean);
               }
               const res = await fetch(`https://registry.npmjs.org/${encodeURIComponent(pkg)}`);
               if (!res.ok) throw new Error(`npm status=${res.status}`);

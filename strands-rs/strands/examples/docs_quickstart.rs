@@ -49,14 +49,8 @@ mod custom_tool {
     // --8<-- [start:custom_tool]
     use strands::{Agent, ToolError, tool};
 
-    /// Count occurrences of a letter in a word.
-    #[tool]
-    async fn letter_counter(
-        /// Word to search.
-        word: String,
-        /// Single letter to count.
-        letter: char,
-    ) -> Result<usize, ToolError> {
+    #[tool(description = "Count occurrences of a letter in a word.")]
+    async fn letter_counter(word: String, letter: char) -> Result<usize, ToolError> {
         Ok(word
             .chars()
             .filter(|candidate| candidate.eq_ignore_ascii_case(&letter))

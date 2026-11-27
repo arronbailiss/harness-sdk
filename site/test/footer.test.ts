@@ -4,7 +4,7 @@ import { getCollection } from 'astro:content'
 import { JSDOM } from 'jsdom'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import { showFooterLanguage } from '../src/util/footer'
+import { bindFooterLanguage, showFooterLanguage } from '../src/util/footer'
 import { sampleGuidePath, sortSampleGuides, type SampleGuideEntry } from '../src/util/sample-guides'
 
 const SITE_ORIGIN = 'https://strandsagents.com'
@@ -146,5 +146,33 @@ describe('showFooterLanguage', () => {
     expect([...document.querySelectorAll<HTMLElement>('[data-release-lang]')].every((release) => !release.hidden)).toBe(
       true
     )
+  })
+})
+
+describe('bindFooterLanguage', () => {
+  it('follows the effective route language as well as preference changes', () => {
+    const dom = new JSDOM(`
+      <footer class="site-footer">
+        <span data-release-lang="Python"></span>
+        <span data-release-lang="TypeScript"></span>
+      </footer>
+    `)
+    const { document } = dom.window
+    const python = document.querySelector<HTMLElement>('[data-release-lang="Python"]')!
+    const typescript = document.querySelector<HTMLElement>('[data-release-lang="TypeScript"]')!
+    const unbind = bindFooterLanguage(document, dom.window, 'TypeScript')
+
+    expect(python.hidden).toBe(true)
+    expect(typescript.hidden).toBe(false)
+
+    dom.window.dispatchEvent(new dom.window.CustomEvent('lang-effective-change', { detail: 'Rust' }))
+    expect(python.hidden).toBe(false)
+    expect(typescript.hidden).toBe(false)
+
+    dom.window.dispatchEvent(new dom.window.CustomEvent('lang-change', { detail: 'Python' }))
+    expect(python.hidden).toBe(false)
+    expect(typescript.hidden).toBe(true)
+
+    unbind()
   })
 })

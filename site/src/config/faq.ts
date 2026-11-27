@@ -96,7 +96,7 @@ export const faqItems: FaqItem[] = [
       'Choose Python, TypeScript, or Rust based on your runtime and feature maturity. Rust is in developer preview, and support varies by SDK.',
     answer: [
       paragraph(
-        "Use the SDK that matches your application's runtime and maturity requirements. Python and TypeScript cover the broadest feature surface today. Rust provides the core agent loop, typed tools, model providers, MCP, sessions, and telemetry in developer preview."
+        "Use the SDK that matches your application's runtime and maturity requirements. Python and TypeScript cover the broadest feature surface today. Rust provides the core agent loop, typed tools, model providers, MCP, sessions, and observability in developer preview."
       ),
       paragraph(
         'Support for features and providers varies between the SDKs. Bidirectional agents are currently Python-only, for example. Start with the ',

@@ -42,7 +42,7 @@ The Strands Agents SDK empowers developers to quickly build, manage, evaluate an
 Strands runs inside your own process. Creating an agent is constructing an object
 in Python, Node.js, or Rust: there is no hosted control plane, scheduler, or database to
 stand up first. Amazon Bedrock is the default model provider. Provider support
-varies by SDK, and Rust providers other than Bedrock require an explicit Cargo
+varies by SDK, and Rust providers other than Amazon Bedrock require an explicit Cargo
 feature. Adding an agent to an existing web application is a dependency and a
 few lines of code, not new infrastructure.
 
@@ -250,33 +250,62 @@ include a Rust tab. Use the [Rust quickstart](./rust/) and
 exact APIs during the developer preview.
 
 | Category | Feature | Python | TypeScript | Rust preview |
-|----------|---------|:------:|:----------:|:------------:|
-| **Core** | [Agent creation and invocation](../agents/agent-loop/) | ✅ | ✅ | ✅ |
-| | [Streaming responses](../streaming/) | ✅ | ✅ | ✅ |
-| | [Structured output](../agents/structured-output/) | ✅ | ✅ | ✅ |
-| **Model providers** | [Amazon Bedrock](../model-providers/amazon-bedrock/) | ✅ | ✅ | ✅ |
-| | [OpenAI](../model-providers/openai/) | ✅ | ✅ | ✅ |
-| | [OpenAI Responses API](../model-providers/openai-responses/) | ✅ | ✅ | ✅ |
-| | [Anthropic](../model-providers/anthropic/) | ✅ | ✅ | ✅ |
-| | [Google](../model-providers/google/) | ✅ | ✅ | ❌ |
-| | [Ollama](../model-providers/ollama/) | ✅ | ❌ | ❌ |
-| | [LiteLLM](../model-providers/litellm/) | ✅ | ❌ | ❌ |
-| | [Custom providers](../model-providers/custom_model_provider/) | ✅ | ✅ | ✅ |
-| | [Additional providers](../model-providers/) | 5+ | 1+ | 1+ |
-| **Tools** | [Custom function tools](../tools/custom-tools/) | ✅ | ✅ | ✅ |
-| | [MCP (Model Context Protocol)](../tools/mcp-tools/) | ✅ | ✅ | ✅ |
-| | [Vended tools](../tools/vended-tools/) | ✅ | ✅ | ✅ |
-| **Conversation** | [Null manager](../agents/conversation-management/) | ✅ | ✅ | ✅ |
-| | [Sliding window manager](../agents/conversation-management/) | ✅ | ✅ | ✅ |
-| | [Summarizing manager](../agents/conversation-management/) | ✅ | ✅ | ✅ |
-| **Hooks** | [Lifecycle hooks](../agents/hooks/) | ✅ | ✅ | ✅ |
-| | [Custom hook providers](../agents/hooks/) | ✅ | ✅ | ✅ |
-| **Multi-agent** | [Swarms](../multi-agent/swarm/) | ✅ | ✅ | ❌ |
-| | [Graphs](../multi-agent/graph/) | ✅ | ✅ | ❌ |
-| | [Workflows](../multi-agent/workflow/) | ✅ | ✅ | ❌ |
-| | [Agents as tools](../multi-agent/agents-as-tools/) | ✅ | ✅ | ✅ |
-| | [Agent-to-Agent (A2A)](../multi-agent/agent-to-agent/) | ✅ | ✅ | ❌ |
-| **Session management** | [File, S3, repository managers](../agents/session-management/) | ✅ | ✅ | File and custom storage |
-| **Observability** | [OpenTelemetry integration](../observability-evaluation/observability/) | ✅ | ✅ | ✅ |
-| **Steering** | [Agent steering](../agents/interventions/steering/) | ✅ | ✅ | ❌ |
-| **Voice** | [Bidirectional streaming](../bidi/quickstart/) | ✅ | ❌ | ❌ |
+| --- | --- | :---: | :---: | :---: |
+| **Core** | [Agent creation][agent-loop] | Yes | Yes | Yes |
+|  | [Streaming responses][streaming] | Yes | Yes | Yes |
+|  | [Structured output][structured-output] | Yes | Yes | Yes |
+| **Model providers** | [Amazon Bedrock][bedrock] | Yes | Yes | Yes |
+|  | [OpenAI][openai] | Yes | Yes | Yes |
+|  | [OpenAI Responses API][openai-responses] | Yes | Yes | Yes |
+|  | [Anthropic][anthropic] | Yes | Yes | Yes |
+|  | [Google][google] | Yes | Yes | No |
+|  | [Ollama][ollama] | Yes | No | No |
+|  | [LiteLLM][litellm] | Yes | No | No |
+|  | [Custom providers][custom-providers] | Yes | Yes | Yes |
+|  | [Additional providers][providers] | 5+ | 1+ | 1+ |
+| **Tools** | [Custom tools][custom-tools] | Yes | Yes | Yes |
+|  | [MCP tools][mcp-tools] | Yes | Yes | Yes |
+|  | [Vended tools][vended-tools] | Yes | Yes | Yes |
+| **Conversation** | [Null manager][conversation] | Yes | Yes | Yes |
+|  | [Sliding window manager][conversation] | Yes | Yes | Yes |
+|  | [Summarizing manager][conversation] | Yes | Yes | Yes |
+| **Hooks** | [Lifecycle hooks][hooks] | Yes | Yes | Yes |
+|  | [Custom hook providers][hooks] | Yes | Yes | Yes |
+| **Multi-agent** | [Swarms][swarm] | Yes | Yes | No |
+|  | [Graphs][graph] | Yes | Yes | No |
+|  | [Workflows][workflow] | Yes | Yes | No |
+|  | [Agents as tools][agents-as-tools] | Yes | Yes | Yes |
+|  | [Agent-to-Agent (A2A)][a2a] | Yes | Yes | No |
+| **Session management** | [Storage managers][sessions] | Yes | Yes | Partial |
+| **Observability** | [OpenTelemetry][observability] | Yes | Yes | Yes |
+| **Steering** | [Agent steering][steering] | Yes | Yes | No |
+| **Voice** | [Bidirectional streaming][bidi] | Yes | No | No |
+
+Rust session management currently includes file and custom storage.
+
+[agent-loop]: ../agents/agent-loop/
+[streaming]: ../streaming/
+[structured-output]: ../agents/structured-output/
+[bedrock]: ../model-providers/amazon-bedrock/
+[openai]: ../model-providers/openai/
+[openai-responses]: ../model-providers/openai-responses/
+[anthropic]: ../model-providers/anthropic/
+[google]: ../model-providers/google/
+[ollama]: ../model-providers/ollama/
+[litellm]: ../model-providers/litellm/
+[custom-providers]: ../model-providers/custom_model_provider/
+[providers]: ../model-providers/
+[custom-tools]: ../tools/custom-tools/
+[mcp-tools]: ../tools/mcp-tools/
+[vended-tools]: ../tools/vended-tools/
+[conversation]: ../agents/conversation-management/
+[hooks]: ../agents/hooks/
+[swarm]: ../multi-agent/swarm/
+[graph]: ../multi-agent/graph/
+[workflow]: ../multi-agent/workflow/
+[agents-as-tools]: ../multi-agent/agents-as-tools/
+[a2a]: ../multi-agent/agent-to-agent/
+[sessions]: ../agents/session-management/
+[observability]: ../observability-evaluation/observability/
+[steering]: ../agents/interventions/steering/
+[bidi]: ../bidi/quickstart/

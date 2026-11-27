@@ -61,18 +61,22 @@ From here you add the tools, memory, and model provider your application needs, 
 
 Strands gives you two starting points, and you can move between them without a rewrite.
 
-| If you want to... | Start with | Why |
-|---|---|---|
-| Get a complete agent harness with tested defaults | [Strands harness](../harness/) | The decisions are already made: system prompt, tools, memory, sessions, context management, and a production loop come pre-wired and benchmarked. You start from a working agent. |
-| Build the agent harness yourself, piece by piece | [Strands Harness SDK quickstart](./quickstart/overview/) | Nothing is pre-decided. You get the primitives and the loop, and you choose every component and how they fit. |
-| Start on Strands harness and drop down for more control later | [Compose with the Strands Harness SDK](../harness/composing-with-sdk/) | Strands harness is built on the Strands Harness SDK, so any piece is yours to swap out without a rewrite. |
+| Goal | Start with | Why |
+| --- | --- | --- |
+| Use tested defaults | [Strands harness][harness] | Start with a working agent. |
+| Choose each component | [SDK quickstart][sdk-quickstart] | Build from primitives. |
+| Customize later | [Compose with the SDK][compose-sdk] | Swap any default. |
+
+[harness]: ../harness/
+[sdk-quickstart]: ./quickstart/overview/
+[compose-sdk]: ../harness/composing-with-sdk/
 
 Weighing Strands against other frameworks or a hand-written loop instead? See [choosing an agent foundation](../migrate/choosing-an-agent-foundation/).
 
 <LinkCard
   title="Quickstart"
   href="./quickstart/overview/"
-  description="Install the Strands Harness SDK, choose a model provider, and run your first agent in Python, TypeScript, or Rust."
+  description="Run your first SDK agent in Python, TypeScript, or Rust."
 />
 
 ## Build

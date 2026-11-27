@@ -1,15 +1,14 @@
 ---
 title: Rust Quickstart
 description: >-
-  Get a Strands agent running in Rust: install the SDK, invoke the default
-  Amazon Bedrock model, and add a typed custom tool.
+  Build your first Rust agent with the Strands Agents SDK: create a project,
+  invoke Amazon Bedrock, add a typed custom tool, and choose a model provider.
 languages: Rust
 sidebar:
   label: "Rust"
 tags: [quickstart]
 sourceLinks:
-  - path: strands-rs/strands/examples/basic.rs
-  - path: strands-rs/strands/examples/tools.rs
+  - path: strands-rs/strands/examples/docs_quickstart.rs
 ---
 
 This quickstart takes you to a running Rust agent with one custom tool. You install
@@ -81,9 +80,8 @@ Run the project again:
 cargo run
 ```
 
-The `#[tool]` macro reads the function and parameter documentation to build the
-tool description and input schema. It generates the `LetterCounter` tool struct
-from the `letter_counter` function name.
+The `#[tool]` macro generates the input schema from the typed parameters and
+the `LetterCounter` tool struct from the `letter_counter` function name.
 
 ## Choose another model provider
 

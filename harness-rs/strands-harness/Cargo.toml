@@ -69,7 +69,8 @@ aws-smithy-runtime-api.workspace = true
 workspace = true
 
 [[example]]
-name = "docs_quickstart"
+name = "docs_harness_quickstart"
+path = "examples/docs_quickstart.rs"
 required-features = ["bedrock", "anthropic", "openai"]
 
 [package.metadata.docs.rs]

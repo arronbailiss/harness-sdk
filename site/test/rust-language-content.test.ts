@@ -5,11 +5,14 @@ import { JSDOM } from 'jsdom'
 import { parse } from 'node-html-parser'
 import { describe, expect, it } from 'vitest'
 import { normalizeSdkLanguages } from '../src/config/languages'
+import { bindFooterLanguage } from '../src/util/footer'
 import { LANGUAGE_STORAGE_KEY } from '../src/util/language-preference'
 
 const REQUIRED_RUST_PAGES = [
   'docs/api/rust',
   'docs/contribute/contributing/core-sdk',
+  'docs/contribute/contributing/documentation',
+  'docs/integrations/get-featured',
   'docs/user-guide/harness',
   'docs/user-guide/harness/quickstart',
   'docs/user-guide/sdk',
@@ -71,6 +74,7 @@ describe('Rust documentation language coverage', () => {
 
     expect(script, 'language toggle script is missing').toBeDefined()
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, 'TypeScript')
+    const unbindFooter = bindFooterLanguage(window.document, window, 'TypeScript')
     window.eval(script!.textContent)
     window.document.dispatchEvent(new window.Event('DOMContentLoaded'))
 
@@ -87,6 +91,12 @@ describe('Rust documentation language coverage', () => {
       )
     ).toBe(true)
     expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe('TypeScript')
+    expect(
+      [...window.document.querySelectorAll<HTMLElement>('.site-footer [data-release-lang]')].every(
+        (release) => !release.hidden
+      )
+    ).toBe(true)
+    unbindFooter()
   })
 
   it('switches inline syntax to the effective Rust language', async () => {

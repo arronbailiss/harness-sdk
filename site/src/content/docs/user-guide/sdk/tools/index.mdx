@@ -1,6 +1,8 @@
 ---
 title: Add tools to your agent
-description: "Give AI agents the ability to take real-world actions. Strands supports built-in tools, custom functions, MCP servers, and community packages."
+description: >-
+  Give Strands agents tools that call APIs, read files, run code, and query
+  databases. Learn to create and use custom, vended, MCP, and community tools.
 languages: [Python, TypeScript, Rust]
 sidebar:
   label: "Overview"
@@ -16,7 +18,10 @@ sourceLinks:
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components'
 
-Give your agent the ability to do things beyond generating text: call an API, read a file, run code, or query a database. You pass tools to an agent, and the agent decides when to call them based on the request. Strands works with tools you write yourself, prebuilt tools the SDK and community ship, and any MCP server.
+Give your agent the ability to do things beyond generating text: call an API,
+read a file, run code, or query a database. You pass tools to an agent, and the
+agent decides when to call them based on the request. Strands works with custom,
+vended, community, and MCP tools.
 
 :::caution[Tool Security]
 All tools, whether custom, community-provided, or included in the Strands tools package, execute code on behalf of your agent with the permissions of the host process. Under the shared responsibility model, you should audit each tool's behavior (file access patterns, network calls, shell execution) and ensure it is appropriate for your deployment environment and threat model. See [Responsible AI](../safety-security/responsible-ai.md) for more details.
@@ -47,7 +52,7 @@ All tools, whether custom, community-provided, or included in the Strands tools 
   />
 </CardGrid>
 
-## Prebuilt tools and how they run
+## Vended and community tools
 
 <CardGrid>
   <LinkCard
@@ -123,7 +128,8 @@ enable the optional `mcp` feature.
 :::note[Rust guide coverage]
 This overview and the Rust quickstart include Rust examples. Linked feature
 guides currently cover Python and TypeScript unless they show a Rust tab. Use
-the [Rust API reference](/docs/api/rust/) for the complete Rust surface.
+the [Rust API reference](../../../api/rust/index.md) for the complete Rust
+surface.
 :::
 
 ## Where to go next
