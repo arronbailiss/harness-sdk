@@ -140,7 +140,7 @@ a specific subset of actions:
 How actions behave depends on the lifecycle method:
 
 - **Deny**
-  - Before events: sets `event.cancel` and short-circuits remaining handlers.
+  - Before events: cancels the event and short-circuits remaining handlers.
   - After events: has no effect and logs a warning at runtime.
 - **Guide**
   - Before tool calls and invocations: cancels with accumulated feedback.
@@ -148,7 +148,7 @@ How actions behave depends on the lifecycle method:
   - After events: injects feedback and retries.
 - **Confirm**
   - Before events: pauses the agent for human approval through interrupt and
-    resume. A denied response sets `event.cancel`.
+    resume. A denied response cancels the event.
   - After events: not supported.
 - **Transform**
   - Before events: calls `action.apply(event)`. Later handlers see the modified
@@ -276,11 +276,15 @@ the supplied value immediately. The default accepts `true`, `"y"`, or `"yes"`.
 
 Interventions build on the [hooks](../hooks.mdx) system: each lifecycle method registers a hook callback. The difference is in how they communicate with the framework.
 
-[Hooks](../hooks.mdx) and [plugins](../../plugins/index.mdx) mutate event properties directly (e.g., setting `event.cancel = "reason"`). The framework doesn't know _why_ something was cancelled. Was it a hard authorization denial, or soft guidance to retry differently? Multiple plugins modifying the same event can conflict silently with last-write-wins semantics.
+[Hooks](../hooks.mdx) and [plugins](../../plugins/index.mdx) mutate event state
+directly, such as by setting a cancellation reason. The framework doesn't know
+_why_ something was cancelled. Was it a hard authorization denial, or soft
+guidance to retry differently? Multiple plugins modifying the same event can
+conflict silently with last-write-wins semantics.
 
 Interventions return typed actions that the framework interprets. This enables:
 
-- **Short-circuiting**: a `Deny` from an authorization handler skips all remaining handlers automatically. With hooks, each plugin must independently check `event.cancel` before doing work.
+- **Short-circuiting**: a `Deny` from an authorization handler skips all remaining handlers automatically. With hooks, each plugin must independently check whether the event was cancelled before doing work.
 - **Feedback accumulation**: multiple handlers can return `Guide` and their feedback is combined into a single message to the model, rather than overwriting each other.
 - **Human-in-the-loop**: `Confirm` integrates with the SDK's interrupt/resume system to pause for approval without the handler needing to manage interrupt lifecycle.
 - **Ordered evaluation**: handlers always run in registration order with well-defined precedence (deny > confirm > guide > transform > proceed).

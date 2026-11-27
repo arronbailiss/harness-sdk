@@ -71,6 +71,13 @@ description, and a `.describe()` on a field describes that field to the model.
 </Tab>
 <Tab label="Rust">
 
+Add the schema derives to your project:
+
+```bash
+cargo add schemars
+cargo add serde --features derive
+```
+
 A schema is a type that derives `schemars::JsonSchema` and
 `serde::Deserialize`. The tool is named `strands_structured_output`.
 `schemars` field attributes add constraints and descriptions to the generated

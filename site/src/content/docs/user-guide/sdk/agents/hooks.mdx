@@ -399,8 +399,14 @@ The live event exposes `messages`, but `toJSON()` omits them.
 </Tab>
 </Tabs>
 
-Assign a new collection to `event.messages` to replace the input. Assign an empty
-collection to remove the input from the invocation.
+Use
+<Syntax
+  py="event.messages = messages"
+  ts="event.messages = messages"
+  rs="event.set_messages(messages)"
+/>
+to replace the input. Pass an empty collection to remove the input from the
+invocation.
 
 ### Result Modification
 
@@ -967,7 +973,15 @@ Rust exposes the original error through `AfterToolCallEvent::error()`:
 
 ### Tool Call Retry
 
-Useful for implementing custom retry logic for tool invocations. The `AfterToolCallEvent.retry` field allows hooks to request that a tool be re-executed: for example, to handle transient errors, timeouts, or flaky external services. When `retry` is set to `True`, the tool executor discards the current result and invokes the tool again with the same `tool_use_id`.
+Use tool-call retries to handle transient errors, timeouts, or unreliable
+external services. Request a retry with
+<Syntax
+  py="event.retry = True"
+  ts="event.retry = true"
+  rs="event.set_retry(true)"
+/>.
+The tool executor then discards the current result and invokes the tool again
+with the same `tool_use_id`.
 
 :::note[Streaming behavior]
 When a tool call is retried, intermediate streaming events (`ToolStreamEvent`) from discarded attempts will have already been emitted to callers. Only the final attempt's `ToolResultEvent` is emitted and added to conversation history. Callers consuming streamed events should be prepared to handle events from discarded attempts.

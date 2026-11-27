@@ -23,7 +23,10 @@ Writing is opt-in, and comes in two modes:
 - **The `add_memory` tool** lets the agent decide what to save. Enable it on
   the manager with <Syntax py="add_tool_config=True" ts="addToolConfig: true"
   rs="add_tool_config(true.into())" />.
-- **Automatic extraction** captures memories from the conversation without tool call. Enable it on a writable store, where it runs every 5 turns by default using your agent's model.
+- **Automatic extraction** captures memories from the conversation without a tool
+  call. Enable it on a writable store, where it runs every 5 turns by default.
+  It resolves its model in this order: the configured extractor model, the
+  agent's auxiliary model, then the agent model.
 
 <Tabs>
 <Tab label="Python">
@@ -204,7 +207,17 @@ agent = Agent(
 </Tab>
 </Tabs>
 
-- `trigger` accepts `'userTurn'` (the default, inject only on a fresh user ask), `'everyTurn'` (inject before every model call, for autonomous agents), or a predicate: a function that receives the injection context and returns whether to inject this call.
+- `trigger` accepts
+  <Syntax py="'userTurn'" ts="'userTurn'" rs="InjectionTrigger::UserTurn" />
+  (the default, inject only on a fresh user ask),
+  <Syntax py="'everyTurn'" ts="'everyTurn'" rs="InjectionTrigger::EveryTurn" />
+  (inject before every model call, for autonomous agents), or a predicate over
+  the injection context. Create a predicate with
+  <Syntax
+    py="trigger=predicate"
+    ts="trigger: predicate"
+    rs="InjectionTrigger::predicate(predicate)"
+  />.
 - <Syntax py="max_entries" ts="maxEntries" rs="max_entries" /> caps how many
   entries are retrieved and injected.
 - `query` overrides the adaptive default with your own query logic. Return an empty value to skip injection for this call.

@@ -204,7 +204,12 @@ To extend or narrow the retryable set, see [Custom Retry Logic](#custom-retry-lo
 For more control over retry decisions, such as validating model responses or handling additional error types, you have two options:
 
 1. Customize or implement a retry strategy to own the full decision shape.
-2. Use a hook on `AfterModelCallEvent` to set `event.retry = true` directly.
+2. Use a hook on `AfterModelCallEvent` and request a retry with
+   <Syntax
+     py="event.retry = True"
+     ts="event.retry = true"
+     rs="event.set_retry(true)"
+   />.
 
 ### Subclassing the Retry Strategy
 
@@ -262,7 +267,15 @@ agents. Create a new instance per agent.
 
 ### Using a Hook
 
-Hooks are simpler when you only need to inspect a model error and request a retry. Set `event.retry = true` from an `AfterModelCallEvent` callback. Hooks do not introduce delays automatically; the example below adds a 2-second wait.
+Hooks are simpler when you only need to inspect a model error and request a
+retry. From an `AfterModelCallEvent` callback, use
+<Syntax
+  py="event.retry = True"
+  ts="event.retry = true"
+  rs="event.set_retry(true)"
+/>.
+Hooks do not introduce delays automatically; the example below adds a 2-second
+wait.
 
 <Tabs>
 <Tab label="Python">

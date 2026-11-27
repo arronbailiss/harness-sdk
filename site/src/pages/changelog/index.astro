@@ -66,7 +66,7 @@ const areaCounts = getAreaCounts(allEntries)
   // Client-side faceted filtering. State: SDK (toggle), language (global pref), areas (chips), search.
   // This is a processed (bundled) script, so importing shared config works —
   // no hand-maintained mirror of SDK metadata.
-  import { SDK_META, hasLanguageStreams, type Sdk } from '../../config/changelog'
+  import { SDK_META, hasLanguageStreams, languageForReleaseAnchor, type Sdk } from '../../config/changelog'
   import {
     isSdkLanguage,
     sdkLanguageFromLabel,
@@ -431,8 +431,9 @@ const areaCounts = getAreaCounts(allEntries)
       state.sdk = tSdk
       sdkBtns.forEach((b) => b.setAttribute('aria-pressed', b.dataset.clSdkBtn === tSdk ? 'true' : 'false'))
     }
-    if (tSdk === 'sdk' && tLang && tLang !== effectiveLang()) {
-      setLang(tLang)
+    const anchorLanguage = tSdk && isKnownSdk(tSdk) ? languageForReleaseAnchor(tSdk as Sdk, tLang) : undefined
+    if (anchorLanguage && anchorLanguage !== effectiveLang()) {
+      setLang(anchorLanguage)
     }
     return true
   }

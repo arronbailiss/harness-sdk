@@ -1,5 +1,6 @@
 export type Sdk = 'sdk' | 'harness' | 'cli' | 'evals' | 'box' | 'shell'
 export type Language = 'python' | 'typescript' | 'rust'
+export type PackageRegistryLabel = 'PyPI' | 'npm' | 'crates.io' | 'Package'
 
 export const LANGUAGE_META: Record<Language, { label: string; short: string }> = {
   python: { label: 'Python', short: 'Py' },
@@ -37,6 +38,23 @@ export const PRODUCT_RELEASE_STREAM: Record<string, Sdk | null> = {
 /** Products released as separate per-language streams; only these carry `language`. */
 export function hasLanguageStreams(sdk: Sdk): boolean {
   return SDK_META[sdk].languages.length > 1
+}
+
+/** Language encoded by a release anchor when that product has per-language streams. */
+export function languageForReleaseAnchor(sdk: Sdk, language: string | undefined): Language | undefined {
+  if (!hasLanguageStreams(sdk)) return undefined
+  return SDK_META[sdk].languages.find((candidate) => candidate === language)
+}
+
+/** Registry label shown next to a release package link. */
+export function packageRegistryLabel(language: Language | undefined, packageUrl: string): PackageRegistryLabel {
+  if (language === 'python') return 'PyPI'
+  if (language === 'typescript') return 'npm'
+  if (language === 'rust') return 'crates.io'
+  if (packageUrl.includes('pypi.org')) return 'PyPI'
+  if (packageUrl.includes('npmjs.com')) return 'npm'
+  if (packageUrl.includes('crates.io')) return 'crates.io'
+  return 'Package'
 }
 
 // The site-wide language preference key + default live in

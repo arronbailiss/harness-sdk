@@ -413,8 +413,9 @@ When trust is enabled, a human can respond with `'t'` or `'trust'` to approve th
 
 Trust state is stored in
 <Syntax py="agent.state" ts="agent.appState" rs="agent.app_state()" />
-and persists across turns within a session but resets when the agent is
-re-created. It is only read while trust is enabled. Negated tools
+and persists across turns within a session. Recreating an agent resets it unless
+the application restores that state from a session or snapshot. It is only read
+while trust is enabled. Negated tools
 (`"!tool_name"`) cannot be trusted and always prompt.
 
 <Tabs>
