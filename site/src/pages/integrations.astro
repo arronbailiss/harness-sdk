@@ -164,7 +164,7 @@ const sidebar = [
   const validTypes = new Set(CATALOG_TYPES.map((t) => t.value))
   for (const t of state.types) if (!validTypes.has(t)) state.types.delete(t)
 
-  // Language is a catalog control (the All / Python / TypeScript segment), no
+  // Language is a catalog control (the All / Python / TypeScript / Rust segment), no
   // longer tied to the header's site-wide language toggle. Drop any ?lang value
   // without a rendered button so the URL can't select an option the user can't
   // clear.

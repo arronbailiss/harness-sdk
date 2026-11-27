@@ -47,6 +47,28 @@ describe('catalog content collection', () => {
     expect(result.success).toBe(true)
   })
 
+  it('accepts Rust package and guide-only language blocks', () => {
+    const base = {
+      name: 'rust-entry',
+      description: 'Rust integration',
+      integrationType: 'tool' as const,
+      github: 'https://github.com/example/rust-entry',
+      addedDate: '2026-07-21',
+    }
+    expect(
+      catalogEntrySchema.safeParse({
+        ...base,
+        languages: { rust: { package: 'strands-example' } },
+      }).success
+    ).toBe(true)
+    expect(
+      catalogEntrySchema.safeParse({
+        ...base,
+        languages: { rust: {} },
+      }).success
+    ).toBe(true)
+  })
+
   it('rejects a language block that declares a registry URL', () => {
     // Registry links derive from the package name at build time. The block is
     // .strict() so a submitted registry (or any stray key) fails the build

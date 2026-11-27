@@ -1,20 +1,25 @@
 ---
 title: Observe your agent
 description: "See what your agent does in production: capture traces of every model and tool call, read performance metrics, and stream logs from the SDK."
+languages: [Python, TypeScript, Rust]
 sidebar:
   label: Overview
 tags: [observability]
+sourceLinks:
+  - path: strands-py/src/strands/telemetry/tracer.py
+  - path: strands-ts/src/telemetry/tracer.ts
+  - path: strands-rs/strands/src/telemetry/tracer.rs
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components'
 
 Once an agent leaves your laptop, the loop you watched in the terminal runs
 where you cannot see it. Observability is how you get that view back: the SDK
-emits traces of every model and tool call, performance metrics for each run,
-and logs from its own operation, all through OpenTelemetry so the data lands in
-the tools you already run. You reach for it to debug why a run went wrong,
-measure how fast and how expensive it is, and watch for regressions as you ship
-changes.
+emits traces of model and tool calls, performance metrics for each run, and
+logs from its own operation. The exact setup varies by SDK. Rust configures
+OpenTelemetry tracing and metrics separately, and emits SDK logs through
+`tracing`. You reach for these signals to debug why a run went wrong, measure
+how fast and how expensive it is, and watch for regressions as you ship changes.
 
 ## Instrument your agent
 
@@ -72,10 +77,36 @@ agent("What is agent observability?")
 ```
 
 </Tab>
+<Tab label="Rust">
+
+This example uses the default Amazon Bedrock model. Complete the
+[Rust quickstart](../quickstart/rust/) first, or configure another model.
+
+```bash
+cargo add strands --features otel
+cargo add tokio --features macros,rt-multi-thread
+```
+
+```rust
+--8<-- "../../../../strands-rs/strands/examples/docs_overviews.rs:observability_overview"
+```
+
+The standalone example installs a `tracing` subscriber. If your application
+already owns the subscriber, add the guard's layer to it instead of calling
+`try_init_subscriber()`.
+
+</Tab>
 </Tabs>
 
-Swap the console exporter for an OTLP exporter to send the same spans to Jaeger,
-Grafana Tempo, AWS X-Ray, Datadog, or any OpenTelemetry backend.
+Swap the console exporter for an OTLP exporter to send the same spans to an
+OpenTelemetry collector, which can forward them to your observability backend.
+
+:::note[Rust guide coverage]
+This overview currently covers Rust tracing. The linked metrics and logging
+guides cover Python and TypeScript unless they show a Rust tab. Use the
+[Rust API reference](/docs/api/rust/) for `setup_meter` and the rest of the
+Rust telemetry surface.
+:::
 
 ## Where to go next
 

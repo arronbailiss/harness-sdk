@@ -1,13 +1,16 @@
 ---
 title: Contributing to the SDK
-description: 'Contribute to the Strands core SDK for Python and TypeScript: find open issues, set up your development environment, and submit changes for review.'
+description: 'Contribute to the Strands core SDK for Python, TypeScript, and Rust: find open issues, set up your development environment, and submit changes for review.'
+languages: [Python, TypeScript, Rust]
 sidebar:
   label: "SDK"
 ---
 
 The SDK powers every Strands agent: the agent loop, model integrations, tool execution, and streaming. When you fix a bug or improve performance here, you help every developer who uses Strands.
 
-This guide covers contributing to the Python and TypeScript SDKs: what we accept, how to set up your development environment, and how to submit changes for review.
+This guide covers contributing to the Python, TypeScript, and Rust SDKs: what
+we accept, how to set up your development environment, and how to submit
+changes for review.
 
 ## Find something to work on
 
@@ -41,7 +44,7 @@ If you're unsure whether your contribution fits, [open a discussion](https://git
 
 ## Set up your development environment
 
-Setup differs between Python and TypeScript.
+Setup differs between Python, TypeScript, and Rust.
 
 <Tabs>
 <Tab label="Python">
@@ -124,6 +127,38 @@ npm run format              # Format code with Prettier
 - Run `npm run test:all` to test in both Node.js and browser environments
 - Check [CONTRIBUTING.md](https://github.com/strands-agents/harness-sdk/blob/main/CONTRIBUTING.md) for the full development workflow
 </Tab>
+<Tab label="Rust">
+
+Clone the repository and install the pinned Rust toolchain:
+
+```bash
+git clone https://github.com/strands-agents/harness-sdk.git
+cd harness-sdk
+rustup show
+```
+
+The Rust SDK and harness share the Cargo workspace at the repository root. Run
+the formatting, lint, and test gates from there:
+
+```bash
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-features
+cargo test --workspace --no-default-features
+```
+
+**Development tips:**
+
+- Rust 1.96 is the minimum supported version; `rust-toolchain.toml` selects the
+  pinned toolchain automatically
+- Run `cargo build --workspace --examples --all-features` when you change an
+  example
+- Check
+  [`strands-rs/AGENTS.md`](https://github.com/strands-agents/harness-sdk/blob/main/strands-rs/AGENTS.md)
+  and
+  [`strands-rs/docs/TESTING.md`](https://github.com/strands-agents/harness-sdk/blob/main/strands-rs/docs/TESTING.md)
+  for the full Rust workflow
+</Tab>
 </Tabs>
 
 ## Submit your contribution
@@ -135,6 +170,8 @@ After making your changes, submit them for review:
 3. **Run quality checks** before committing to ensure everything passes:
     - Python: `hatch run prepare`
     - TypeScript: `npm run check`
+    - Rust: run the formatting, lint, all-features, and no-default-features
+      commands in the Rust setup tab above
 4. **Use [conventional commits](https://www.conventionalcommits.org/)** like `fix: resolve memory leak in session manager` or `feat: add streaming support to tools`
 5. **Submit a pull request** referencing the issue number in the description
 6. **Respond to feedback**: we review within a few days and may request changes

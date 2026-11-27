@@ -143,7 +143,7 @@ export type ChangelogFrontmatter = z.infer<typeof changelogFrontmatterSchema>
 // ignored.
 const catalogLanguageSchema = z
   .object({
-    // Package name as published on the registry (PyPI or npm)
+    // Package name as published on the registry (PyPI, npm, or crates.io)
     package: z.string().optional(),
   })
   .strict()
@@ -177,6 +177,7 @@ export const catalogEntrySchema = z
       .object({
         python: catalogLanguageSchema.optional(),
         typescript: catalogLanguageSchema.optional(),
+        rust: catalogLanguageSchema.optional(),
       })
       .strict(),
     // The single self-declared link: the maintainer shown on the card derives
@@ -206,11 +207,11 @@ export const catalogEntrySchema = z
   // clear error instead of being silently dropped.
   .strict()
   .superRefine((d, ctx) => {
-    if (!d.languages.python && !d.languages.typescript) {
+    if (!d.languages.python && !d.languages.typescript && !d.languages.rust) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['languages'],
-        message: 'at least one language block (python or typescript) is required',
+        message: 'at least one language block (python, typescript, or rust) is required',
       })
     }
   })

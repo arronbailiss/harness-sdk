@@ -11,8 +11,9 @@
  * tint, so the tile signals the type at a glance without external logos.
  */
 import type { CatalogCardModel } from '../../util/catalog'
+import { sdkLanguageLabel } from '../../config/languages'
 import { pathWithBase } from '../../util/links'
-import { AWS_ICON, DOWNLOAD_ICON, GITHUB_ICON, NPM_ICON, PYPI_ICON, STAR_ICON } from './icons'
+import { AWS_ICON, CRATES_IO_ICON, DOWNLOAD_ICON, GITHUB_ICON, NPM_ICON, PYPI_ICON, STAR_ICON } from './icons'
 import { AWS_MARK_VIEWBOX, MAINTAINED_BY_FLAGS, MAINTAINED_BY_TITLES, TYPE_ICONS, TYPE_LABELS, VERIFIED_ICON } from './types'
 
 interface Props {
@@ -24,8 +25,12 @@ const { card } = Astro.props
 const numberFormat = new Intl.NumberFormat('en', { notation: 'compact' })
 
 // Footer links render brand marks instead of text; the registry label picks
-// the icon ('PyPI' → Python snakes, 'npm' → npm block logo).
-const REGISTRY_ICONS: Record<'PyPI' | 'npm', readonly string[]> = { PyPI: PYPI_ICON, npm: NPM_ICON }
+// the icon ('PyPI' → Python snakes, 'npm' → npm block logo, crates.io → Rust).
+const REGISTRY_ICONS = {
+  PyPI: PYPI_ICON,
+  npm: NPM_ICON,
+  'crates.io': CRATES_IO_ICON,
+} satisfies Record<CatalogCardModel['registryLinks'][number]['label'], readonly string[]>
 
 // Internal docs hrefs need the deploy base path; external URLs must not get it.
 const href = card.external ? card.href : pathWithBase(card.href)
@@ -129,7 +134,7 @@ const href = card.external ? card.href : pathWithBase(card.href)
       <span class="cat-facts">
         <span class="cat-type">{TYPE_LABELS[card.integrationType]}</span>
         <span class="cat-langs">
-          {card.languages.map((l) => (l === 'python' ? 'Python' : 'TypeScript')).join(' · ')} · by {card.maintainer}
+          {card.languages.map(sdkLanguageLabel).join(' · ')} · by {card.maintainer}
         </span>
       </span>
       <span class="cat-links">

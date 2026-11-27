@@ -114,6 +114,10 @@ name = "docs_openai"
 required-features = ["openai"]
 
 [[example]]
+name = "docs_overviews"
+required-features = ["bedrock", "otel"]
+
+[[example]]
 name = "streaming"
 required-features = ["bedrock"]
 

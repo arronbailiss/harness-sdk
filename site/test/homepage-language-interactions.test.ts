@@ -167,11 +167,25 @@ describe('homepage language interactions', () => {
       expect(terminal.querySelector<HTMLElement>('[data-toolkit-terminal-unavailable]')?.hidden).toBe(true)
       expect(terminal.querySelector<HTMLButtonElement>('[data-toolkit-terminal-copy]')?.disabled).toBe(false)
     }
-    expect(useCases?.querySelector('.terminal__code:not([hidden])')).toBeNull()
-    expect(useCasesUnavailable?.textContent).toBe('No Rust example is available yet.')
-    expect(useCasesUnavailable?.hidden).toBe(false)
-    expect(useCasesCopy?.disabled).toBe(true)
-    expect(filename?.textContent).toBe('No Rust example')
+    expect(useCases?.querySelector<HTMLElement>('.terminal__code:not([hidden])')?.dataset.langCode).toBe('rust')
+    expect(useCases?.querySelector<HTMLElement>('.terminal__code:not([hidden])')?.textContent).toContain(
+      'tool_list![ClassifyLead, RouteToRep]'
+    )
+    expect(useCasesUnavailable?.hidden).toBe(true)
+    expect(useCasesCopy?.disabled).toBe(false)
+    expect(filename?.textContent).toBe('lead_router.rs')
+    for (const [useCase, expectedFilename, expectedCode] of [
+      ['assistants', 'support.rs', '.tools([IssueRefund])'],
+      ['research', 'research_agent.rs', 'compatible models also get web search'],
+    ]) {
+      useCases?.querySelector<HTMLButtonElement>(`[data-use-case-btn="${useCase}"]`)?.click()
+      expect(useCases?.querySelector<HTMLElement>('.terminal__code:not([hidden])')?.dataset.langCode).toBe('rust')
+      expect(useCases?.querySelector<HTMLElement>('.terminal__code:not([hidden])')?.textContent).toContain(expectedCode)
+      expect(filename?.textContent).toBe(expectedFilename)
+      expect(useCasesUnavailable?.hidden).toBe(true)
+      expect(useCasesCopy?.disabled).toBe(false)
+    }
+    useCases?.querySelector<HTMLButtonElement>('[data-use-case-btn="automate"]')?.click()
     expect(footerOptions.find((option) => option.dataset.lang === 'Rust')?.getAttribute('aria-pressed')).toBe('true')
     expect(footerApiLink?.pathname).toContain('/docs/api/rust/')
     expect(
@@ -229,7 +243,30 @@ describe('homepage language interactions', () => {
     expect(pythonOptions.every((option) => option.getAttribute('aria-checked') === 'true')).toBe(true)
   })
 
-  it('does not substitute Python robot code for TypeScript', async () => {
+  it('returns to the default when another tab removes the stored preference', () => {
+    const window = loadHomepage('Rust')
+
+    window.eval(inlineScript('__strandsLanguageToggleInit'))
+    window.document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    expect(window.document.documentElement.dataset.sdkLanguage).toBe('rust')
+
+    window.localStorage.removeItem(LANGUAGE_STORAGE_KEY)
+    window.dispatchEvent(
+      new window.StorageEvent('storage', {
+        key: LANGUAGE_STORAGE_KEY,
+        newValue: null,
+      })
+    )
+
+    expect(window.document.documentElement.dataset.sdkLanguage).toBe('typescript')
+    expect(
+      [...window.document.querySelectorAll<HTMLButtonElement>('language-toggle [data-lang="TypeScript"]')].every(
+        (option) => option.getAttribute('aria-checked') === 'true'
+      )
+    ).toBe(true)
+  })
+
+  it('does not substitute Python robot code for unsupported languages', async () => {
     const window = loadHomepage()
 
     await importModule('UseCases.astro')
@@ -246,6 +283,14 @@ describe('homepage language interactions', () => {
     expect(unavailable?.textContent).toBe('No TypeScript example is available yet.')
     expect(unavailable?.hidden).toBe(false)
     expect(filename?.textContent).toBe('No TypeScript example')
+    expect(copyButton?.disabled).toBe(true)
+
+    changeLanguage(window, 'Rust')
+
+    expect(useCases?.querySelector('.terminal__code:not([hidden])')).toBeNull()
+    expect(unavailable?.textContent).toBe('No Rust example is available yet.')
+    expect(unavailable?.hidden).toBe(false)
+    expect(filename?.textContent).toBe('No Rust example')
     expect(copyButton?.disabled).toBe(true)
 
     changeLanguage(window, 'Python')

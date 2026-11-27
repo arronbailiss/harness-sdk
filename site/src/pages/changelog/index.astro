@@ -191,7 +191,7 @@ const areaCounts = getAreaCounts(allEntries)
 
   function apply() {
     const lang = effectiveLang()
-    // Special case: user asked for TypeScript but Evals is Python-only.
+    // Special case: the requested language is not available for this SDK.
     const unsupportedLanguage = state.sdk === 'evals' && !sdkHasRequestedLang()
     const requestedLabel = sdkLanguageLabel(requestedLang())
     if (unsupportedEl) unsupportedEl.hidden = !unsupportedLanguage

@@ -18,7 +18,7 @@ const CATALOG_FEED_SCHEMA_PATH = '/integrations.schema.json'
 
 const feedLanguageSchema = z.object({
   package: z.string().optional().describe('Package name as published on the registry'),
-  registryUrl: z.url().optional().describe('PyPI or npm page for the package'),
+  registryUrl: z.url().optional().describe('PyPI, npm, or crates.io page for the package'),
 })
 
 const catalogFeedEntrySchema = z.object({
@@ -29,7 +29,11 @@ const catalogFeedEntrySchema = z.object({
   sdk: z.enum(['agents', 'evals']),
   maintainedBy: z.enum(MAINTAINED_BY_TIERS.map((t) => t.value)),
   languages: z
-    .object({ python: feedLanguageSchema.optional(), typescript: feedLanguageSchema.optional() })
+    .object({
+      python: feedLanguageSchema.optional(),
+      typescript: feedLanguageSchema.optional(),
+      rust: feedLanguageSchema.optional(),
+    })
     .describe('Supported languages; a language without a package is covered by a guide only'),
   github: z.url(),
   docsUrl: z.url().optional().describe('On-site integration page when one exists, otherwise external docs'),

@@ -11,11 +11,11 @@ documentation page is optional.
 
 ## What we list
 
-Reusable packages published to PyPI or npm that extend Strands Agents: model providers,
-decision models, tools, session managers, memory stores, storage backends, plugins,
-observability backends, integrations, agent extensions, and interventions. Vendor
-integrations documented by a dev guide (with no installable Strands package) also qualify —
-see the `docsUrl` field below.
+Reusable packages published to PyPI, npm, or crates.io that extend Strands Agents:
+model providers, decision models, tools, session managers, memory stores, storage
+backends, plugins, observability backends, integrations, agent extensions, and
+interventions. Vendor integrations documented by a dev guide (with no installable
+Strands package) also qualify — see the `docsUrl` field below.
 
 **Out of scope:** example agents, demos, and applications *built with* Strands. The
 catalog lists building blocks you add to your own agent, not finished agents or one-off
@@ -45,6 +45,8 @@ languages:
     package: your-package-name
   typescript:
     package: "@your-scope/your-package"
+  rust:
+    package: your-package-name
 github: https://github.com/your-org/your-repo
 docsUrl: https://your-docs-site.example.com/strands   # optional — see below
 addedDate: 2026-07-31        # the date you open the PR
@@ -55,16 +57,17 @@ addedDate: 2026-07-31        # the date you open the PR
 | `name` | ✅ | Display name in the catalog |
 | `description` | ✅ | One sentence, ~160 characters max — the card clamps longer text |
 | `integrationType` | ✅ | One of the eleven types above |
-| `languages` | ✅ | At least one of `python` / `typescript`, each with the `package` name as published on PyPI / npm (use `pkg[extra]` for an extras-qualified install, e.g. `temporalio[strands-agents]`). For a vendor-guide integration with no Strands-specific package, leave the block empty (`python: {}`) and set `docsUrl` to your guide. |
+| `languages` | ✅ | At least one of `python` / `typescript` / `rust`, each with the `package` name as published on PyPI / npm / crates.io (use `pkg[extra]` for an extras-qualified Python install, e.g. `temporalio[strands-agents]`). For a vendor-guide integration with no Strands-specific package, leave the block empty (`python: {}`) and set `docsUrl` to your guide. |
 | `github` | ✅ | Public repository URL, starting with `https://github.com/` |
 | `addedDate` | ✅ | Date of submission (drives the "New" badge) |
 | `docsUrl` | Recommended | Link to your own docs page about the Strands integration — your card's primary link. Must start with `https://`. |
 | `docsPage` | Legacy | On-site docs page reference — existing entries only; new submissions link their own docs via `docsUrl` |
 | `maintainedBy` | Optional | Who stands behind the integration, shown and filtered on the catalog. Defaults to `community` (maintained by an individual developer). Set `partner` only if you represent the company behind the integration and the entry's `github` org is that company's official org — a maintainer verifies this before merging. `strands` and `aws` are granted by the Strands team. |
 
-The maintainer shown on your card and the PyPI/npm links are derived automatically — the
-maintainer from your `github` URL's owner, the registry links from your `package` names.
-Don't declare `maintainer` or `registry` fields; the build rejects them.
+The maintainer shown on your card and the PyPI, npm, and crates.io links are
+derived automatically — the maintainer from your `github` URL's owner, the
+registry links from your `package` names. Don't declare `maintainer` or
+`registry` fields; the build rejects them.
 
 Leave `featured` and `badges` unset — the Strands team grants those, and CI flags
 submissions that set them for maintainer review.

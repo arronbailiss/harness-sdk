@@ -27,6 +27,8 @@ export interface StatsFetchers {
 
 export interface EntryStats {
   stars?: number
+  // Registry totals are last-month downloads. Rust is intentionally absent:
+  // the current job has comparable sources for PyPI and npm only.
   downloads: { python?: number; typescript?: number }
 }
 
@@ -139,7 +141,11 @@ export function loadEntries(catalogDir: string): StatsEntry[] {
         github?: string
         // package is absent for guide-only language blocks (`python: {}`) —
         // those entries get no download stats for that language.
-        languages?: { python?: { package?: string }; typescript?: { package?: string } }
+        languages?: {
+          python?: { package?: string }
+          typescript?: { package?: string }
+          rust?: { package?: string }
+        }
       }
       if (!data?.github || typeof data.github !== 'string') {
         console.warn(`entry=<${id}> | missing or non-string github field, skipping`)
@@ -153,7 +159,9 @@ export function loadEntries(catalogDir: string): StatsEntry[] {
       // A guide-only entry (no package in any language block) points its
       // github at the vendor's main repo — that repo's stars measure the
       // vendor's product, not the Strands integration, so skip them.
-      const hasPackage = Boolean(languages.python?.package || languages.typescript?.package)
+      // Rust packages make an entry package-backed (and therefore eligible
+      // for GitHub stars), but do not contribute registry download totals.
+      const hasPackage = Boolean(languages.python?.package || languages.typescript?.package || languages.rust?.package)
       if (repoSlug.startsWith('strands-agents/')) {
         console.warn(`entry=<${id}>, source=github | repo is the sdk itself, skipping stats`)
       } else if (!hasPackage) {

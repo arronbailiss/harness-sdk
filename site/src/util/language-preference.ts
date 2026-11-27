@@ -17,8 +17,8 @@ export const LANGUAGE_SYNC_KEY = 'jarkqt'
 export const LANGUAGE_STORAGE_KEY = `starlight-synced-tabs__${LANGUAGE_SYNC_KEY}`
 
 /**
- * Language assumed when no preference is stored yet. Label form ("TypeScript"/
- * "Python") because that is what Starlight's synced tabs write to storage.
+ * Language assumed when no preference is stored yet. Uses the display label
+ * because that is what Starlight's synced tabs write to storage.
  */
 export const DEFAULT_LANGUAGE_LABEL = SDK_LANGUAGE_LABELS.typescript
 

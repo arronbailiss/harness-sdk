@@ -29,7 +29,7 @@ const panels = [
   ...(codePy ? [{ language: 'python' as const, rows: codePy }] : []),
   ...(codeRs ? [{ language: 'rust' as const, rows: codeRs }] : []),
 ];
-const initialLanguage = code?.language ?? (codeTs ? 'typescript' : 'python');
+const initialLanguage = code?.language ?? (codeTs ? 'typescript' : codePy ? 'python' : 'rust');
 const languageNames = {
   policy: 'Policy',
   shell: 'Shell',

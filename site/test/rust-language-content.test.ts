@@ -9,11 +9,16 @@ import { LANGUAGE_STORAGE_KEY } from '../src/util/language-preference'
 
 const REQUIRED_RUST_PAGES = [
   'docs/api/rust',
+  'docs/contribute/contributing/core-sdk',
   'docs/user-guide/harness',
   'docs/user-guide/harness/quickstart',
   'docs/user-guide/sdk',
+  'docs/user-guide/sdk/agents',
+  'docs/user-guide/sdk/observability-evaluation',
   'docs/user-guide/sdk/quickstart/overview',
   'docs/user-guide/sdk/quickstart/rust',
+  'docs/user-guide/sdk/streaming',
+  'docs/user-guide/sdk/tools',
 ]
 
 describe('Rust documentation language coverage', () => {
@@ -82,6 +87,49 @@ describe('Rust documentation language coverage', () => {
       )
     ).toBe(true)
     expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe('TypeScript')
+  })
+
+  it('switches inline syntax to the effective Rust language', async () => {
+    const html = readFileSync(new URL('../dist/docs/user-guide/harness/quickstart/index.html', import.meta.url), 'utf8')
+    const dom = new JSDOM(html, {
+      runScripts: 'outside-only',
+      url: 'https://example.test/docs/user-guide/harness/quickstart/',
+    })
+    const { window } = dom
+    const inlineScript = (marker: string) =>
+      [...window.document.querySelectorAll<HTMLScriptElement>('script:not([src])')].find((candidate) =>
+        candidate.textContent.includes(marker)
+      )?.textContent
+    const languageScript = inlineScript('__strandsLanguageToggleInit')
+    const syntaxScript = inlineScript('__strandsSyntaxSwitchInit')
+
+    expect(languageScript, 'language toggle script is missing').toBeDefined()
+    expect(syntaxScript, 'syntax switch script is missing').toBeDefined()
+    if (window.document.readyState === 'loading') {
+      await new Promise<void>((resolve) =>
+        window.document.addEventListener('DOMContentLoaded', () => resolve(), { once: true })
+      )
+    }
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, 'TypeScript')
+    window.eval(languageScript!)
+    window.eval(syntaxScript!)
+
+    const syntaxSwitch = [...window.document.querySelectorAll<HTMLElement>('syntax-switch')].find((candidate) =>
+      candidate.textContent.includes('provider/name')
+    )
+    const visibleVariant = () =>
+      [...(syntaxSwitch?.querySelectorAll<HTMLElement>('[data-lang]') ?? [])].find(
+        (variant) => variant.style.display === 'inline'
+      )
+
+    expect(visibleVariant()?.dataset.lang).toBe('TypeScript')
+
+    window.dispatchEvent(new window.CustomEvent('lang-change', { detail: 'Rust' }))
+    await Promise.resolve()
+
+    expect(window.document.documentElement.dataset.sdkLanguage).toBe('rust')
+    expect(visibleVariant()?.dataset.lang).toBe('Rust')
+    expect(visibleVariant()?.textContent).toBe('.model("provider/name")')
   })
 
   it('keeps the Rust launch path enabled', async () => {

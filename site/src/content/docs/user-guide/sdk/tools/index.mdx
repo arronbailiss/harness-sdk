@@ -1,6 +1,7 @@
 ---
 title: Add tools to your agent
-description: "Give AI agents the ability to take real-world actions. Strands supports built-in tools, custom Python functions, MCP servers, and community packages."
+description: "Give AI agents the ability to take real-world actions. Strands supports built-in tools, custom functions, MCP servers, and community packages."
+languages: [Python, TypeScript, Rust]
 sidebar:
   label: "Overview"
 tags: [tool-authoring, mcp]
@@ -9,6 +10,8 @@ sourceLinks:
   - path: strands-py/src/strands/tools/registry.py
   - path: strands-ts/src/tools/tool.ts
   - path: strands-ts/src/tools/tool-factory.ts
+  - path: strands-rs/strands/src/tools/tool.rs
+  - path: strands-rs/strands-macros/src/tool_fn.rs
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components'
@@ -55,7 +58,7 @@ All tools, whether custom, community-provided, or included in the Strands tools 
   <LinkCard
     title="Community tools package"
     href="../../migrate/strands-agents-tools/"
-    description="Migration guidance from the former community tools package."
+    description="Python migration guidance from the former community tools package."
   />
   <LinkCard
     title="Tool executors"
@@ -95,9 +98,33 @@ agent("What's the weather in Seattle?")
 ```
 
 </Tab>
+<Tab label="Rust">
+
+This example uses the default Amazon Bedrock model. Complete the
+[Rust quickstart](../quickstart/rust/) first, or configure another model.
+
+```bash
+cargo add strands
+cargo add tokio --features macros,rt-multi-thread
+```
+
+```rust
+--8<-- "../../../../strands-rs/strands/examples/docs_overviews.rs:tool_overview"
+```
+
+</Tab>
 </Tabs>
 
 The agent reads the tool's description and decides when to call it. From here you add the tools your application needs and control how they run.
+
+Rust custom tools work with the default crate features. To connect MCP tools,
+enable the optional `mcp` feature.
+
+:::note[Rust guide coverage]
+This overview and the Rust quickstart include Rust examples. Linked feature
+guides currently cover Python and TypeScript unless they show a Rust tab. Use
+the [Rust API reference](/docs/api/rust/) for the complete Rust surface.
+:::
 
 ## Where to go next
 

@@ -1,8 +1,13 @@
 ---
 title: Anatomy of an agent
 description: "The parts you compose into a Strands agent: the loop that reasons and calls tools, the prompts and state that shape it, and the hooks and interventions that control it."
+languages: [Python, TypeScript, Rust]
 sidebar:
   label: Overview
+sourceLinks:
+  - path: strands-py/src/strands/agent/agent.py
+  - path: strands-ts/src/agent/agent.ts
+  - path: strands-rs/strands/src/agent/mod.rs
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components'
@@ -75,7 +80,7 @@ this section; this is the map of how they fit together.
   <LinkCard
     title="Retry strategies"
     href="retry-strategies/"
-    description="Recover from model and tool errors without failing the whole run."
+    description="Recover from model errors and control whether failed tool calls run again."
   />
 </CardGrid>
 
@@ -114,16 +119,36 @@ agent("How many words are in this sentence?")
 ```
 
 </Tab>
+<Tab label="Rust">
+
+This example uses the default Amazon Bedrock model. Complete the
+[Rust quickstart](../quickstart/rust/) first, or configure another model.
+
+```bash
+cargo add strands
+cargo add tokio --features macros,rt-multi-thread
+```
+
+```rust
+--8<-- "../../../../strands-rs/strands/examples/docs_overviews.rs:agent_anatomy"
+```
+
+</Tab>
 </Tabs>
 
 The loop, the prompt, and the tool are the whole agent here. Every other part in
 this section adds to that same core rather than replacing it.
 
+:::note[Rust guide coverage]
+This overview and the Rust quickstart include Rust examples. Linked feature
+guides currently cover Python and TypeScript unless they show a Rust tab. Use
+the [Rust API reference](/docs/api/rust/) for the complete Rust surface.
+:::
+
 ## Where to go next
 
-New to the SDK? Start with the [Python quickstart](/docs/user-guide/sdk/quickstart/python/)
-or [TypeScript quickstart](/docs/user-guide/sdk/quickstart/typescript/), then read the
-[agent loop](agent-loop/) to understand the cycle everything else builds on.
+New to the SDK? Start with the [SDK quickstart](../quickstart/overview/), then read
+the [agent loop](agent-loop/) to understand the cycle everything else builds on.
 
 Building a feature? Give the agent capabilities with [tools](../tools/), then reach
 for the part of the anatomy your task needs: [session management](session-management/)

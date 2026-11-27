@@ -6,6 +6,7 @@
  * segments and the left rail's type/badge chips.
  */
 import CatalogSegments from './CatalogSegments.astro'
+import { SDK_LANGUAGES, SDK_LANGUAGE_LABELS } from '../../config/languages'
 import { AWS_MARK_VIEWBOX, MAINTAINED_BY_ICONS, VERIFIED_ICON, type FacetOption } from './types'
 
 // Type filtering now lives in the left sidebar (one link per type), so the
@@ -22,18 +23,19 @@ const { maintainedBy, showSdkFacet, hasVerified, hasFeatured, hasNew } = Astro.p
 ---
 
 <div class="cat-facet-row">
-  {/* Language is a catalog control here (All / Python / TypeScript), independent
+  {/* Language is a catalog control here (All / Python / TypeScript / Rust), independent
       of the header's site-wide language toggle. The page script binds it. */}
   <div class="cat-seg" role="radiogroup" aria-label="Language">
     <button class="cat-seg-btn" type="button" role="radio" aria-checked="true" data-cat-lang="">
       All
     </button>
-    <button class="cat-seg-btn" type="button" role="radio" aria-checked="false" data-cat-lang="python">
-      Python
-    </button>
-    <button class="cat-seg-btn" type="button" role="radio" aria-checked="false" data-cat-lang="typescript">
-      TypeScript
-    </button>
+    {
+      SDK_LANGUAGES.map((language) => (
+        <button class="cat-seg-btn" type="button" role="radio" aria-checked="false" data-cat-lang={language}>
+          {SDK_LANGUAGE_LABELS[language]}
+        </button>
+      ))
+    }
   </div>
   <CatalogSegments showSdkFacet={showSdkFacet} />
   {/* Maintainer and status filters share the one row with the language / SDK

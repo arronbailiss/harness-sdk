@@ -320,9 +320,9 @@ const languageOptions = [
     });
 
     window.addEventListener('storage', function (e) {
-      if (e.key === STORAGE_KEY && e.newValue) {
-        applyLanguage(e.newValue, false, true);
-      }
+      if (e.key !== STORAGE_KEY) return;
+      var next = LANGUAGE_LABELS.indexOf(e.newValue) !== -1 ? e.newValue : DEFAULT_LANG;
+      applyLanguage(next, false, true);
     });
 
     window.addEventListener('lang-change', function (e) {

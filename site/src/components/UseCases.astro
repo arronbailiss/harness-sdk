@@ -18,9 +18,10 @@ interface UseCase {
   title: string
   description: string
   active: boolean
-  filename: { ts?: string; py: string }
+  filename: { ts?: string; py: string; rs?: string }
   ts?: Array<{ line: number; tokens: Array<{ text: string; color?: string }> }>
   py: Array<{ line: number; tokens: Array<{ text: string; color?: string }> }>
+  rs?: Array<{ line: number; tokens: Array<{ text: string; color?: string }> }>
 }
 
 const useCases: UseCase[] = [
@@ -31,7 +32,7 @@ const useCases: UseCase[] = [
     description:
       'Classify, score, and route. One agent, one job. Replace brittle scripts with tools that adapt when your process changes.',
     active: true,
-    filename: { ts: 'lead_router.ts', py: 'lead_router.py' },
+    filename: { ts: 'lead_router.ts', py: 'lead_router.py', rs: 'lead_router.rs' },
     ts: [
       { line: 1, tokens: [kw('import'), t(' { createHarness } '), kw('from'), t(' '), str("'@strands-agents/harness'")] },
       { line: 2, tokens: [kw('import'), t(' { tool } '), kw('from'), t(' '), str("'@strands-agents/sdk'")] },
@@ -100,6 +101,50 @@ const useCases: UseCase[] = [
       { line: 21, tokens: [t('agent = create_harness(tools=[classify_lead, route_to_rep])')] },
       { line: 22, tokens: [t('agent('), str('"New lead: jane@acme.com, Acme Corp, US-West"'), t(')')] },
     ],
+    rs: [
+      { line: 1, tokens: [kw('use'), t(' strands::{ToolError, tool, tool_list};')] },
+      { line: 2, tokens: [kw('use'), t(' strands_harness::{HarnessAgentOptions, create_harness};')] },
+      { line: 3, tokens: [t('')] },
+      { line: 4, tokens: [t('/// Score and classify a lead.')] },
+      { line: 5, tokens: [kw('#[tool]')] },
+      { line: 6, tokens: [kw('async fn'), t(' classify_lead(')] },
+      { line: 7, tokens: [t('    /// Lead email address.')] },
+      { line: 8, tokens: [t('    email: String,')] },
+      { line: 9, tokens: [t('    /// Company name.')] },
+      { line: 10, tokens: [t('    company: String,')] },
+      { line: 11, tokens: [t(') -> Result<String, ToolError> {')] },
+      { line: 12, tokens: [t('    Ok(format!('), str('"lead={email}, company={company}, score=87"'), t('))')] },
+      { line: 13, tokens: [t('}')] },
+      { line: 14, tokens: [t('')] },
+      { line: 15, tokens: [t('/// Assign a lead to a sales representative.')] },
+      { line: 16, tokens: [kw('#[tool]')] },
+      { line: 17, tokens: [kw('async fn'), t(' route_to_rep(')] },
+      { line: 18, tokens: [t('    /// Lead identifier.')] },
+      { line: 19, tokens: [t('    lead_id: String,')] },
+      { line: 20, tokens: [t('    /// Sales region.')] },
+      { line: 21, tokens: [t('    region: String,')] },
+      { line: 22, tokens: [t(') -> Result<String, ToolError> {')] },
+      { line: 23, tokens: [t('    Ok(format!('), str('"{lead_id} assigned to {region} rep"'), t('))')] },
+      { line: 24, tokens: [t('}')] },
+      { line: 25, tokens: [t('')] },
+      { line: 26, tokens: [kw('#[tokio::main]')] },
+      { line: 27, tokens: [kw('async fn'), t(' main() -> strands::Result<()> {')] },
+      { line: 28, tokens: [t('    '), kw('let mut'), t(' agent = create_harness(')] },
+      { line: 29, tokens: [t('        HarnessAgentOptions::builder()')] },
+      { line: 30, tokens: [t('            .tools(tool_list![ClassifyLead, RouteToRep])')] },
+      { line: 31, tokens: [t('            .build(),')] },
+      { line: 32, tokens: [t('    )')] },
+      { line: 33, tokens: [t('    .'), kw('await'), t('?;')] },
+      { line: 34, tokens: [t('')] },
+      { line: 35, tokens: [t('    agent')] },
+      {
+        line: 36,
+        tokens: [t('        .invoke('), str('"New lead: jane@acme.com, Acme Corp, US-West"'), t(')')],
+      },
+      { line: 37, tokens: [t('        .'), kw('await'), t('?;')] },
+      { line: 38, tokens: [t('    agent.shutdown().'), kw('await')] },
+      { line: 39, tokens: [t('}')] },
+    ],
   },
   {
     id: 'assistants',
@@ -108,7 +153,7 @@ const useCases: UseCase[] = [
     description:
       'Build assistants that reason over your own data by giving an agent retrieval tools. Strands harness manages context across turns, keeping the conversation within the model’s window.',
     active: false,
-    filename: { ts: 'support.ts', py: 'support.py' },
+    filename: { ts: 'support.ts', py: 'support.py', rs: 'support.rs' },
     ts: [
       { line: 1, tokens: [kw('import'), t(' { createHarness } '), kw('from'), t(' '), str("'@strands-agents/harness'")] },
       { line: 2, tokens: [kw('import'), t(' { tool } '), kw('from'), t(' '), str("'@strands-agents/sdk'")] },
@@ -147,6 +192,56 @@ const useCases: UseCase[] = [
       { line: 14, tokens: [t(')')] },
       { line: 15, tokens: [t('agent('), str('"Order A1234 wants a $40 refund. Policy, and can you process it?"'), t(')')] },
     ],
+    rs: [
+      { line: 1, tokens: [kw('use'), t(' strands::{ToolError, tool};')] },
+      { line: 2, tokens: [kw('use'), t(' strands_harness::{HarnessAgentOptions, create_harness};')] },
+      { line: 3, tokens: [t('')] },
+      { line: 4, tokens: [t('/// Process a customer refund.')] },
+      { line: 5, tokens: [kw('#[tool]')] },
+      { line: 6, tokens: [kw('async fn'), t(' issue_refund(')] },
+      { line: 7, tokens: [t('    /// Order identifier.')] },
+      { line: 8, tokens: [t('    order_id: String,')] },
+      { line: 9, tokens: [t('    /// Refund amount in dollars.')] },
+      { line: 10, tokens: [t('    amount: f64,')] },
+      { line: 11, tokens: [t(') -> Result<String, ToolError> {')] },
+      { line: 12, tokens: [t('    Ok(format!('), str('"Refunded ${amount:.2} for {order_id}"'), t('))')] },
+      { line: 13, tokens: [t('}')] },
+      { line: 14, tokens: [t('')] },
+      { line: 15, tokens: [kw('#[tokio::main]')] },
+      { line: 16, tokens: [kw('async fn'), t(' main() -> strands::Result<()> {')] },
+      { line: 17, tokens: [t('    '), kw('let mut'), t(' agent = create_harness(')] },
+      { line: 18, tokens: [t('        HarnessAgentOptions::builder()')] },
+      {
+        line: 19,
+        tokens: [
+          t('            .instructions('),
+          str('"Support assistant. Use the KB. Refunds require approval."'),
+          t(')'),
+        ],
+      },
+      { line: 20, tokens: [t('            .tools([IssueRefund])')] },
+      { line: 21, tokens: [t('            .mcp_servers('), str('".mcp.json"'), t(')')] },
+      {
+        line: 22,
+        tokens: [t('            .interventions('), str('"Ask before issuing any refund."'), t(')')],
+      },
+      { line: 23, tokens: [t('            .build(),')] },
+      { line: 24, tokens: [t('    )')] },
+      { line: 25, tokens: [t('    .'), kw('await'), t('?;')] },
+      { line: 26, tokens: [t('')] },
+      { line: 27, tokens: [t('    agent')] },
+      {
+        line: 28,
+        tokens: [
+          t('        .invoke('),
+          str('"Order A1234 wants a $40 refund. Policy, and can you process it?"'),
+          t(')'),
+        ],
+      },
+      { line: 29, tokens: [t('        .'), kw('await'), t('?;')] },
+      { line: 30, tokens: [t('    agent.shutdown().'), kw('await')] },
+      { line: 31, tokens: [t('}')] },
+    ],
   },
   {
     id: 'research',
@@ -155,7 +250,7 @@ const useCases: UseCase[] = [
     description:
       'Build agents that work autonomously through multi-step tasks, calling tools to gather and synthesize information. The agent loops on its own — you describe the goal, not the steps.',
     active: false,
-    filename: { ts: 'research_agent.ts', py: 'research_agent.py' },
+    filename: { ts: 'research_agent.ts', py: 'research_agent.py', rs: 'research_agent.rs' },
     ts: [
       { line: 1, tokens: [kw('import'), t(' { createHarness } '), kw('from'), t(' '), str("'@strands-agents/harness'")] },
       { line: 2, tokens: [t('')] },
@@ -176,6 +271,41 @@ const useCases: UseCase[] = [
       { line: 5, tokens: [t('agent(')] },
       { line: 6, tokens: [t('    '), str('"Summarize recent advances in solid-state batteries from https://en.wikipedia.org/wiki/Solid-state_battery"')] },
       { line: 7, tokens: [t(')')] },
+    ],
+    rs: [
+      { line: 1, tokens: [kw('use'), t(' strands_harness::{HarnessAgentOptions, create_harness};')] },
+      { line: 2, tokens: [t('')] },
+      { line: 3, tokens: [kw('#[tokio::main]')] },
+      { line: 4, tokens: [kw('async fn'), t(' main() -> strands::Result<()> {')] },
+      { line: 5, tokens: [t('    // Web fetch is on by default; compatible models also get web search.')] },
+      { line: 6, tokens: [t('    '), kw('let mut'), t(' agent = create_harness(')] },
+      { line: 7, tokens: [t('        HarnessAgentOptions::builder()')] },
+      {
+        line: 8,
+        tokens: [
+          t('            .instructions('),
+          str('"Research the goal, fetch sources, cite them."'),
+          t(')'),
+        ],
+      },
+      { line: 9, tokens: [t('            .build(),')] },
+      { line: 10, tokens: [t('    )')] },
+      { line: 11, tokens: [t('    .'), kw('await'), t('?;')] },
+      { line: 12, tokens: [t('')] },
+      { line: 13, tokens: [t('    agent')] },
+      { line: 14, tokens: [t('        .invoke(')] },
+      {
+        line: 15,
+        tokens: [
+          t('            '),
+          str('"Summarize recent advances in solid-state batteries from Wikipedia."'),
+          t(','),
+        ],
+      },
+      { line: 16, tokens: [t('        )')] },
+      { line: 17, tokens: [t('        .'), kw('await'), t('?;')] },
+      { line: 18, tokens: [t('    agent.shutdown().'), kw('await')] },
+      { line: 19, tokens: [t('}')] },
     ],
   },
   {
@@ -306,7 +436,7 @@ const useCases: UseCase[] = [
           </button>
         </header>
 
-        {/* One TS + one Python panel per use case. Only the active use case's
+        {/* One panel per supported language and use case. Only the active use case's
             panel for the current language is visible; the rest are `hidden`.
             The item buttons + language toggle swap visibility via data attrs. */}
         {useCases.map((uc) => (
@@ -347,6 +477,25 @@ const useCases: UseCase[] = [
                 ))}</span>
               </div>
             ))}</code></pre>
+            {uc.rs && (
+              <pre
+                class="terminal__code terminal__code--rs"
+                data-lang-code="rust"
+                data-use-case-code={uc.id}
+                data-filename={uc.filename.rs}
+                hidden
+                tabindex="0"
+                role="region"
+                aria-label={`${uc.title} — Rust code example`}
+              ><code>{uc.rs.map((row) => (
+                <div class="terminal__row">
+                  <span class="terminal__lineno">{row.line}</span>
+                  <span class="terminal__line">{row.tokens.map((tok) => (
+                    tok.color ? <span style={`color: ${tok.color};`}>{tok.text}</span> : <span>{tok.text}</span>
+                  ))}</span>
+                </div>
+              ))}</code></pre>
+            )}
           </Fragment>
         ))}
 

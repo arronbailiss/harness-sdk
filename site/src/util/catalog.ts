@@ -6,10 +6,12 @@
  */
 
 import type { CatalogEntryData } from '../content.config'
+import { SDK_LANGUAGES, type SdkLanguage } from '../config/languages'
 import { isNew } from './new-badge'
 
 export interface CatalogStats {
   stars?: number
+  /** Last-month registry downloads. The stats job currently supports PyPI and npm only. */
   downloads?: { python?: number; typescript?: number }
 }
 
@@ -24,11 +26,11 @@ export interface CatalogCardModel {
   integrationType: CatalogEntryData['integrationType']
   maintainedBy: CatalogEntryData['maintainedBy']
   sdk: 'agents' | 'evals'
-  languages: ('python' | 'typescript')[]
+  languages: CatalogLanguage[]
   href: string
   external: boolean
   github: string
-  registryLinks: { label: 'PyPI' | 'npm'; href: string }[]
+  registryLinks: { label: CatalogRegistryLabel; href: string }[]
   maintainer: string
   featured: boolean
   badges: string[]
@@ -36,10 +38,15 @@ export interface CatalogCardModel {
   downloads?: number
 }
 
-type CatalogLanguage = 'python' | 'typescript'
+export type CatalogLanguage = SdkLanguage
+export type CatalogRegistryLabel = 'PyPI' | 'npm' | 'crates.io'
 
-const LANGUAGES: CatalogLanguage[] = ['python', 'typescript']
-const REGISTRY_LABELS = { python: 'PyPI', typescript: 'npm' } as const
+const LANGUAGES = SDK_LANGUAGES
+const REGISTRY_LABELS = {
+  python: 'PyPI',
+  typescript: 'npm',
+  rust: 'crates.io',
+} as const satisfies Record<CatalogLanguage, CatalogRegistryLabel>
 
 /** Public fields of a catalog entry with build-time derivations applied; editorial fields stay out. */
 export interface CatalogPublicModel {
@@ -61,12 +68,13 @@ function registryUrl(language: CatalogLanguage, pkg: string): string {
   // An extras-qualified package (`temporalio[strands-agents]`) lives on PyPI
   // under its base name. Scoped npm names (@scope/name) work unencoded.
   if (language === 'python') return `https://pypi.org/project/${pkg.replace(/\[.*\]$/, '')}/`
-  return `https://www.npmjs.com/package/${pkg}`
+  if (language === 'typescript') return `https://www.npmjs.com/package/${pkg}`
+  return `https://crates.io/crates/${encodeURIComponent(pkg)}`
 }
 
 export function toPublicModel(id: string, data: CatalogEntryData): CatalogPublicModel {
   // Registry URLs derive from the package name so an entry can't point its
-  // PyPI/npm link at a different (or malicious) page than the package it
+  // PyPI/npm/crates.io link at a different (or malicious) page than the package it
   // names. A language block without a package is a guide-only integration.
   const languages: CatalogPublicModel['languages'] = {}
   for (const language of LANGUAGES) {

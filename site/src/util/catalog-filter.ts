@@ -4,6 +4,7 @@
  */
 
 import { CATALOG_TYPES } from '../components/catalog/types'
+import { SDK_LANGUAGES } from '../config/languages'
 
 export interface CatalogFilterState {
   search: string
@@ -24,7 +25,7 @@ export interface CardFilterData {
 }
 
 const KNOWN_TYPES = new Set<string>(CATALOG_TYPES.map((t) => t.value))
-const KNOWN_LANGUAGES = new Set(['python', 'typescript'])
+const KNOWN_LANGUAGES = new Set<string>(SDK_LANGUAGES)
 const KNOWN_BADGES = new Set(['verified', 'featured', 'new'])
 export const KNOWN_MAINTAINED_BY = new Set(['strands', 'aws', 'partner', 'community'])
 const KNOWN_SDKS = new Set(['agents', 'evals'])
