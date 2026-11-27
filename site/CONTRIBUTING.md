@@ -14,6 +14,7 @@ The documentation site is built with [Astro](https://astro.build/) and the [Star
 
 - Python 3.10+
 - Node.js 22+, npm
+- Rust 1.96+ when validating Rust documentation snippets
 
 ### Install and Run
 
@@ -28,11 +29,12 @@ npm run build      # generates static site
 
 ### Writing Docs
 
-- Content lives in `docs/` as standard Markdown files
+- Content lives in `src/content/docs/` as Markdown and MDX files
 - Navigation structure is defined in `src/config/navigation.yml`
-- Use `<Tabs>` / `<Tab label="...">` for Python/TypeScript code tabs (auto-imported)
-- Use `<Syntax py="python_name" ts="tsName" />` for inline language-specific identifiers in prose (auto-imported). Renders as `<code>` by default; pass `plain` for plain text. Reacts live to the global language toggle.
-- Use `--8<-- "path/to/file.ts:snippet_name"` to pull in code snippets from external files
+- Use `<Tabs>` / `<Tab label="...">` for Python, TypeScript, and verified Rust code tabs (auto-imported)
+- Use `<Syntax py="python_name" ts="tsName" rs="rust_name" />` for inline language-specific identifiers in prose (auto-imported). The `rs` prop is required on pages that support Rust. The component renders as `<code>` by default; pass `plain` for plain text. It reacts live to the global language toggle.
+- Use `--8<-- "path/to/file.ts:snippet_name"` or a sibling `.rs` file to pull in code snippets from external files
+- Omit `languages` frontmatter for the default Python and TypeScript coverage. Explicitly include `Rust` only after the page's Rust prose, links, and examples have been verified.
 - Relative file links (e.g. `../tools/index.md`) resolve automatically: no need to use slugs
 - Link to API reference pages with the `@api` shorthand: `[@api/python/strands.agent.agent](#Class)`
 
@@ -45,6 +47,7 @@ Before committing, run from `site/`:
 ```bash
 npm run format        # apply formatting fixes
 npm run check         # check formatting, build, check types, and run tests
+npm run typecheck:snippets # validate TypeScript and Rust documentation snippets
 ```
 
 Run `npm test`, `npm run typecheck`, or `npm run format:check` individually as needed; CI also runs these checks.

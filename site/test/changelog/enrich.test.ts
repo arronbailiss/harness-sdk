@@ -135,10 +135,12 @@ describe('enrich', () => {
     expect(e.streams).toBe(null)
   })
 
-  it('maps harness, cli, and mcp dirs to their own streams', async () => {
+  it('maps harness, Rust, CLI, and MCP dirs to their own streams', async () => {
     const cases: Array<[string, string]> = [
       ['harness-py/src/strands_harness/harness.py', 'harness:python'],
       ['harness-ts/src/index.ts', 'harness:typescript'],
+      ['strands-rs/strands/src/agent.rs', 'sdk:rust'],
+      ['harness-rs/strands-harness/src/agent.rs', 'harness:rust'],
       ['strands-cli/src/main.ts', 'cli'],
       ['strands-mcp/src/server.py', 'mcp'],
     ]
@@ -163,6 +165,16 @@ describe('enrich', () => {
       files: ['package-lock.json'],
     })
     expect((await enrichFromPr('r', 1, npmBump)).streams).toEqual(['sdk:typescript'])
+  })
+
+  it('a root Cargo lockfile-only PR is attributed to both Rust crates', async () => {
+    const cargoBump = async () => ({
+      labels: [],
+      merge_commit_sha: 'abc1234',
+      user: 'dependabot[bot]',
+      files: ['Cargo.lock'],
+    })
+    expect((await enrichFromPr('r', 1, cargoBump)).streams?.sort()).toEqual(['harness:rust', 'sdk:rust'])
   })
 
   it('a root lockfile alongside SDK code keeps the dir signal', async () => {

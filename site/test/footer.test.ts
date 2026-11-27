@@ -110,18 +110,27 @@ describe('showFooterLanguage', () => {
       <footer class="site-footer">
         <span data-release-lang="Python"></span>
         <span data-release-lang="TypeScript"></span>
+        <span data-release-lang="Rust"></span>
       </footer>
     `).window.document
     const python = document.querySelector<HTMLElement>('[data-release-lang="Python"]')!
     const typescript = document.querySelector<HTMLElement>('[data-release-lang="TypeScript"]')!
+    const rust = document.querySelector<HTMLElement>('[data-release-lang="Rust"]')!
 
     showFooterLanguage(document, 'Python')
     expect(python.hidden).toBe(false)
     expect(typescript.hidden).toBe(true)
+    expect(rust.hidden).toBe(true)
 
     showFooterLanguage(document, 'TypeScript')
     expect(python.hidden).toBe(true)
     expect(typescript.hidden).toBe(false)
+    expect(rust.hidden).toBe(true)
+
+    showFooterLanguage(document, 'Rust')
+    expect(python.hidden).toBe(true)
+    expect(typescript.hidden).toBe(true)
+    expect(rust.hidden).toBe(false)
   })
 
   it('keeps every stream visible when the preference has no matching release', () => {

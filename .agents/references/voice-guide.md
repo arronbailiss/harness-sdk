@@ -23,7 +23,7 @@ When writing or reviewing any developer-facing content, walk through the five la
     - [Documenting non-deterministic behavior](#documenting-non-deterministic-behavior)
 - [Layer 5: Authenticity](#layer-5-authenticity)
 - [Agent SDK-Specific Guidance](#agent-sdk-specific-guidance)
-  - [Multi-language documentation](#multi-language-documentation-python--typescript)
+  - [Multi-language documentation](#multi-language-documentation-python--typescript--rust)
   - [Multi-agent patterns](#multi-agent-patterns)
   - [Streaming and async](#streaming-and-async)
   - [Version sensitivity](#version-sensitivity)
@@ -306,21 +306,21 @@ Replace "you could use X or Y" with "use X. Y works too, but X handles [common c
 
 ## Agent SDK-Specific Guidance
 
-### Multi-language documentation (Python + TypeScript)
+### Multi-language documentation (Python + TypeScript + Rust)
 
-Strands ships both a Python and TypeScript SDK. Most doc pages show code in both languages via tabs. This creates specific challenges.
+Strands ships Python and TypeScript SDKs, plus a Rust SDK in developer preview. Existing pages default to Python and TypeScript; add Rust only when that page's Rust content has been verified. This creates specific challenges.
 
-**When to show both languages:** Concept pages (tutorials, how-to, explanation) should show both languages in tabs when the feature exists in both SDKs. Reference pages are per-language (the Python API reference is separate from the TypeScript API reference).
+**When to show multiple languages:** Concept pages (tutorials, how-to, explanation) should show each verified implementation in tabs. Reference pages are per-language: Python and TypeScript references are generated separately, while the Rust reference landing page links to docs.rs.
 
-**When to show one language:** If a feature only exists in one SDK, document it in that language only and note availability: "Available in the Python SDK. TypeScript support is tracked in [issue link]." Don't show empty tabs or placeholder code.
+**When to show fewer languages:** If a feature exists in only a subset of SDKs, document only those implementations and set the `languages` frontmatter. Don't show empty tabs or placeholder code. Omitted `languages` means the default Python and TypeScript coverage; Rust coverage must be explicit while it is in developer preview.
 
-**API parity is a goal, not a guarantee.** The two SDKs may have different parameter names, different import paths, or different API surfaces for the same concept. Never assume that Python code translates directly to TypeScript. Verify each language independently against its own SDK source.
+**API parity is a goal, not a guarantee.** The SDKs may have different parameter names, import paths, feature flags, or API surfaces for the same concept. Never translate an example mechanically. Verify each language independently against its own SDK source and compile every Rust example with the documented Cargo features.
 
 **Language-specific patterns:**
-- Python uses `@tool` decorator, TypeScript uses `tool()` function or `ZodTool` class
-- Python uses snake_case (`retry_strategy`), TypeScript uses camelCase (`retryStrategy`)
-- Python has `from strands import Agent`, TypeScript has `import { Agent } from '@strands-agents/sdk'` (verify current package name)
-- Error handling differs: Python raises exceptions, TypeScript may use different patterns
+- Python uses the `@tool` decorator, TypeScript uses the `tool()` function or `ZodTool` class, and Rust uses the `#[tool]` attribute macro
+- Python and Rust use snake_case (`retry_strategy`); TypeScript uses camelCase (`retryStrategy`)
+- Python imports `Agent` with `from strands import Agent`, TypeScript uses `import { Agent } from '@strands-agents/sdk'`, and Rust uses `use strands::Agent`
+- Error handling differs: Python raises exceptions, TypeScript uses JavaScript error patterns, and Rust examples normally return `strands::Result`
 
 **Prose between tabs should be language-neutral — or use `<Syntax>`.** When shared prose needs to reference a language-specific identifier, use the `<Syntax>` component rather than spelling out both variants manually. This adapts to the reader's language selection and keeps prose clean. For introductory sentences before tabs, you can also write language-neutral prose ("Configure a retry strategy:") and let the code speak for itself.
 
@@ -328,7 +328,7 @@ Strands ships both a Python and TypeScript SDK. Most doc pages show code in both
 
 #### Where divergence content lives in the page structure
 
-The page's heading structure should read the same in both languages. A reader on either tab should see the same table of contents. Divergence is content, not structure — keep it **inside the existing `<Tab>`**: same heading on both sides, with per-tab prose and code carrying the difference.
+The page's heading structure should read the same in every supported language. A reader on any tab should see the same table of contents. Divergence is content, not structure — keep it **inside the existing `<Tab>`**: same heading across tabs, with per-tab prose and code carrying the difference.
 
 Avoid:
 - **A heading that exists in only one language.** It produces an empty stub in the other language's table of contents and breaks the page's symmetry. Demote it under a shared parent or fold it into the tab.

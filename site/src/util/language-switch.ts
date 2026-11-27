@@ -19,12 +19,12 @@
  *   4. Otherwise don't navigate at all.
  */
 import { normalizePathToSlug } from './links'
+import { SDK_LANGUAGES, type SdkLanguage } from '../config/languages'
 
-const LANGUAGE_SLUGS = ['python', 'typescript'] as const
-export type LanguageSlug = (typeof LANGUAGE_SLUGS)[number]
+export type LanguageSlug = SdkLanguage
 
 function isLanguageSlug(segment: string): segment is LanguageSlug {
-  return (LANGUAGE_SLUGS as readonly string[]).includes(segment)
+  return (SDK_LANGUAGES as readonly string[]).includes(segment)
 }
 
 /**
@@ -52,7 +52,8 @@ export function getLanguageSwitchTarget(
   // segment under a tree of the other language (true of today's structure).
   const langIndex = segments.findIndex(isLanguageSlug)
   if (langIndex === -1) return null
-  if (segments[langIndex] === targetLang) return null
+  const currentLang = segments[langIndex]
+  if (currentLang === targetLang) return null
 
   const swapped = [...segments]
   swapped[langIndex] = targetLang
@@ -62,7 +63,8 @@ export function getLanguageSwitchTarget(
   if (docIds.has(counterpart)) return `/${counterpart}/`
 
   // Symbol-level API counterpart (e.g. strands.models.bedrock -> BedrockModel)
-  const apiTarget = apiCounterparts?.get(slug)
+  const supportsApiCounterpart = currentLang !== 'rust' && targetLang !== 'rust'
+  const apiTarget = supportsApiCounterpart ? apiCounterparts?.get(slug) : undefined
   if (apiTarget) return apiTarget
 
   // Section index for the target language (e.g. docs/api/typescript)

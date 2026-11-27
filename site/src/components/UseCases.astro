@@ -12,7 +12,18 @@ const kw = (text: string) => ({ text, color: 'var(--code-keyword)' })
 const str = (text: string) => ({ text, color: 'var(--code-string)' })
 const t = (text: string) => ({ text })
 
-const useCases = [
+interface UseCase {
+  id: string
+  icon: string
+  title: string
+  description: string
+  active: boolean
+  filename: { ts?: string; py: string }
+  ts?: Array<{ line: number; tokens: Array<{ text: string; color?: string }> }>
+  py: Array<{ line: number; tokens: Array<{ text: string; color?: string }> }>
+}
+
+const useCases: UseCase[] = [
   {
     id: 'automate',
     icon: boxIcon,
@@ -174,16 +185,7 @@ const useCases = [
     description:
       'Drive arms, humanoids, quadrupeds, and drones with natural language. One Robot() call gives an agent a MuJoCo simulation or a real robot — same code, sim or hardware.',
     active: false,
-    filename: { ts: 'robot_agent.py', py: 'robot_agent.py' },
-    ts: [
-      { line: 1, tokens: [str('# strands-robots is Python-first — toggle to Python for the sample.')] },
-      { line: 2, tokens: [t('')] },
-      { line: 3, tokens: [kw('from'), t(' strands_harness '), kw('import'), t(' create_harness')] },
-      { line: 4, tokens: [kw('from'), t(' strands_robots '), kw('import'), t(' Robot')] },
-      { line: 5, tokens: [t('')] },
-      { line: 6, tokens: [t('robot = Robot('), str('"so100"'), t(')')] },
-      { line: 7, tokens: [t('create_harness(tools=[robot])('), str('"pick up the red cube"'), t(')')] },
-    ],
+    filename: { py: 'robot_agent.py' },
     py: [
       { line: 1, tokens: [kw('from'), t(' strands_harness '), kw('import'), t(' create_harness')] },
       { line: 2, tokens: [kw('from'), t(' strands_robots '), kw('import'), t(' Robot')] },
@@ -253,12 +255,7 @@ const useCases = [
       <!-- On mobile the terminal sits below all three use-case items (see the
            `order` in the mobile media query). On desktop it's the right-hand
            column, unaffected by `order`. -->
-      <div
-        class="terminal"
-        data-filenames={JSON.stringify(
-          Object.fromEntries(useCases.map((uc) => [uc.id, uc.filename]))
-        )}
-      >
+      <div class="terminal">
         <header class="terminal__header">
           <div class="terminal__dots" aria-hidden="true">
             <span class="terminal__dot terminal__dot--red"></span>
@@ -314,26 +311,30 @@ const useCases = [
             The item buttons + language toggle swap visibility via data attrs. */}
         {useCases.map((uc) => (
           <Fragment>
-            <pre
-              class="terminal__code terminal__code--ts"
-              data-lang-code="typescript"
-              data-use-case-code={uc.id}
-              hidden={!uc.active}
-              tabindex="0"
-              role="region"
-              aria-label={`${uc.title} — TypeScript code example`}
-            ><code>{uc.ts.map((row) => (
-              <div class="terminal__row">
-                <span class="terminal__lineno">{row.line}</span>
-                <span class="terminal__line">{row.tokens.map((tok) => (
-                  tok.color ? <span style={`color: ${tok.color};`}>{tok.text}</span> : <span>{tok.text}</span>
-                ))}</span>
-              </div>
-            ))}</code></pre>
+            {uc.ts && (
+              <pre
+                class="terminal__code terminal__code--ts"
+                data-lang-code="typescript"
+                data-use-case-code={uc.id}
+                data-filename={uc.filename.ts}
+                hidden={!uc.active}
+                tabindex="0"
+                role="region"
+                aria-label={`${uc.title} — TypeScript code example`}
+              ><code>{uc.ts.map((row) => (
+                <div class="terminal__row">
+                  <span class="terminal__lineno">{row.line}</span>
+                  <span class="terminal__line">{row.tokens.map((tok) => (
+                    tok.color ? <span style={`color: ${tok.color};`}>{tok.text}</span> : <span>{tok.text}</span>
+                  ))}</span>
+                </div>
+              ))}</code></pre>
+            )}
             <pre
               class="terminal__code terminal__code--py"
               data-lang-code="python"
               data-use-case-code={uc.id}
+              data-filename={uc.filename.py}
               hidden
               tabindex="0"
               role="region"
@@ -348,6 +349,8 @@ const useCases = [
             ))}</code></pre>
           </Fragment>
         ))}
+
+        <p class="terminal__unavailable" data-use-cases-unavailable aria-live="polite" hidden></p>
 
         <div class="terminal__toggle">
           <LanguageToggle />
@@ -620,6 +623,11 @@ const useCases = [
     opacity: 0.8;
   }
 
+  .terminal__copy:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
   /* Taller hit area without changing the terminal header height. */
   .terminal__copy::before {
     content: '';
@@ -669,6 +677,17 @@ const useCases = [
 
   .terminal__code::-webkit-scrollbar {
     display: none;
+  }
+
+  .terminal__unavailable {
+    margin: 0;
+    padding: 20px;
+    height: 419px;
+    color: var(--terminal-fg);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    text-align: center;
   }
 
   .terminal__row {
@@ -818,17 +837,25 @@ const useCases = [
   if (section) {
     const terminal = section.querySelector<HTMLElement>('.terminal');
     const filenameEl = terminal?.querySelector<HTMLElement>('[data-filename]');
-    const filenames: Record<string, { ts: string; py: string }> = JSON.parse(
-      terminal?.dataset.filenames || '{}'
-    );
+    const unavailableEl = terminal?.querySelector<HTMLElement>('[data-use-cases-unavailable]');
+    const copyButton = terminal?.querySelector<HTMLButtonElement>('.terminal__copy');
 
     const firstItem = section.querySelector<HTMLElement>('.use-cases__item.is-active');
-    let currentCase = firstItem?.dataset.useCase || Object.keys(filenames)[0] || '';
-    let currentLang: 'TypeScript' | 'Python' =
-      localStorage.getItem(LANGUAGE_STORAGE_KEY) === 'Python' ? 'Python' : DEFAULT_LANGUAGE_LABEL;
+    let currentCase = firstItem?.dataset.useCase || '';
+    let currentLang = currentLanguage();
+
+    function currentLanguage() {
+      try {
+        return localStorage.getItem(LANGUAGE_STORAGE_KEY) || DEFAULT_LANGUAGE_LABEL;
+      } catch {
+        return DEFAULT_LANGUAGE_LABEL;
+      }
+    }
 
     function render() {
-      const langCode = currentLang === 'Python' ? 'python' : 'typescript';
+      const languageLabel = currentLang.trim() || DEFAULT_LANGUAGE_LABEL;
+      const langCode = languageLabel.toLowerCase();
+      let activePanel: HTMLElement | undefined;
 
       // Show only the panel matching the current use case AND language.
       section!.querySelectorAll<HTMLElement>('.terminal__code').forEach((pre) => {
@@ -836,13 +863,18 @@ const useCases = [
           pre.dataset.useCaseCode === currentCase &&
           pre.dataset.langCode === langCode;
         pre.hidden = !match;
+        if (match) activePanel = pre;
       });
 
-      // Filename follows the use case + language.
-      if (filenameEl && filenames[currentCase]) {
-        filenameEl.textContent =
-          currentLang === 'Python' ? filenames[currentCase].py : filenames[currentCase].ts;
+      if (filenameEl) {
+        filenameEl.textContent = activePanel?.dataset.filename ?? `No ${languageLabel} example`;
       }
+
+      if (unavailableEl) {
+        unavailableEl.textContent = activePanel ? '' : `No ${languageLabel} example is available yet.`;
+        unavailableEl.hidden = Boolean(activePanel);
+      }
+      if (copyButton) copyButton.disabled = !activePanel;
 
       // Active use-case item styling + a11y state.
       section!.querySelectorAll<HTMLElement>('.use-cases__item').forEach((item) => {
@@ -867,8 +899,8 @@ const useCases = [
     // Language is driven by the shared <LanguageToggle/>, which broadcasts
     // lang-change site-wide; the terminal just re-renders to match.
     window.addEventListener('lang-change', (e: Event) => {
-      const lang = (e as CustomEvent).detail;
-      currentLang = lang === 'Python' ? 'Python' : 'TypeScript';
+      const lang = (e as CustomEvent<unknown>).detail;
+      currentLang = typeof lang === 'string' && lang.trim() ? lang.trim() : DEFAULT_LANGUAGE_LABEL;
       render();
     });
 

@@ -8,8 +8,9 @@ import fastGlob from 'fast-glob'
 import { pathToDocsSlug } from './util/links'
 import { TagSchema } from './config/tags'
 import { SDK_META, hasLanguageStreams, type Sdk } from './config/changelog'
+import { DEFAULT_DOC_LANGUAGES, SDK_LANGUAGES, normalizeSdkLanguage } from './config/languages'
 
-export const ALL_SDK_LANGUAGES = ['python', 'typescript'] as const
+export const ALL_SDK_LANGUAGES = SDK_LANGUAGES
 
 function optionalGlob(options: Parameters<typeof glob>[0]) {
   const loader = glob(options)
@@ -27,18 +28,25 @@ function optionalGlob(options: Parameters<typeof glob>[0]) {
   }
 }
 
+const docsLanguageSchema = z.string().superRefine((value, ctx) => {
+  if (!normalizeSdkLanguage(value)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `unknown SDK language "${value}"`,
+    })
+  }
+})
+
 export const docsLanguagesSchema = z
-  .union([z.string(), z.array(z.string())])
+  .union([docsLanguageSchema, z.array(docsLanguageSchema).min(1)])
   .optional()
-  .superRefine((val, ctx) => {
-    if (!val) return
-    const langs = Array.isArray(val) ? val.map((l) => l.toLowerCase()) : [val.toLowerCase()]
-    if (ALL_SDK_LANGUAGES.every((l) => langs.includes(l))) {
+  .superRefine((value, ctx) => {
+    if (!Array.isArray(value)) return
+    const normalized = value.map(normalizeSdkLanguage).filter(Boolean)
+    if (new Set(normalized).size !== normalized.length) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message:
-          'languages must not list all supported SDKs (python and typescript) — ' +
-          'omit the field entirely when a feature is available in all languages',
+        message: 'languages must not contain duplicates',
       })
     }
   })
@@ -94,7 +102,7 @@ export type ChangelogEntry = z.infer<typeof changelogEntrySchema>
 export const changelogFrontmatterSchema = z
   .object({
     sdk: z.enum(Object.keys(SDK_META) as [Sdk, ...Sdk[]]),
-    language: z.enum(['python', 'typescript']).optional(),
+    language: z.enum(SDK_LANGUAGES).optional(),
     version: z.string(),
     tag: z.string(),
     date: z.coerce.date(),
@@ -112,7 +120,7 @@ export const changelogFrontmatterSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['language'],
-        message: `${d.sdk} releases require a language (python or typescript)`,
+        message: `${d.sdk} releases require a language (${SDK_LANGUAGES.join(', ')})`,
       })
     }
     if (!hasLanguageStreams(d.sdk) && d.language !== undefined) {
@@ -298,7 +306,7 @@ const sampleGuideSchema = z
     title: z.string(),
     description: z.string(),
     slug: z.string(),
-    language: z.enum(ALL_SDK_LANGUAGES),
+    language: z.enum(DEFAULT_DOC_LANGUAGES),
     category: z.string(),
     categoryLabel: z.string(),
     collection: z
@@ -416,6 +424,7 @@ export const collections = {
         'docs/labs/**/*.{md,mdx}',
         'docs/api/python/**/*.mdx',
         'docs/api/typescript/**/*.(md|mdx)',
+        'docs/api/rust/**/*.mdx',
       ],
       generateId: generateDocsId,
     }),

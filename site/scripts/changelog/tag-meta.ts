@@ -11,8 +11,10 @@ function cleanVersion(raw: string): string {
 const MONOREPO_STREAMS: Record<string, { sdk: Sdk; language?: Language }> = {
   'python/': { sdk: 'sdk', language: 'python' },
   'typescript/': { sdk: 'sdk', language: 'typescript' },
+  'rust/': { sdk: 'sdk', language: 'rust' },
   'harness-python/': { sdk: 'harness', language: 'python' },
   'harness-typescript/': { sdk: 'harness', language: 'typescript' },
+  'harness-rust/': { sdk: 'harness', language: 'rust' },
   'harness-cli/': { sdk: 'cli' },
 }
 
@@ -67,6 +69,7 @@ export function tagToMeta(repo: string, tag: string): TagMeta | null {
 
 const pypi = (name: string, v: string) => `https://pypi.org/project/${name}/${v}/`
 const npm = (name: string, v: string) => `https://www.npmjs.com/package/${name}/v/${v}`
+const crates = (name: string, v: string) => `https://crates.io/crates/${name}/${v}`
 
 export function getPackageUrl(sdk: Sdk, language: Language | undefined, version: string): string {
   if (sdk === 'evals') return pypi('strands-agents-evals', version)
@@ -74,8 +77,10 @@ export function getPackageUrl(sdk: Sdk, language: Language | undefined, version:
   if (sdk === 'shell') return `https://github.com/strands-agents/shell/releases/tag/v${version}`
   if (sdk === 'cli') return npm('@strands-agents/cli', version)
   if (sdk === 'harness') {
+    if (language === 'rust') return crates('strands-harness', version)
     return language === 'typescript' ? npm('@strands-agents/harness', version) : pypi('strands-harness', version)
   }
+  if (language === 'rust') return crates('strands', version)
   if (language === 'typescript') return npm('@strands-agents/sdk', version)
   return pypi('strands-agents', version)
 }

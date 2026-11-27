@@ -10,30 +10,36 @@
 import {
   HARNESS_QUICKSTART_PROMPT,
   PYTHON_QUICKSTART_PROMPT,
+  RUST_QUICKSTART_PROMPT,
   TYPESCRIPT_QUICKSTART_PROMPT,
 } from '../data/quickstart-prompts'
 
 interface Props {
-  language: 'python' | 'typescript' | 'harness'
+  language: 'python' | 'typescript' | 'rust' | 'harness'
 }
 
 const PROMPTS = {
   python: PYTHON_QUICKSTART_PROMPT,
   typescript: TYPESCRIPT_QUICKSTART_PROMPT,
+  rust: RUST_QUICKSTART_PROMPT,
   'harness': HARNESS_QUICKSTART_PROMPT,
 } as const
 
 const { language } = Astro.props
 const prompt = PROMPTS[language]
-const asksLanguage = language === 'harness'
+const promptSetup =
+  language === 'harness'
+    ? 'ask which path, language, and model provider you want'
+    : language === 'rust'
+      ? 'use Amazon Bedrock for the first agent'
+      : 'ask which model provider you want'
 ---
 
 <div class="copy-prompt not-content" data-copy-prompt data-language={language}>
   <div class="copy-prompt__text">
     <strong>Using a coding agent?</strong> Copy this prompt into Codex, Claude Code, Kiro,
-    or any coding assistant and it will walk you through this page, ask which{' '}
-    {asksLanguage ? 'path, language, and model provider' : 'model provider'} you want, and offer
-    to set up the Strands MCP server.
+    or any coding assistant and it will walk you through this page, {promptSetup}, and
+    offer to set up the Strands MCP server.
   </div>
   <button type="button" class="copy-prompt__btn" data-copy-prompt-btn aria-label="Copy the quickstart prompt for a coding agent">
     <span data-copy-prompt-label>Copy prompt</span>

@@ -1,27 +1,29 @@
 ---
 /**
- * Copyable install command that follows the site-wide Python/TypeScript
- * preference. Shows `pip install …` for Python and `npm install …` for
- * TypeScript, swapping live on the `lang-change` event that the language
- * toggles broadcast (same channel as the banner/UseCases terminal). The copy
- * button writes the *visible* command, so users always copy what they see.
+ * Copyable install command that follows the site-wide SDK language preference.
+ * Shows the matching pip, npm, or Cargo command and swaps live on the
+ * `lang-change` event that the language toggles broadcast. The copy button
+ * writes the visible command, so users always copy what they see.
  *
  * Rendered in the homepage banner, toolkit cards, and site footer. The inline
  * script is idempotent and event-driven, so multiple instances stay in sync.
  */
 import { LANGUAGE_STORAGE_KEY, DEFAULT_LANGUAGE_LABEL } from '../util/language-preference'
+import { SDK_LANGUAGE_LABEL_LIST } from '../config/languages'
 
 // Defaults install the SDK; callers (e.g. the homepage banner) can override to
 // lead with another package such as Strands harness.
 interface Props {
   pip?: string
   npm?: string
+  cargo?: string
   compact?: boolean
   copyAriaLabel?: string
 }
 const {
   pip: PIP = 'pip install strands-agents',
   npm: NPM = 'npm install @strands-agents/sdk',
+  cargo: CARGO = 'cargo add strands && cargo add tokio --features macros,rt-multi-thread',
   compact = false,
   copyAriaLabel = 'Copy install command',
 } = Astro.props
@@ -33,6 +35,7 @@ const {
     <span class="install__text">
       <span class="install__variant" data-install-variant="Python" aria-hidden="true">{PIP}</span>
       <span class="install__variant" data-install-variant="TypeScript">{NPM}</span>
+      <span class="install__variant" data-install-variant="Rust" aria-hidden="true">{CARGO}</span>
     </span>
   </code>
   <button type="button" class="install__copy" data-install-copy aria-label={copyAriaLabel}>
@@ -148,7 +151,14 @@ const {
   }
 </style>
 
-<script is:inline define:vars={{ STORAGE_KEY: LANGUAGE_STORAGE_KEY, DEFAULT_LANG: DEFAULT_LANGUAGE_LABEL }}>
+<script
+  is:inline
+  define:vars={{
+    STORAGE_KEY: LANGUAGE_STORAGE_KEY,
+    DEFAULT_LANG: DEFAULT_LANGUAGE_LABEL,
+    LANGUAGE_LABELS: SDK_LANGUAGE_LABEL_LIST,
+  }}
+>
   (function () {
     var blocks = document.querySelectorAll('[data-install]');
     if (!blocks.length) return;
@@ -162,7 +172,7 @@ const {
     }
 
     function render(lang) {
-      var active = lang === 'Python' ? 'Python' : 'TypeScript';
+      var active = LANGUAGE_LABELS.indexOf(lang) >= 0 ? lang : DEFAULT_LANG;
       blocks.forEach(function (block) {
         block.querySelectorAll('[data-install-variant]').forEach(function (variant) {
           variant.setAttribute('aria-hidden', String(variant.dataset.installVariant !== active));
@@ -181,7 +191,7 @@ const {
 
 <script>
   // Copy wiring + analytics via the shared helper. Kept separate from the
-  // inline render above so the pip/npm command still paints before hydration.
+  // inline render above so the install command still paints before hydration.
   import { attachCopyButton } from '../util/clipboard'
 
   document.querySelectorAll<HTMLElement>('[data-install]').forEach((block) => {
@@ -192,8 +202,15 @@ const {
     attachCopyButton(btn, {
       label: block.querySelector<HTMLElement>('[data-install-copy-label]'),
       getText: activeText,
-      // pip = Python, npm = TypeScript — distinguish which command was copied.
-      track: { surface: 'install', detail: () => (activeText().startsWith('pip') ? 'pip' : 'npm') },
+      track: {
+        surface: 'install',
+        detail: () => {
+          const command = activeText()
+          if (command.startsWith('pip')) return 'pip'
+          if (command.startsWith('cargo')) return 'cargo'
+          return 'npm'
+        },
+      },
     })
   })
 </script>

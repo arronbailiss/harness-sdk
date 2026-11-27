@@ -1,16 +1,17 @@
 export type Sdk = 'sdk' | 'harness' | 'cli' | 'evals' | 'box' | 'shell'
-export type Language = 'python' | 'typescript'
+export type Language = 'python' | 'typescript' | 'rust'
 
 export const LANGUAGE_META: Record<Language, { label: string; short: string }> = {
   python: { label: 'Python', short: 'Py' },
   typescript: { label: 'TypeScript', short: 'TS' },
+  rust: { label: 'Rust', short: 'Rs' },
 }
 
 // Key order is the order of the product toggle; the first is the default.
 // An empty `languages` marks a product with no language streams (one stream).
 export const SDK_META: Record<Sdk, { label: string; languages: Language[] }> = {
-  sdk: { label: 'SDK', languages: ['python', 'typescript'] },
-  harness: { label: 'Harness', languages: ['python', 'typescript'] },
+  sdk: { label: 'SDK', languages: ['python', 'typescript', 'rust'] },
+  harness: { label: 'Harness', languages: ['python', 'typescript', 'rust'] },
   cli: { label: 'Harness CLI', languages: [] },
   evals: { label: 'Evals', languages: ['python'] },
   box: { label: 'Box', languages: [] },

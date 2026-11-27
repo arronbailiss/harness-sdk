@@ -10,7 +10,7 @@
     "dev": "astro dev",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "typecheck:snippets": "npm run typecheck --prefix test-snippets",
+    "typecheck:snippets": "npm run typecheck --prefix test-snippets && cargo check --manifest-path ../Cargo.toml --locked -p strands --example docs_quickstart && cargo check --manifest-path ../Cargo.toml --locked -p strands --example docs_anthropic --no-default-features --features anthropic && cargo check --manifest-path ../Cargo.toml --locked -p strands --example docs_openai --no-default-features --features openai && cargo check --manifest-path ../Cargo.toml --locked -p strands-harness --example docs_quickstart",
     "check": "npm run format:check && npm run build && npm run typecheck && npm test",
     "format": "prettier --write docs scripts src test '*.ts'",
     "format:check": "prettier --check docs scripts src test '*.ts'",

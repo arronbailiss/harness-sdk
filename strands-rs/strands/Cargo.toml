@@ -102,6 +102,18 @@ name = "tools"
 required-features = ["bedrock"]
 
 [[example]]
+name = "docs_quickstart"
+required-features = ["bedrock"]
+
+[[example]]
+name = "docs_anthropic"
+required-features = ["anthropic"]
+
+[[example]]
+name = "docs_openai"
+required-features = ["openai"]
+
+[[example]]
 name = "streaming"
 required-features = ["bedrock"]
 

@@ -6,6 +6,7 @@ import LanguageSupportAside from '../LanguageSupportAside.astro';
 import ExperimentalAside from '../ExperimentalAside.astro';
 import ExternalDocsPreviewAside from '../ExternalDocsPreviewAside.astro';
 import PageTags from '../PageTags.astro';
+import { DEFAULT_DOC_LANGUAGES } from '../../config/languages';
 
 const { starlightRoute } = Astro.locals;
 const { languages, community, experimental, externalDocs } = starlightRoute.entry.data;
@@ -16,11 +17,10 @@ const isIntegrationsPage =
   starlightRoute.id !== 'docs/integrations/get-featured' &&
   (starlightRoute.id === 'docs/integrations' || starlightRoute.id.startsWith('docs/integrations/'));
 
-const ALL_SDK_LANGUAGES = ['python', 'typescript']
 const langArray = languages
   ? (Array.isArray(languages) ? languages : [languages]).map((l: string) => l.toLowerCase())
   : []
-const coversAllLanguages = ALL_SDK_LANGUAGES.every((l) => langArray.includes(l))
+const coversDefaultLanguages = DEFAULT_DOC_LANGUAGES.every((language) => langArray.includes(language))
 ---
 
 <div class="sl-markdown-content">
@@ -32,7 +32,7 @@ const coversAllLanguages = ALL_SDK_LANGUAGES.every((l) => langArray.includes(l))
     )
   }
   {community && <CommunityContributionAside />}
-  {languages && !coversAllLanguages && <LanguageSupportAside languages={languages} />}
+  {languages && !coversDefaultLanguages && <LanguageSupportAside languages={languages} />}
   <slot />
   <PageTags />
 </div>

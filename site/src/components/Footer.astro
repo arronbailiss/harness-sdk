@@ -93,6 +93,7 @@ const columns = [
                 <a
                   href={link.href}
                   class="footer__link"
+                  {...(link.label === 'API References' ? { 'data-footer-api-link': '' } : {})}
                   {...(link.external ? { target: '_blank', rel: 'noopener' } : {})}
                 >{link.label}</a>
               </li>
@@ -108,6 +109,8 @@ const columns = [
               <button type="button" class="footer__pref-opt" data-lang="Python">Python</button>
               <span class="footer__pref-sep">/</span>
               <button type="button" class="footer__pref-opt" data-lang="TypeScript">TypeScript</button>
+              <span class="footer__pref-sep">/</span>
+              <button type="button" class="footer__pref-opt" data-lang="Rust">Rust</button>
             </span>
           </li>
           <li>
@@ -431,25 +434,34 @@ const columns = [
   // (which has no Starlight chrome). They share the same storage keys, so the
   // header and footer stay in sync.
   import { LANGUAGE_STORAGE_KEY, DEFAULT_LANGUAGE_LABEL } from '../util/language-preference'
+  import { SDK_LANGUAGE_LABEL_LIST, sdkLanguageFromLabel } from '../config/languages'
   const THEME_KEY = 'starlight-theme'
 
   // ---- Language ----
   const langGroup = document.querySelector('[data-footer-lang]')
+  const languageLabels = new Set<string>(SDK_LANGUAGE_LABEL_LIST)
   function currentLang() {
     try {
-      return localStorage.getItem(LANGUAGE_STORAGE_KEY) === 'Python' ? 'Python' : 'TypeScript'
+      const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY)
+      return stored && languageLabels.has(stored) ? stored : DEFAULT_LANGUAGE_LABEL
     } catch {
-      return 'TypeScript'
+      return DEFAULT_LANGUAGE_LABEL
     }
   }
   function paintLang(lang: string) {
     langGroup?.querySelectorAll<HTMLButtonElement>('[data-lang]').forEach((b) => {
       b.setAttribute('aria-pressed', b.dataset.lang === lang ? 'true' : 'false')
     })
+    const apiLink = document.querySelector<HTMLAnchorElement>('[data-footer-api-link]')
+    const slug = sdkLanguageFromLabel(lang) ?? 'typescript'
+    if (apiLink) {
+      apiLink.href = apiLink.href.replace(/\/api\/(?:python|typescript|rust)\//, `/api/${slug}/`)
+    }
   }
   langGroup?.querySelectorAll<HTMLButtonElement>('[data-lang]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const lang = btn.dataset.lang === 'Python' ? 'Python' : 'TypeScript'
+      const requested = btn.dataset.lang
+      const lang = requested && languageLabels.has(requested) ? requested : DEFAULT_LANGUAGE_LABEL
       try {
         localStorage.setItem(LANGUAGE_STORAGE_KEY, lang)
       } catch {}
@@ -462,7 +474,7 @@ const columns = [
   // Keep the footer in sync when language changes elsewhere.
   window.addEventListener('lang-change', (e: Event) => {
     const lang = (e as CustomEvent).detail
-    paintLang(lang === 'Python' ? 'Python' : 'TypeScript')
+    paintLang(languageLabels.has(lang) ? lang : DEFAULT_LANGUAGE_LABEL)
   })
   paintLang(currentLang())
 

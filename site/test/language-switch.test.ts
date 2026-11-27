@@ -7,10 +7,12 @@ describe('getLanguageSwitchTarget', () => {
   const docIds = new Set([
     'docs/user-guide/quickstart/python',
     'docs/user-guide/quickstart/typescript',
+    'docs/user-guide/quickstart/rust',
     'docs/user-guide/deploy/deploy_to_docker/python',
     'docs/user-guide/deploy/deploy_to_docker/typescript',
     'docs/api/python',
     'docs/api/typescript',
+    'docs/api/rust',
     'docs/api/python/strands.agent.a2a_agent',
     'docs/api/python/strands.models.bedrock',
     'docs/api/typescript/Agent',
@@ -25,6 +27,9 @@ describe('getLanguageSwitchTarget', () => {
     expect(getLanguageSwitchTarget('/docs/user-guide/deploy/deploy_to_docker/typescript/', 'python', docIds)).toBe(
       '/docs/user-guide/deploy/deploy_to_docker/python/'
     )
+    expect(getLanguageSwitchTarget('/docs/user-guide/quickstart/python/', 'rust', docIds)).toBe(
+      '/docs/user-guide/quickstart/rust/'
+    )
   })
 
   it('falls back to the section index when no counterpart page exists', () => {
@@ -37,6 +42,14 @@ describe('getLanguageSwitchTarget', () => {
 
   it('swaps between API index pages directly', () => {
     expect(getLanguageSwitchTarget('/docs/api/python/', 'typescript', docIds)).toBe('/docs/api/typescript/')
+    expect(getLanguageSwitchTarget('/docs/api/python/', 'rust', docIds)).toBe('/docs/api/rust/')
+  })
+
+  it('does not use Python and TypeScript API counterparts when targeting Rust', () => {
+    const counterparts = new Map([['docs/api/python/strands.models.bedrock', '/docs/api/typescript/BedrockModel/']])
+    expect(getLanguageSwitchTarget('/docs/api/python/strands.models.bedrock/', 'rust', docIds, counterparts)).toBe(
+      '/docs/api/rust/'
+    )
   })
 
   it('returns null when the page has no language segment', () => {
@@ -68,7 +81,7 @@ describe('getLanguageSwitchTarget', () => {
 
       const broken: string[] = []
       for (const doc of docs) {
-        for (const target of ['python', 'typescript'] as const) {
+        for (const target of ['python', 'typescript', 'rust'] as const) {
           const result = getLanguageSwitchTarget(`/${doc.id}/`, target, ids, counterparts)
           const resultSlug = result?.replace(/^\//, '').replace(/\/(#.*)?$/, '')
           if (resultSlug && !ids.has(resultSlug)) {

@@ -1,0 +1,33 @@
+---
+title: Rust API Reference
+description: >-
+  Browse the Rust API references for the Strands Agents SDK, its attribute
+  macros, and the preconfigured Strands harness.
+languages: Rust
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components'
+
+The Rust API reference is published on docs.rs. The SDK and harness are in
+developer preview, and their public APIs may change in any 0.x release.
+
+<CardGrid>
+  <LinkCard
+    title="strands"
+    description="Agent loop, models, tools, hooks, sessions, MCP, and telemetry."
+    href="https://docs.rs/strands/"
+  />
+  <LinkCard
+    title="strands-macros"
+    description="Attribute macros for typed function and method tools."
+    href="https://docs.rs/strands-macros/"
+  />
+  <LinkCard
+    title="strands-harness"
+    description="A preconfigured agent with tools, memory, and context management."
+    href="https://docs.rs/strands-harness/"
+  />
+</CardGrid>
+
+Start with the [Rust quickstart](../../user-guide/sdk/quickstart/rust/) for a
+complete project using the `strands` crate.

@@ -19,17 +19,24 @@ Practical reference for writing documentation in this repo. This site uses Astro
     --8<-- "user-guide/concepts/agents/example.ts:basic_agent"
     ```
   </Tab>
+  <Tab label="Rust">
+    ```rust
+    --8<-- "user-guide/concepts/agents/example.rs:basic_agent"
+    ```
+  </Tab>
 </Tabs>
 ```
 
-`<Syntax>` is also globally available. Use it when shared prose needs to reference a language-specific identifier — any method name, parameter, class name, or short expression that differs between Python and TypeScript:
+`<Syntax>` is also globally available. Use it when shared prose needs to reference a language-specific identifier — any method name, parameter, class name, or short expression that differs between SDKs:
 
 ```mdx
-Use <Syntax py=".as_tool()" ts=".asTool()" /> to customize the tool name.
-The <Syntax py="Agent.retry_strategy" ts="Agent.retryStrategy" /> parameter controls retry behavior.
+Use <Syntax py=".as_tool()" ts=".asTool()" rs=".as_tool()" /> to customize the tool name.
+The <Syntax py="retry_strategy" ts="retryStrategy" rs="retry_strategy" /> parameter controls retry behavior.
 ```
 
 Renders as inline `<code>` by default. Pass `plain` for plain text. Reacts live to the global language toggle — no page reload.
+
+The `rs` prop is optional on the default Python-and-TypeScript pages and required on any page whose `languages` frontmatter includes Rust. Without `rs`, `<Syntax>` falls back to the default language when no Rust variant is present.
 
 **When to use `<Syntax>` vs `<Tabs>`:**
 - `<Syntax>`: single identifier or short expression that differs by language, embedded in a prose sentence.
@@ -98,6 +105,8 @@ Only the code between markers is rendered. Paths inside the `--8<--` directive a
 
 **When to skip the imports file:** the page renders no TypeScript snippets, *or* every snippet body genuinely has zero external imports. Otherwise, write the imports file — relying on the imports at the top of the body `.ts` is wrong, since those lines live above the `[start:...]` marker and never appear in rendered docs.
 
+Rust snippets use sibling `.rs` files and the same named-region markers. Include the `use` declarations required by the rendered block inside its region, and keep each snippet in a module or function so the complete file compiles through `npm run typecheck:snippets`.
+
 ## Callout Syntax
 
 Starlight-native admonitions. **Use sparingly** — callouts are visually loud and reset the reader's flow. In most cases inline prose is the better choice; reach for a callout only when the information genuinely needs to break frame. Overusing `caution`/`danger` in particular trains readers to ignore them.
@@ -142,7 +151,7 @@ Optional fields (validated by Zod in `site/src/content.config.ts`):
 
 | Field | Type | Purpose |
 |-------|------|---------|
-| `languages` | `string \| string[]` | Feature only available in specific SDK language(s) |
+| `languages` | `string \| string[]` | SDK languages whose page content has been verified |
 | `community` | `boolean` | Marks page as community-contributed |
 | `experimental` | `boolean` | Marks feature as experimental |
 | `externalDocs` | object | Generated provenance and publication status for imported docs; authors must not set it |
@@ -154,7 +163,13 @@ Optional fields (validated by Zod in `site/src/content.config.ts`):
 
 The relevant fields render contextual banners automatically (experimental → external preview → community → languages); community pages suppress the separate language banner. Anything not in this table is silently stripped by Zod at build time, so don't invent fields like `contentType` or `lastReviewed` — add them to the schema first if they'd be useful.
 
-Do not set `languages: [python, typescript]` — listing all supported languages is redundant. Omit the field when a feature is available in all languages.
+Omitting `languages` means the page has the site's default Python and TypeScript coverage. Explicitly list `Rust` only after its prose, links, and examples have been verified against the Rust SDK. A page that supports all three SDKs uses:
+
+```yaml
+languages: [Python, TypeScript, Rust]
+```
+
+Use a single value or a smaller list when the page applies to only those SDKs.
 
 ## TypeScript Snippet Scoping
 
@@ -200,7 +215,7 @@ Link to generated API docs without fragile relative paths:
 
 Run from `site/`:
 
-- `npm run typecheck:snippets` type-checks snippet files under `src/content/docs/`
+- `npm run typecheck:snippets` type-checks TypeScript and Rust snippet files under `src/content/docs/`
 - `npm run typecheck` type-checks other TypeScript
 - `npm run format` applies Prettier formatting to doc snippet files
 - `npm test` runs the site's unit tests
@@ -210,7 +225,7 @@ Run from `site/`:
 
 - **Snippet dedent**: Leading whitespace is automatically stripped from included snippets. If the snippet reference in markdown is indented, content indents to that level.
 - **Tab indentation**: Content inside `<Tab>` must not have leading blank lines or it may not render correctly.
-- **API docs are symlinked**: `site/src/content/docs/api/python/_generated` and `typescript/_generated` are symlinks to `site/.build/api-docs/`. Never edit these directly — they are auto-generated.
+- **API docs differ by language**: `site/src/content/docs/api/python/_generated` and `typescript/_generated` are symlinks to `site/.build/api-docs/`. Never edit these directly — they are auto-generated. Rust uses a static `api/rust/index.mdx` landing page that links to docs.rs.
 - **No `TabItem`**: The auto-imported component is `Tab`, not `TabItem` (even though Starlight's native component is called TabItem).
 - **Code theme**: Uses GitHub Light/Dark themes. Follows Starlight's `[data-theme]` attribute.
 - **Formatting**: No semicolons, single quotes, 2-space indent, trailing commas ES5 style (enforced by Prettier).

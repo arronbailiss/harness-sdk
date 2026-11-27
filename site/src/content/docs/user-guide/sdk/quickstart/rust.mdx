@@ -1,0 +1,105 @@
+---
+title: Rust Quickstart
+description: >-
+  Get a Strands agent running in Rust: install the SDK, invoke the default
+  Amazon Bedrock model, and add a typed custom tool.
+languages: Rust
+sidebar:
+  label: "Rust"
+tags: [quickstart]
+sourceLinks:
+  - path: strands-rs/strands/examples/basic.rs
+  - path: strands-rs/strands/examples/tools.rs
+---
+
+This quickstart takes you to a running Rust agent with one custom tool. You install
+the SDK, invoke the default Amazon Bedrock model, and use `#[tool]` to expose an
+async function to the agent loop.
+
+:::note[Developer preview]
+The Rust SDK is in developer preview. Its public API may change in any 0.x release.
+:::
+
+<CopyPromptButton language="rust" />
+
+## Create a project
+
+Install Rust 1.96 or newer through [rustup](https://rustup.rs/), then create a
+binary project and add the SDK with the Tokio async runtime:
+
+```bash
+cargo new strands-quickstart
+cd strands-quickstart
+cargo add strands
+cargo add tokio --features macros,rt-multi-thread
+```
+
+## Run your first agent
+
+Create `src/main.rs` with an agent that uses Amazon Bedrock, the default model
+provider:
+
+```rust
+--8<-- "../../../../strands-rs/strands/examples/docs_quickstart.rs:basic"
+```
+
+The default model is Claude Sonnet 4.6 on Amazon Bedrock. Give the SDK AWS
+credentials with permission to invoke the model, using one of:
+
+- **Bedrock API key**: set `AWS_BEARER_TOKEN_BEDROCK` to a
+  [Bedrock API
+  key](https://docs.aws.amazon.com/bedrock/latest/userguide/api-key-management.html).
+- **AWS credentials**: run `aws configure`, use an AWS profile, or set the AWS
+  credential environment variables.
+- **IAM role**: run the agent on an AWS service with an attached role.
+
+Set `AWS_REGION` to a region where the model is available. The SDK uses
+`us-west-2` when no region is configured.
+
+Run the agent:
+
+```bash
+cargo run
+```
+
+The default printer streams the model response to the terminal. Each invocation
+also returns an `AgentResult` with the final response, stop reason, and metrics.
+Call `shutdown()` before the process exits so the agent can finish cleanup.
+
+## Add a custom tool
+
+Replace `src/main.rs` with a typed tool and pass its generated tool struct to the
+agent:
+
+```rust
+--8<-- "../../../../strands-rs/strands/examples/docs_quickstart.rs:custom_tool"
+```
+
+Run the project again:
+
+```bash
+cargo run
+```
+
+The `#[tool]` macro reads the function and parameter documentation to build the
+tool description and input schema. It generates the `LetterCounter` tool struct
+from the `letter_counter` function name.
+
+## Choose another model provider
+
+To run the agent on Anthropic, OpenAI, or the Amazon Bedrock Mantle endpoint,
+enable the provider's Cargo feature:
+
+```bash
+cargo add strands --no-default-features --features anthropic
+```
+
+Without the default `bedrock` feature, pass an explicit model to
+`Agent::builder()`. See the
+[Rust API reference](../../../api/rust/) for provider builders and feature flags.
+
+## Next steps
+
+- [Browse the Rust API reference](../../../api/rust/)
+- [Compare SDK feature availability](./overview/#feature-availability)
+- [Use the preconfigured Strands harness](../../harness/quickstart/)

@@ -3,7 +3,7 @@ name = "strands-harness"
 description = "A preconfigured Strands agent in one call"
 readme = "../README.md"
 # Listed so the git-ignored model-info.json copied in before packaging is shipped.
-include = ["/build.rs", "/model-info.json", "/src/**", "/tests/**"]
+include = ["/build.rs", "/examples/**", "/model-info.json", "/src/**", "/tests/**"]
 keywords = ["agents", "ai", "llm", "strands", "harness"]
 categories = ["api-bindings", "asynchronous"]
 # Releases on its own tag, so it does not inherit the workspace (SDK) version.
@@ -67,6 +67,10 @@ aws-smithy-runtime-api.workspace = true
 
 [lints]
 workspace = true
+
+[[example]]
+name = "docs_quickstart"
+required-features = ["bedrock", "anthropic", "openai"]
 
 [package.metadata.docs.rs]
 all-features = true

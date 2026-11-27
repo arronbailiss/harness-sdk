@@ -3,7 +3,7 @@
 This document provides guidance for AI agents working on the Strands Agents documentation site (the `site/` directory). For human contributor guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Purpose and Scope
-This directory contains the documentation site for Strands Agents, providing guides on how to develop with the SDK in both Python and TypeScript.
+This directory contains the documentation site for Strands Agents, providing guides for the Python and TypeScript SDKs and verified developer-preview coverage for the Rust SDK.
 
 **AGENTS.md** contains agent-specific repository information including:
 - Directory structure with summaries of what is included in each directory
@@ -65,7 +65,7 @@ When authoring or reviewing documentation pages, follow the voice guide and the 
 ├── external-docs.lock.json      # Immutable upstream documentation revisions
 ├── SITE-ARCHITECTURE.md          # Detailed Astro/Starlight customizations
 ├── .build/
-│   ├── api-docs/                 # Generated Python and TypeScript API reference
+│   ├── api-docs/                 # Generated Python and TypeScript API reference (Rust links to docs.rs)
 │   ├── external-docs/
 │   │   ├── strands-box/          # Generated imported Box docs (not committed)
 │   │   └── strands-decider/      # Generated imported Decider docs (not committed)
@@ -93,6 +93,8 @@ When authoring or reviewing documentation pages, follow the voice guide and the 
 │   │       ├── api/
 │   │       │   ├── python/
 │   │       │   │   └── _generated/   # Symlink to .build/api-docs/python
+│   │       │   ├── rust/
+│   │       │   │   └── index.mdx     # Static landing page linking to docs.rs
 │   │       │   └── typescript/
 │   │       │       └── _generated/   # Symlink to .build/api-docs/typescript
 │   │       ├── assets/
@@ -127,7 +129,7 @@ When authoring or reviewing documentation pages, follow the voice guide and the 
 │   ├── external-docs/            # External Markdown import and lock updates
 │   └── samples/                  # Import samples metadata and guides at build time
 ├── test/                         # Test files
-└── test-snippets/                # TypeScript snippet test files
+└── test-snippets/                # TypeScript snippet test files; Rust snippets compile through Cargo
 ```
 ### Directory Purposes
 
@@ -141,6 +143,7 @@ When authoring or reviewing documentation pages, follow the voice guide and the 
 
 - Python 3.10+
 - Node.js 22+, npm
+- Rust 1.96+ for validating Rust documentation snippets
 
 #### Setup and Installation
 
@@ -180,6 +183,7 @@ From `site/`:
 ```bash
 npm run format        # apply formatting fixes
 npm run check         # check formatting, build, check types, and run tests
+npm run typecheck:snippets # validate TypeScript and Rust documentation snippets
 ```
 
 CI enforces these checks.
@@ -218,7 +222,9 @@ For the underlying Astro/Starlight implementation (the snippets plugin, custom c
 ## Additional Resources
 
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/intro.html)
+- [The Rust Programming Language](https://doc.rust-lang.org/book/)
 - [TSDoc Reference](https://tsdoc.org/)
 - [Conventional Commits](https://www.conventionalcommits.org/)
 - [Strands Agents Documentation](https://strandsagents.com/)
 - [TypeScript SDK](../strands-ts/)
+- [Rust SDK](../strands-rs/)

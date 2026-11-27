@@ -91,18 +91,20 @@ export const faqItems: FaqItem[] = [
   {
     id: 'python-or-typescript',
     category: 'choose',
-    question: 'Should I use Python or TypeScript?',
+    question: 'Which Strands SDK should I use?',
     featuredSummary:
-      'Choose the SDK that matches your runtime. Both cover the core agent loop; check the feature pages for gaps such as Python-only bidirectional agents.',
+      'Choose Python, TypeScript, or Rust based on your runtime and feature maturity. Rust is in developer preview, and support varies by SDK.',
     answer: [
       paragraph(
-        "Use the SDK that matches your application's runtime. Both implement the core agent loop and support tools, MCP tools, streaming, structured output, sessions, and the main multi-agent patterns."
+        "Use the SDK that matches your application's runtime and maturity requirements. Python and TypeScript cover the broadest feature surface today. Rust provides the core agent loop, typed tools, model providers, MCP, sessions, and telemetry in developer preview."
       ),
       paragraph(
         'Support for features and providers varies between the SDKs. Bidirectional agents are currently Python-only, for example. Start with the ',
         link('Python quickstart', '/docs/user-guide/sdk/quickstart/python/'),
-        ' or ',
+        ', ',
         link('TypeScript quickstart', '/docs/user-guide/sdk/quickstart/typescript/'),
+        ', or ',
+        link('Rust quickstart', '/docs/user-guide/sdk/quickstart/rust/'),
         ', then check the language tabs and provider pages for the feature you need.'
       ),
     ],
@@ -115,7 +117,7 @@ export const faqItems: FaqItem[] = [
       paragraph(
         'Standard ',
         link('streaming', '/docs/user-guide/sdk/streaming/async-iterators/'),
-        ' emits events as one agent invocation produces its response. Both SDKs support async iteration, and Python also supports callback handlers.'
+        ' emits events as one agent invocation produces its response. All three SDKs support async iteration, and Python also supports callback handlers.'
       ),
       paragraph(
         link('Bidirectional agents', '/docs/user-guide/sdk/bidi/'),
