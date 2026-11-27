@@ -1,6 +1,16 @@
 ---
 title: Strands harness versioning and support
-description: "How Strands harness (strands-harness on PyPI, @strands-agents/harness on npm) is versioned while pre-1.0: what patch and minor mean, what counts as breaking, and how it relates to the Strands Harness SDK."
+description: >-
+  How the Python, TypeScript, and Rust harness packages are versioned before
+  1.0, including breaking changes and SDK compatibility.
+languages: [Python, TypeScript, Rust]
+sourceLinks:
+  - path: harness-py/pyproject.toml
+    language: Python
+  - path: harness-ts/package.json
+    language: TypeScript
+  - path: harness-rs/strands-harness/Cargo.toml
+    language: Rust
 sidebar:
   label: "Versioning & Support"
 ---
@@ -12,7 +22,8 @@ It ships opinionated defaults (tools, prompt, context management, sessions, memo
 shape as we learn what works. Keeping it at 0.x lets those defaults evolve without forcing major
 releases on SDK users who never touch the harness.
 
-This page covers `strands-harness` (Python) and `@strands-agents/harness` (TypeScript). The
+This page covers `strands-harness` on PyPI and crates.io, plus
+`@strands-agents/harness` on npm. The
 [Strands CLI](https://github.com/strands-agents/harness-sdk/tree/main/strands-cli#versioning) follows the same rule.
 
 ## Version numbers
@@ -24,8 +35,8 @@ Versions are `0.MINOR.PATCH`.
 * **No major releases pre-1.0.** Reaching 1.0 is a separate decision made on customer signal, not on
   a date. At 1.0, Strands harness adopts the [SDK versioning policy](../sdk/versioning-and-support/).
 
-The Python and TypeScript packages are versioned and released independently. Matching version
-numbers do not mean matching features.
+The Python, TypeScript, and Rust packages are versioned and released independently.
+Matching version numbers do not mean matching features.
 
 ## What counts as breaking
 
@@ -50,9 +61,9 @@ These are **not** breaking and may change in any release:
 ## Relationship to the Strands Harness SDK
 
 Each Strands harness release pins a version range of the Strands Harness SDK. Raising the minimum
-SDK version within the same SDK major ships as a patch; if that conflicts with your own SDK pin, pip
-or npm reports it at install time. If an SDK major release forces a harness change, that change
-ships as a harness minor.
+SDK version within the same SDK major ships as a patch. If that conflicts with your own
+SDK pin, the package manager reports it at install time. If an SDK major release forces a
+harness change, that change ships as a harness minor.
 
 ## Deprecation
 
@@ -63,6 +74,7 @@ features.
 ## Staying informed
 
 * **Release notes**: [GitHub Releases](https://github.com/strands-agents/harness-sdk/releases),
-  tagged `harness-python/v*` and `harness-typescript/v*`
-* **Pin to a minor** to avoid breaking changes: `strands-harness~=0.1.0` (pip) or
-  `@strands-agents/harness@~0.1.0` (npm). Patch releases still add features and built-in tools.
+  tagged `harness-python/v*`, `harness-typescript/v*`, and `harness-rust/v*`.
+* **Pin to a minor** to avoid breaking changes: `strands-harness~=0.1.0` (pip),
+  `@strands-agents/harness@~0.1.0` (npm), or `strands-harness = "~0.1.0"`
+  (Cargo). Patch releases still add features and built-in tools.

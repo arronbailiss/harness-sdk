@@ -124,12 +124,13 @@ When authoring or reviewing documentation pages, follow the voice guide and the 
 ├── NOTICE
 ├── README.md
 ├── overrides/                    # Legacy MkDocs overrides (being migrated)
+├── rust-snippets/                # Cargo crate that compiles page-adjacent Rust snippets
 ├── scripts/                      # Build and utility scripts
 │   ├── catalog/                  # Catalog stats refresh
 │   ├── external-docs/            # External Markdown import and lock updates
 │   └── samples/                  # Import samples metadata and guides at build time
 ├── test/                         # Test files
-└── test-snippets/                # TypeScript snippet test files; Rust snippets compile through Cargo
+└── test-snippets/                # TypeScript snippet test files
 ```
 ### Directory Purposes
 

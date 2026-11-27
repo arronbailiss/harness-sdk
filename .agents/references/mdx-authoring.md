@@ -105,11 +105,12 @@ Only the code between markers is rendered. Paths inside the `--8<--` directive a
 
 **When to skip the imports file:** the page renders no TypeScript snippets, *or* every snippet body genuinely has zero external imports. Otherwise, write the imports file — relying on the imports at the top of the body `.ts` is wrong, since those lines live above the `[start:...]` marker and never appear in rendered docs.
 
-Rust snippets use `.rs` files and the same named-region markers. Keep
-page-specific snippets beside the page. When an example depends on workspace
-crates or Cargo features, include a named region from a registered Cargo example
-under `strands-rs/` or `harness-rs/`. Include the `use` declarations required by
-the rendered block inside its region. Every source file must compile through
+Rust snippets use `.rs` files and the same named-region markers. Keep each
+page-specific snippet beside the page that includes it. The `site/rust-snippets`
+crate discovers and compiles every `.rs` file under `site/src/content/docs/`, so
+do not add documentation-only examples to a published SDK crate or register a
+Cargo example per page. Include the `use` declarations required by the rendered
+block inside its region. Every source file must compile through
 `npm run typecheck:snippets`.
 
 ## Callout Syntax
@@ -157,6 +158,7 @@ Optional fields (validated by Zod in `site/src/content.config.ts`):
 | Field | Type | Purpose |
 |-------|------|---------|
 | `languages` | `string \| string[]` | SDK languages whose page content has been verified |
+| `unsupportedLanguages` | `string \| string[]` | SDKs that do not implement the documented feature |
 | `community` | `boolean` | Marks page as community-contributed |
 | `experimental` | `boolean` | Marks feature as experimental |
 | `externalDocs` | object | Generated provenance and publication status for imported docs; authors must not set it |
@@ -175,6 +177,15 @@ languages: [Python, TypeScript, Rust]
 ```
 
 Use a single value or a smaller list when the page applies to only those SDKs.
+
+Use `unsupportedLanguages` only when the feature itself is unavailable in an
+SDK. A language omitted from both fields means the feature may exist, but that
+page has not been verified for the language yet:
+
+```yaml
+languages: [Python, TypeScript]
+unsupportedLanguages: Rust
+```
 
 ## TypeScript Snippet Scoping
 

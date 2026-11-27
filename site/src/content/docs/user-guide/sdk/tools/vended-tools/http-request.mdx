@@ -1,15 +1,17 @@
 ---
 title: HTTP request
 description: "Use the HTTP request vended tool to let a Strands agent call external APIs and fetch web content, with any HTTP method, custom headers, and request bodies."
+languages: [Python, TypeScript, Rust]
 tags: [tool-authoring]
 sourceLinks:
   - path: strands-ts/src/vended-tools/http-request/http-request.ts
   - path: strands-py/src/strands/vended_tools/http_request/http_request.py
+  - path: strands-rs/strands/src/vended_tools/http_request.rs
 ---
 
 Lets your agent call external APIs and fetch web content. Supports all HTTP methods, custom headers, and request bodies. Default timeout is 30 seconds.
 
-_Supported in: Python; Node.js 22+, modern browsers (TypeScript)._
+_Supported in: Python and Rust; Node.js 22+ and modern browsers (TypeScript)._
 
 <Tabs>
 <Tab label="Python">
@@ -18,6 +20,12 @@ The Python tool delegates all networking to an `httpx.AsyncClient`. Use the `mak
 
 </Tab>
 <Tab label="TypeScript">
+</Tab>
+<Tab label="Rust">
+
+Rust uses the tool's built-in HTTP client. Configure request headers, body, and
+timeout through each tool call.
+
 </Tab>
 </Tabs>
 
@@ -55,6 +63,13 @@ client = httpx.AsyncClient(
 )
 tool = make_http_request(client=client)
 agent = Agent(tools=[tool])
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/http-request.rs:example"
 ```
 
 </Tab>

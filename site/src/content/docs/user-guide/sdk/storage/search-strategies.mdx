@@ -2,6 +2,7 @@
 title: Search Strategies
 description: "Plug in keyword, BM25, or custom search algorithms
   to find relevant content across storage backends."
+languages: [Python, TypeScript, Rust]
 tags: [session-management]
 addedDate: 2026-09-15
 sourceLinks:
@@ -11,22 +12,25 @@ sourceLinks:
   - path: strands-ts/src/storage/search/types.ts
   - path: strands-ts/src/storage/search/keyword.ts
   - path: strands-ts/src/storage/search/qmd.ts
+  - path: strands-rs/strands/src/storage/search/mod.rs
+  - path: strands-rs/strands/src/storage/search/keyword.rs
 ---
 
 Storage backends expose a
-<Syntax py="search()" ts="search()" /> method that
+<Syntax py="search()" ts="search()" rs="search()" /> method that
 delegates to a pluggable search strategy. A strategy
 implements the
-<Syntax py="SearchStrategy" ts="SearchStrategy" />
+<Syntax py="SearchStrategy" ts="SearchStrategy" rs="SearchStrategy" />
 protocol/interface: given a storage backend and a query
 string, it returns a ranked list of matching keys with
 relevance scores. Strategies that maintain an index use
-<Syntax py="index()" ts="index()" /> to update
+<Syntax py="index()" ts="index()" rs="index()" /> to update
 incrementally on each write;
 <Syntax
   plain
   py="strategies that search on the fly implement it as a no-op"
   ts="strategies that search on the fly omit it"
+  rs="strategies that search on the fly use the default no-op"
 />.
 
 All shipped backends default to
@@ -35,6 +39,7 @@ the
 <Syntax
   py="search_strategy"
   ts="searchStrategy"
+  rs="search_strategy"
 /> parameter on any built-in backend to override it.
 
 ## KeywordSearchStrategy
@@ -59,6 +64,13 @@ index, embedding model, or external dependency required.
 --8<-- "user-guide/sdk/storage/search-strategies_imports.ts:keyword_search_imports"
 
 --8<-- "user-guide/sdk/storage/search-strategies.ts:keyword_search"
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/storage/search-strategies.rs:keyword"
 ```
 
 </Tab>
@@ -115,11 +127,17 @@ npm install @tobilu/qmd
 ```
 
 </Tab>
+<Tab label="Rust">
+
+Rust does not ship a BM25 or QMD strategy. Use `KeywordSearchStrategy` for
+small-to-medium stores, or implement `SearchStrategy` for another index.
+
+</Tab>
 </Tabs>
 
 The strategy persists a SQLite database alongside the
 storage directory. Call
-<Syntax py="close()" ts="close()" /> when the strategy
+<Syntax py="close()" ts="close()" rs="drop" /> when the strategy
 is no longer needed to release the database connection.
 
 ## Passing a strategy to a storage backend
@@ -129,10 +147,11 @@ Every built-in backend (`InMemoryStorage`,
 <Syntax
   py="search_strategy"
   ts="searchStrategy"
+  rs="search_strategy"
 /> parameter. When set, writes automatically call the
 strategy's
-<Syntax py="index()" ts="index()" /> method, and
-<Syntax py="search()" ts="search()" /> delegates to
+<Syntax py="index()" ts="index()" rs="index()" /> method, and
+<Syntax py="search()" ts="search()" rs="search()" /> delegates to
 the strategy instead of the default keyword scan.
 
 <Tabs>
@@ -152,28 +171,39 @@ the strategy instead of the default keyword scan.
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/storage/search-strategies.rs:configured"
+```
+
+</Tab>
 </Tabs>
 
 ## Writing a custom strategy
 
 To rank results your own way, implement
-<Syntax py="SearchStrategy" ts="SearchStrategy" />
-yourself. Its <Syntax py="search()" ts="search()" />
+<Syntax py="SearchStrategy" ts="SearchStrategy" rs="SearchStrategy" />
+yourself. Its <Syntax py="search()" ts="search()" rs="search()" />
 method receives the storage backend and the query, and
 returns
-<Syntax py="StorageSearchResult" ts="StorageSearchResult" />
+<Syntax
+  py="StorageSearchResult"
+  ts="StorageSearchResult"
+  rs="StorageSearchResult"
+/>
 entries (key, score, and optionally the stored bytes),
 best match first. Read entries through the storage
 passed in, using
-<Syntax py="list()" ts="list()" /> and
-<Syntax py="read()" ts="read()" />, so the strategy
+<Syntax py="list()" ts="list()" rs="list()" /> and
+<Syntax py="read()" ts="read()" rs="read()" />, so the strategy
 works with every backend. When the search already read
 an entry's bytes, include them in the result as `data`
 so callers don't have to read the entry again.
 
 If your strategy keeps its own index, such as a vector
 store or a full-text index, update it in
-<Syntax py="index()" ts="index()" />. The backend calls
+<Syntax py="index()" ts="index()" rs="index()" />. The backend calls
 it on every write with the key and the stored bytes.
 
 The example below ranks entries by how often the exact
@@ -219,6 +249,16 @@ directly instead of going through the storage, declare
 `readonly requiresHostFs = true` on it.
 `LocalFileStorage` then throws when a sandbox is set,
 as it does for `QmdSearchStrategy`.
+
+</Tab>
+<Tab label="Rust">
+
+Implement the async `SearchStrategy` trait. Its `index` method already defaults
+to a no-op for strategies that search on demand.
+
+```rust
+--8<-- "user-guide/sdk/storage/search-strategies.rs:custom"
+```
 
 </Tab>
 </Tabs>

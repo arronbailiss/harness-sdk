@@ -207,6 +207,18 @@ describe('structured data per page type', () => {
             codeRepository: 'https://github.com/strands-agents/harness-sdk',
             url: 'https://github.com/strands-agents/harness-sdk/blob/main/strands-ts/src/agent/agent.ts',
           },
+          {
+            '@type': 'SoftwareSourceCode',
+            programmingLanguage: 'Rust',
+            codeRepository: 'https://github.com/strands-agents/harness-sdk',
+            url: 'https://github.com/strands-agents/harness-sdk/blob/main/strands-rs/strands/src/agent/event_loop.rs',
+          },
+          {
+            '@type': 'SoftwareSourceCode',
+            programmingLanguage: 'Rust',
+            codeRepository: 'https://github.com/strands-agents/harness-sdk',
+            url: 'https://github.com/strands-agents/harness-sdk/blob/main/strands-rs/strands/src/agent/agent.rs',
+          },
         ],
       },
     ])

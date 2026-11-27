@@ -24,6 +24,34 @@ const REQUIRED_RUST_PAGES = [
   'docs/user-guide/sdk/tools',
 ]
 
+const INTENTIONALLY_UNDOCUMENTED_RUST_PAGES = new Set(['docs/user-guide/sdk/streaming/streaming-to-the-browser-guide'])
+
+function directTabLabels(source: string): string[][] {
+  const tabs: string[][] = []
+  const stack: { labels: string[]; nestedDepth: number }[] = []
+  const tagPattern = /<\/?Tabs\b[^>]*>|<Tab\b[^>]*\blabel=['"]([^'"]+)['"][^>]*>/g
+
+  for (const match of source.matchAll(tagPattern)) {
+    const tag = match[0]
+    if (tag.startsWith('<Tabs')) {
+      for (const group of stack) group.nestedDepth += 1
+      stack.push({ labels: [], nestedDepth: 0 })
+      continue
+    }
+    if (tag.startsWith('</Tabs')) {
+      const group = stack.pop()
+      if (group) tabs.push(group.labels)
+      for (const parent of stack) parent.nestedDepth -= 1
+      continue
+    }
+
+    const current = stack.at(-1)
+    if (current?.nestedDepth === 0 && match[1]) current.labels.push(match[1])
+  }
+
+  return tabs
+}
+
 describe('Rust documentation language coverage', () => {
   it('keeps nested provider tabs visible inside language tabs', () => {
     const overview = parse(
@@ -56,6 +84,38 @@ describe('Rust documentation language coverage', () => {
       expect(target?.hasAttribute('disabled'), `${language} counterpart is disabled`).toBe(false)
       expect(target?.getAttribute('data-switch-href'), `${language} counterpart is missing`).toBeTruthy()
     }
+  })
+
+  it('distinguishes unsupported features from undocumented Rust pages', () => {
+    const unsupported = parse(
+      readFileSync(new URL('../dist/docs/user-guide/sdk/multi-agent/graph/index.html', import.meta.url), 'utf8')
+    )
+    const undocumented = parse(
+      readFileSync(
+        new URL('../dist/docs/user-guide/sdk/streaming/streaming-to-the-browser-guide/index.html', import.meta.url),
+        'utf8'
+      )
+    )
+    const documented = parse(
+      readFileSync(new URL('../dist/docs/integrations/model-providers/vllm/index.html', import.meta.url), 'utf8')
+    )
+
+    const unsupportedRust = unsupported.querySelector<HTMLButtonElement>('language-toggle [data-lang="Rust"]')
+    const undocumentedRust = undocumented.querySelector<HTMLButtonElement>('language-toggle [data-lang="Rust"]')
+
+    expect(unsupportedRust?.getAttribute('data-language-availability')).toBe('unsupported')
+    expect(unsupportedRust?.getAttribute('title')).toBe('Rust: This feature is not supported')
+    expect(undocumentedRust?.getAttribute('data-language-availability')).toBe('undocumented')
+    expect(undocumentedRust?.getAttribute('title')).toBe('Rust: Documentation is not available yet')
+
+    const languageSupportAsides = unsupported.querySelectorAll('aside[aria-label="Language Support"]')
+    expect(languageSupportAsides).toHaveLength(1)
+    expect(languageSupportAsides[0].textContent).toContain('This feature is not supported in Rust.')
+
+    const documentedSupportAsides = documented.querySelectorAll('aside[aria-label="Language Support"]')
+    expect(documentedSupportAsides).toHaveLength(1)
+    expect(documentedSupportAsides[0].textContent).toContain('This page has verified Python documentation.')
+    expect(documentedSupportAsides[0].textContent).not.toContain('not supported')
   })
 
   it('keeps a Rust-only route authoritative over a stored language preference', () => {
@@ -178,9 +238,15 @@ describe('Rust documentation language coverage', () => {
       }
       if (!rustEnabled) continue
 
-      const hasPythonOrTypeScriptTabs = /label=['"]Python['"]/.test(body) || /label=['"]TypeScript['"]/.test(body)
-      if (hasPythonOrTypeScriptTabs && !/label=['"]Rust['"]/.test(body)) {
-        offenders.push(`${doc.id}: language tabs are missing Rust`)
+      for (const labels of directTabLabels(body)) {
+        const languageLabels = labels.filter((label) => ['Python', 'TypeScript', 'Rust'].includes(label))
+        if (
+          languageLabels.length === labels.length &&
+          languageLabels.some((label) => label === 'Python' || label === 'TypeScript') &&
+          !languageLabels.includes('Rust')
+        ) {
+          offenders.push(`${doc.id}: language tab group is missing Rust`)
+        }
       }
 
       const syntaxTags = body.match(/<Syntax\b[\s\S]*?>/g) ?? []
@@ -189,6 +255,36 @@ describe('Rust documentation language coverage', () => {
           offenders.push(`${doc.id}: <Syntax> is missing rs`)
         }
       }
+    }
+
+    expect(offenders, offenders.join('\n')).toEqual([])
+  })
+
+  it('classifies every remaining Rust language-tab gap', async () => {
+    const docs = await getCollection('docs')
+    const offenders: string[] = []
+
+    for (const doc of docs) {
+      const inRustRollout =
+        doc.id === 'docs/user-guide/sdk' ||
+        doc.id.startsWith('docs/user-guide/sdk/') ||
+        doc.id === 'docs/user-guide/harness' ||
+        doc.id.startsWith('docs/user-guide/harness/')
+      if (!inRustRollout) continue
+
+      const body = doc.body ?? ''
+      const hasMissingRustGroup = directTabLabels(body).some(
+        (labels) => (labels.includes('Python') || labels.includes('TypeScript')) && !labels.includes('Rust')
+      )
+      if (!hasMissingRustGroup) continue
+
+      const languages = doc.data.languages ? normalizeSdkLanguages(doc.data.languages) : []
+      const unsupported = doc.data.unsupportedLanguages ? normalizeSdkLanguages(doc.data.unsupportedLanguages) : []
+
+      if (languages.includes('rust') || unsupported.includes('rust')) continue
+      if (INTENTIONALLY_UNDOCUMENTED_RUST_PAGES.has(doc.id)) continue
+
+      offenders.push(`${doc.id}: classify Rust as documented or unsupported`)
     }
 
     expect(offenders, offenders.join('\n')).toEqual([])

@@ -1,14 +1,18 @@
 ---
 title: Amazon Bedrock
 description: 'Use Amazon Bedrock models in Strands agents. Configure AWS credentials, model settings, guardrails, prompt caching, and multi-modal input.'
+languages: [Python, TypeScript, Rust]
 integrationType: model-provider
 tags: [bedrock, aws, vision, safety, caching]
 sourceLinks:
   - path: strands-py/src/strands/models/bedrock.py
   - path: strands-ts/src/models/bedrock.ts
+  - path: strands-rs/strands/src/models/bedrock/mod.rs
 ---
 
-Amazon Bedrock gives an agent access to foundation models from several providers through one AWS API. Strands connects to Bedrock through the `BedrockModel` class, which is the default model provider when you create an `Agent` without specifying one.
+Amazon Bedrock gives an agent access to foundation models from several providers
+through one AWS API. Strands connects to Bedrock through `BedrockModel`, which is
+the default model provider when you create an `Agent` without specifying one.
 
 This page covers running an agent on Bedrock: configuring AWS credentials, selecting a model, and setting the options `BedrockModel` exposes. `BedrockModel` supports:
 
@@ -163,6 +167,25 @@ export AWS_REGION="us-west-2"
 
 For complete details on credential configuration, see the [AWS SDK for JavaScript documentation](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/setting-credentials-node.html).
 </Tab>
+<Tab label="Rust">
+
+```bash
+cargo add strands
+cargo add tokio --features macros,rt-multi-thread
+```
+
+The Rust SDK uses the AWS SDK for Rust default credential chain. Configure a
+profile with `aws configure`, use environment variables, or use IAM credentials
+from the runtime environment. Set `AWS_REGION`, or select a region explicitly:
+
+```rust
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.rs:credentials"
+```
+
+For custom credentials, pass a `SharedCredentialsProvider` or a preconfigured
+`SdkConfig` to the `BedrockModel` builder.
+
+</Tab>
 </Tabs>
 
 ## Basic Usage
@@ -209,6 +232,17 @@ You can specify which Bedrock model to use by passing in the model ID string dir
 --8<-- "user-guide/sdk/model-providers/amazon-bedrock.ts:basic_model_id"
 ```
 </Tab>
+<Tab label="Rust">
+
+Create a `BedrockModel`, then pass it to the agent:
+
+```rust
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.rs:basic_usage"
+```
+
+`BedrockModel::default()` selects Claude Sonnet 4.6.
+
+</Tab>
 </Tabs>
 
 > **Note:** See [Bedrock troubleshooting](amazon-bedrock.md#troubleshooting) if you encounter any issues.
@@ -245,6 +279,13 @@ For more control over model configuration, you can create an instance of the [`B
 ```typescript
 --8<-- "user-guide/sdk/model-providers/amazon-bedrock.ts:basic_model_instance"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.rs:custom_configuration"
+```
+
 </Tab>
 </Tabs>
 
@@ -286,6 +327,20 @@ Common configuration parameters include:
 - `clientConfig` - AWS SDK client configuration
 - `additionalArgs` - Additional model-specific parameters
 </Tab>
+<Tab label="Rust">
+
+`BedrockModel::builder()` supports the shared model options plus Bedrock
+transport settings:
+
+- `model_id`, `temperature`, `top_p`, `max_tokens`, and `stop_sequences`
+- `stream`, `cache_config`, `guardrail_config`, and `strict_tools`
+- `additional_request_fields` and `additional_args`
+- `region`, `endpoint_url`, `request_timeout`, and `api_key`
+- `credentials_provider` or a preconfigured `sdk_config`
+
+`AWS_BEARER_TOKEN_BEDROCK` also enables Bedrock API key authentication.
+
+</Tab>
 </Tabs>
 
 ### Example with Configuration
@@ -326,6 +381,13 @@ response = agent("Write a short story about an AI assistant.")
 ```typescript
 --8<-- "user-guide/sdk/model-providers/amazon-bedrock.ts:configuration"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.rs:configuration"
+```
+
 </Tab>
 </Tabs>
 
@@ -376,6 +438,13 @@ non_streaming_model = BedrockModel(
 --8<-- "user-guide/sdk/model-providers/amazon-bedrock.ts:streaming"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.rs:streaming"
+```
+
+</Tab>
 </Tabs>
 
 See the Amazon Bedrock documentation for [Supported models and model features](https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference-supported-models-features.html) to learn about the streaming support for different models.
@@ -422,9 +491,18 @@ response = agent(
 --8<-- "user-guide/sdk/model-providers/amazon-bedrock.ts:multimodal_full"
 ```
 </Tab>
+<Tab label="Rust">
+
+Use typed content blocks for documents, images, audio, and video:
+
+```rust
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.rs:multimodal"
+```
+
+</Tab>
 </Tabs>
 
-For the full list of input types, see the [API Reference](@api/python/strands.types.content).
+For the full list of input types, see the API reference for your SDK.
 
 #### S3 Location Support
 
@@ -471,6 +549,13 @@ response = agent(
 ```typescript
 --8<-- "user-guide/sdk/model-providers/amazon-bedrock.ts:s3_location"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.rs:s3_location"
+```
+
 </Tab>
 </Tabs>
 
@@ -538,6 +623,17 @@ When `guardLatestUserMessage: true`, only the most recent user message is sent t
 :::
 
 </Tab>
+<Tab label="Rust">
+
+Configure the guardrail and its redaction behavior as one value:
+
+```rust
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.rs:guardrails"
+```
+
+Set `guard_latest_user_message` to evaluate only the latest user message.
+
+</Tab>
 </Tabs>
 
 ### Caching
@@ -572,6 +668,13 @@ bedrock_model.update_config(
 ```typescript
 --8<-- "user-guide/sdk/model-providers/amazon-bedrock.ts:update_config"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.rs:update_config"
+```
+
 </Tab>
 </Tabs>
 
@@ -615,13 +718,23 @@ def update_max_tokens(max_tokens: int, agent: Agent) -> str:
 --8<-- "user-guide/sdk/model-providers/amazon-bedrock.ts:tool_update_config"
 ```
 </Tab>
+<Tab label="Rust">
+
+`BedrockModel` clones share configuration. Capture a clone in a custom tool and
+call `update_config` with a `BedrockModelConfig`, as in the preceding example.
+
+</Tab>
 </Tabs>
 
 ### Reasoning support
 
 Many models on Amazon Bedrock can reason through a problem before they answer. You turn
 reasoning on and set its depth through
-<Syntax py="additional_request_fields" ts="additionalRequestFields" />, which
+<Syntax
+  py="additional_request_fields"
+  ts="additionalRequestFields"
+  rs="additional_request_fields"
+/>, which
 `BedrockModel` passes to the Converse API as `additionalModelRequestFields`. Each model
 family names these fields differently:
 
@@ -670,6 +783,19 @@ response = agent(
 --8<-- "user-guide/sdk/model-providers/amazon-bedrock.ts:reasoning"
 ```
 </Tab>
+<Tab label="Rust">
+
+The request fields are JSON values:
+
+```bash
+cargo add serde_json
+```
+
+```rust
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.rs:reasoning"
+```
+
+</Tab>
 </Tabs>
 
 Claude Opus 5.5 always reasons, at `medium` effort unless you set another level, and
@@ -681,8 +807,9 @@ Whichever model reasons, its reasoning arrives as `reasoningContent` blocks in t
 response, separate from the response text. When you stream, Python callback handlers
 receive each reasoning delta with `reasoning=True` and `reasoningText`. In TypeScript, a
 `ModelStreamUpdateEvent` carries each `reasoningContentDelta`, and a `ContentBlockEvent`
-carries the assembled `ReasoningBlock`. See [streaming events](../streaming/events.md) for
-the full event list.
+carries the assembled `ReasoningBlock`. Rust emits reasoning through
+`ContentBlockDelta::ReasoningContent` and assembles it as a `ReasoningBlock`. See
+[streaming events](../streaming/events.md) for the full event list.
 
 Models can skip reasoning on simple requests, so don't assume every response has a
 reasoning block. Read reasoning from these blocks rather than prompting the model to write
@@ -742,6 +869,20 @@ Define a Zod schema and pass it as `structuredOutputSchema`. Validated output is
 --8<-- "user-guide/sdk/model-providers/amazon-bedrock.ts:structured_output"
 ```
 </Tab>
+<Tab label="Rust">
+
+Add the schema derives, then set the schema on `InvokeOptions`:
+
+```bash
+cargo add schemars
+cargo add serde --features derive
+```
+
+```rust
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.rs:structured_output"
+```
+
+</Tab>
 </Tabs>
 
 For schema patterns, error handling, and per-invocation overrides, see [Structured Output](../agents/structured-output/).
@@ -781,6 +922,16 @@ const model = new BedrockModel({
 })
 ```
 </Tab>
+<Tab label="Rust">
+
+Rust uses the native `CountTokens` action and falls back to the same heuristic
+when the API is unavailable:
+
+```rust
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.rs:token_counting"
+```
+
+</Tab>
 </Tabs>
 
 ### Other Bedrock APIs
@@ -796,26 +947,73 @@ it serves Bedrock-hosted models through vendor APIs. The two families serve diff
 overlapping model sets: AWS lists which endpoint serves each model in
 [endpoint availability by model](https://docs.aws.amazon.com/bedrock/latest/userguide/models-endpoint-availability.html).
 
-To use a vendor API, build the vendor SDK's client for Bedrock and pass it to the
-matching model provider as `client`. The vendor SDK signs requests with your AWS
-credentials, and the model provider runs the agent loop on top of it. We chose this over
-Bedrock-specific wrappers because the vendor SDKs already ship Bedrock clients and keep
-them current.
+To use a vendor API in Python or TypeScript, build the vendor SDK's Bedrock client
+and pass it to the matching model provider. In Rust, pass the provider's Bedrock
+route configuration; Strands builds and owns the client. Both approaches sign
+requests with your AWS credentials.
 
-| API | Endpoint | Model provider | Client |
-|-----|----------|----------------|--------|
-| Anthropic Messages (InvokeModel) | `bedrock-runtime` | <Syntax py="AnthropicModel" ts="AnthropicModel" /> | <Syntax py="anthropic.AsyncAnthropicBedrock" ts="AnthropicBedrock" /> |
-| Anthropic Messages | `bedrock-mantle` | <Syntax py="AnthropicModel" ts="AnthropicModel" /> | <Syntax py="anthropic.AsyncAnthropicBedrockMantle" ts="AnthropicBedrockMantle" /> |
-| OpenAI Responses | both | <Syntax py="OpenAIResponsesModel" ts="OpenAIModel" /> | <Syntax py="openai.AsyncOpenAI" ts="OpenAI" /> |
-| OpenAI Chat Completions | both | <Syntax py="OpenAIModel" ts="OpenAIModel with api: 'chat'" /> | <Syntax py="openai.AsyncOpenAI" ts="OpenAI" /> |
+- **Anthropic Messages (InvokeModel)** uses `bedrock-runtime`.
+  Model provider:
+  <Syntax
+    py="AnthropicModel"
+    ts="AnthropicModel"
+    rs="AnthropicModel"
+  />
+  Client or route configuration:
+  <Syntax
+    py="anthropic.AsyncAnthropicBedrock"
+    ts="AnthropicBedrock"
+    rs="AnthropicBedrockConfig"
+  />
+- **Anthropic Messages** uses `bedrock-mantle`.
+  Model provider:
+  <Syntax
+    py="AnthropicModel"
+    ts="AnthropicModel"
+    rs="Not available"
+  />
+  Client or route configuration:
+  <Syntax
+    py="anthropic.AsyncAnthropicBedrockMantle"
+    ts="AnthropicBedrockMantle"
+    rs="Not available"
+  />
+- **OpenAI Responses** uses both endpoints.
+  Model provider:
+  <Syntax
+    py="OpenAIResponsesModel"
+    ts="OpenAIModel"
+    rs="OpenAIModel"
+  />
+  Client or route configuration:
+  <Syntax
+    py="openai.AsyncOpenAI"
+    ts="OpenAI"
+    rs="BedrockMantleConfig"
+  />
+- **OpenAI Chat Completions** uses both endpoints.
+  Model provider:
+  <Syntax
+    py="OpenAIModel"
+    ts="OpenAIModel with api: 'chat'"
+    rs="OpenAIModel with OpenAIApi::Chat"
+  />
+  Client or route configuration:
+  <Syntax
+    py="openai.AsyncOpenAI"
+    ts="OpenAI"
+    rs="BedrockMantleConfig"
+  />
 
-The model provider doesn't close a client you pass in. In Python, don't share one client
-across asyncio event loops.
+In Python and TypeScript, the model provider does not close a client you pass in.
+In Python, do not share one client across asyncio event loops. Rust providers own
+the clients they build from route configurations.
 
 #### Claude through the Anthropic Messages API
 
-Pass Anthropic's Bedrock client to `AnthropicModel`. It uses your AWS credentials from
-the standard credential chain.
+Route `AnthropicModel` through Bedrock using credentials from the standard AWS
+credential chain. Python and TypeScript accept Anthropic's Bedrock client; Rust
+accepts `AnthropicBedrockConfig` and builds the client.
 
 <Tabs>
 <Tab label="Python">
@@ -847,6 +1045,17 @@ Requires `pip install 'strands-agents[anthropic]'`.
 ```
 
 Requires `npm install @anthropic-ai/sdk @anthropic-ai/bedrock-sdk`.
+</Tab>
+<Tab label="Rust">
+
+Use the built-in Bedrock transport for `AnthropicModel`:
+
+```rust
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.rs:anthropic_bedrock"
+```
+
+Enable the `anthropic` and `bedrock` Cargo features.
+
 </Tab>
 </Tabs>
 
@@ -895,13 +1104,21 @@ print(response)
 
 Requires `npm install @anthropic-ai/sdk @anthropic-ai/bedrock-sdk`.
 </Tab>
+<Tab label="Rust">
+
+The Rust Anthropic provider supports `bedrock-runtime` through
+`AnthropicModel::bedrock`, but does not currently support Anthropic Messages on
+`bedrock-mantle`.
+
+</Tab>
 </Tabs>
 
 #### OpenAI models through the OpenAI-compatible APIs
 
-Point an OpenAI client at your region's Bedrock endpoint and give it a function that
-mints a bearer token from your AWS credentials. The client calls that function on every
-request, so long-running agents survive token expiry.
+Route the OpenAI provider through your region's Bedrock endpoint. Python and
+TypeScript configure an OpenAI client with a function that mints bearer tokens
+from AWS credentials. Rust accepts `BedrockMantleConfig`, then builds the client
+and refreshes its SigV4 bearer tokens.
 
 <Tabs>
 <Tab label="Python">
@@ -947,6 +1164,17 @@ to `OpenAIModel` from `strands.models.openai`.
 
 Requires `npm install openai @aws/bedrock-token-generator`.
 </Tab>
+<Tab label="Rust">
+
+The Rust provider builds and owns its HTTP client. Use
+`OpenAIModel::bedrock_mantle` instead of injecting a manually constructed
+client; it derives the endpoint and refreshes SigV4 bearer tokens.
+
+```rust
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.rs:openai_mantle"
+```
+
+</Tab>
 </Tabs>
 
 To authenticate with a
@@ -969,7 +1197,11 @@ profile IDs such as `global.openai.gpt-5.6-luna`. AWS compares the two endpoints
 #### Letting Strands build the OpenAI client
 
 To skip building the client yourself, pass
-<Syntax py="bedrock_mantle_config" ts="bedrockMantleConfig" />. The provider derives
+<Syntax
+  py="bedrock_mantle_config"
+  ts="bedrockMantleConfig"
+  rs="BedrockMantleConfig"
+/>. The provider derives
 the endpoint from your region, picks the `bedrock-mantle` base path for the model, and mints
 bearer tokens from your AWS credentials:
 
@@ -1000,13 +1232,32 @@ print(response)
 
 Requires the optional dependency: `npm install @aws/bedrock-token-generator`
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.rs:openai_mantle"
+```
+
+Enable the `openai` and `mantle` Cargo features.
+
+</Tab>
 </Tabs>
 
 Omit the region to resolve it from your AWS environment. The config also accepts AWS
 credentials to forward to the token generator
-(<Syntax py="credentials_provider" ts="credentials" />, a
-<Syntax py="botocore CredentialProvider" ts="static identity or provider function" plain />)
-and a token-lifetime override (<Syntax py="expiry" ts="expiresInSeconds" />). In
+(<Syntax
+  py="credentials_provider"
+  ts="credentials"
+  rs="credentials_provider"
+/>, a
+<Syntax
+  py="botocore CredentialProvider"
+  ts="static identity or provider function"
+  rs="SharedCredentialsProvider"
+  plain
+/>)
+and a token-lifetime override
+(<Syntax py="expiry" ts="expiresInSeconds" rs="managed automatically" />). In
 Python, `boto_session` can also supply the region from a configured profile, and
 `"endpoint": "bedrock-runtime"` targets `bedrock-runtime` instead of `bedrock-mantle`.
 
@@ -1055,6 +1306,13 @@ const agent = new Agent({
 })
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.rs:invalid_model"
+```
+
+</Tab>
 </Tabs>
 
 
@@ -1065,11 +1323,23 @@ Strands uses a default Claude Sonnet 4.6 inference model from the region of your
 
 ### CacheConfig with ARN-based inference profiles
 
-If you're using an ARN-based application inference profile as your `model_id` (e.g., `arn:aws:bedrock:us-east-1:123456789012:application-inference-profile/abc123`), `CacheConfig(strategy="auto")` will not automatically enable prompt caching.
+If you use an ARN-based application inference profile as your
+<Syntax py="model_id" ts="modelId" rs="model_id" /> (for example,
+`arn:aws:bedrock:us-east-1:123456789012:application-inference-profile/abc123`),
+the automatic cache strategy cannot enable prompt caching.
 
-The `strategy="auto"` detection checks the model ID string for `"claude"` or `"anthropic"` substrings. Cross-region inference profile IDs like `us.anthropic.claude-sonnet-5-5` contain `"anthropic"` and are detected correctly, but application inference profiles use opaque resource IDs (`application-inference-profile/abc123`) that carry no model name information, so detection returns `None`, caching is skipped, and Strands logs a warning: `model_id=<your-arn> | cache_config is enabled but this model does not support automatic caching`.
+Automatic detection checks the model ID for `"claude"` or `"anthropic"`.
+Cross-region inference profile IDs such as `us.anthropic.claude-sonnet-5-5`
+contain `"anthropic"` and are detected correctly. Application inference profiles
+use opaque resource IDs such as `application-inference-profile/abc123`, so the
+provider cannot infer support. It skips caching and logs:
 
-Use `strategy="anthropic"` explicitly to fix this:
+```text
+model_id=<your-arn> | cache_config is enabled but this model does not support
+automatic caching
+```
+
+Select the Anthropic cache strategy explicitly:
 
 <Tabs>
 <Tab label="Python">
@@ -1100,9 +1370,17 @@ const bedrockModel = new BedrockModel({
 const agent = new Agent({ model: bedrockModel })
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/amazon-bedrock.rs:arn_cache"
+```
+
+</Tab>
 </Tabs>
 
-`strategy="anthropic"` has identical performance to `strategy="auto"` and requires no additional API calls or IAM permissions.
+The explicit Anthropic strategy has the same performance as automatic detection
+and requires no additional API calls or IAM permissions.
 
 ### Thinking block is bound to a different conversation
 

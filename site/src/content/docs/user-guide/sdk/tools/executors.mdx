@@ -1,6 +1,7 @@
 ---
 title: Tool Executors
 description: 'Control whether Strands agents run tool calls concurrently or sequentially. Covers tool executors, event ordering, cancellation, and custom executors.'
+languages: [Python, TypeScript, Rust]
 sidebar:
   label: "Executors"
 tags: [tool-execution, event-loop]
@@ -9,13 +10,17 @@ sourceLinks:
   - path: strands-py/src/strands/tools/executors/sequential.py
   - path: strands-ts/src/tools/executors/concurrent.ts
   - path: strands-ts/src/tools/executors/sequential.ts
+  - path: strands-rs/strands/src/tools/executors/concurrent.rs
+  - path: strands-rs/strands/src/tools/executors/sequential.rs
 ---
 
-Tool executors control whether tools from a single assistant turn run concurrently or sequentially. Both SDKs default to concurrent execution.
+Tool executors control whether tools from a single assistant turn run
+concurrently or sequentially. All three SDKs default to concurrent execution.
 
 ## Concurrent Executor
 
-Concurrent execution runs all tool calls from a single turn in parallel. This is the default in both SDKs, so you get it without extra configuration.
+Concurrent execution runs all tool calls from a single turn in parallel. This
+is the default in every SDK, so you get it without extra configuration.
 
 <Tabs>
 <Tab label="Python">
@@ -43,6 +48,16 @@ agent("What is the weather and time in New York?")
 ```
 
 The `'concurrent'` string shorthand keeps your imports minimal. Passing `new ConcurrentToolExecutor()` is equivalent if you prefer to be explicit.
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/executors.rs:concurrent"
+```
+
+Omitting `tool_executor` is equivalent because concurrent execution is the
+default.
 
 </Tab>
 </Tabs>
@@ -84,13 +99,22 @@ agent("Please take a screenshot and then email the screenshot to my friend")
 The `'sequential'` string shorthand keeps your imports minimal. Passing `new SequentialToolExecutor()` is equivalent if you prefer to be explicit.
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/executors.rs:sequential"
+```
+
+</Tab>
 </Tabs>
 
 Assuming the model returns `screenshot_tool` and `email_tool` use requests, the sequential executor runs both in the order given.
 
 ## Event Ordering
 
-Both modes preserve per-tool event order. In concurrent mode, events from different tools may interleave across that per-tool sequence.
+For tool calls that run to completion, both modes preserve per-tool event
+order. In concurrent mode, events from different tools may interleave across
+that per-tool sequence.
 
 <Tabs>
 <Tab label="Python">
@@ -103,11 +127,20 @@ Per-tool event order: `BeforeToolCallEvent` → `ToolStreamEvent*` → `AfterToo
 Per-tool event order: `BeforeToolCallEvent` → `ToolStreamUpdateEvent*` → `AfterToolCallEvent` → `ToolResultEvent`.
 
 </Tab>
+<Tab label="Rust">
+
+On the normal successful path, per-tool event order is
+`BeforeToolCallEvent` → `ToolStreamUpdateEvent*` → `AfterToolCallEvent` →
+`ToolResultEvent`. Batch cancellation or a hook or middleware failure can stop
+the path before every per-tool after event is emitted.
+
+</Tab>
 </Tabs>
 
 ## Cancellation
 
-Cancellation works identically in both modes. Call `agent.cancel()` to request cooperative cancellation. In TypeScript, this flips `agent.cancelSignal`.
+Cancellation works identically in both modes. Request cooperative cancellation
+through the agent's cancellation API.
 
 <Tabs>
 <Tab label="Python">
@@ -122,8 +155,19 @@ Cancellation works identically in both modes. Call `agent.cancel()` to request c
 - **Mid-flight cancel** in sequential mode short-circuits not-yet-started tools. In concurrent mode, all tools have already launched, so each in-flight tool must cooperatively observe `context.cancelSignal` to stop early. In either mode, a tool still waiting on its `BeforeToolCallEvent` hooks when the cancel lands is skipped with an error result.
 
 </Tab>
+<Tab label="Rust">
+
+- **Pre-launch cancel**: call `set_cancel` on `BeforeToolsEvent` or a per-tool
+  `BeforeToolCallEvent`, or use the agent's cancel handle before tools start.
+- **Mid-flight cancel** in sequential mode skips calls that have not started.
+  Concurrent mode launches all calls, so each in-flight tool cooperatively
+  observes its cancellation signal.
+
+</Tab>
 </Tabs>
 
 ## Custom Executors
 
-Custom tool executors are not currently supported but are planned for a future release. You can track progress on this feature at [GitHub Issue #762](https://github.com/strands-agents/harness-sdk/issues/762).
+Custom tool executors are not currently supported in Python, TypeScript, or
+Rust. You can track progress on this feature at
+[GitHub Issue #762](https://github.com/strands-agents/harness-sdk/issues/762).

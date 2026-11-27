@@ -1,11 +1,13 @@
 ---
 title: OpenAI
 description: 'Run Strands agents on OpenAI models or any OpenAI-compatible API. Install the provider, configure OpenAIModel, and enable vision and structured output.'
+languages: [Python, TypeScript, Rust]
 tags: [vision, structured-output]
 integrationType: model-provider
 sourceLinks:
   - path: strands-py/src/strands/models/openai.py
   - path: strands-ts/src/models/openai/model.ts
+  - path: strands-rs/strands/src/models/openai/mod.rs
 ---
 
 [OpenAI](https://platform.openai.com/docs/overview) is an AI research and deployment company that provides a range of language models. The Strands Agents SDK implements an OpenAI provider, letting you run agents against any OpenAI or OpenAI-compatible model.
@@ -26,6 +28,16 @@ pip install 'strands-agents[openai]'
 ```bash
 npm install @strands-agents/sdk openai
 ```
+</Tab>
+<Tab label="Rust">
+
+Enable the optional provider feature:
+
+```bash
+cargo add strands --features openai
+cargo add tokio --features macros,rt-multi-thread
+```
+
 </Tab>
 </Tabs>
 
@@ -66,6 +78,15 @@ print(response)
 --8<-- "user-guide/sdk/model-providers/openai.ts:basic_usage"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/openai.rs:basic_usage"
+```
+
+Set `OPENAI_API_KEY` instead of passing `api_key` in application code.
+
+</Tab>
 </Tabs>
 
 To connect to a custom OpenAI-compatible server:
@@ -89,6 +110,13 @@ model = OpenAIModel(
 --8<-- "user-guide/sdk/model-providers/openai.ts:custom_server"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/openai.rs:custom_server"
+```
+
+</Tab>
 </Tabs>
 
 Guides for specific OpenAI-compatible services, such as
@@ -108,6 +136,13 @@ The `client_args` configure the underlying OpenAI client. For a complete list of
 <Tab label="TypeScript">
 
 The `clientConfig` configures the underlying OpenAI client. For a complete list of available options, please refer to the [OpenAI TypeScript documentation](https://github.com/openai/openai-node).
+</Tab>
+<Tab label="Rust">
+
+`OpenAIClientConfig` configures the base URL, organization, project, default
+headers, retries, and timeout. Environment variables provide the corresponding
+defaults.
+
 </Tab>
 </Tabs>
 
@@ -134,6 +169,19 @@ The model configuration sets parameters for inference:
 | `frequencyPenalty` | Reduces repetition (-2.0 to 2.0) | `0.5` | [reference](https://platform.openai.com/docs/api-reference/chat/create)
 | `presencePenalty` | Encourages new topics (-2.0 to 2.0) | `0.5` | [reference](https://platform.openai.com/docs/api-reference/chat/create)
 | `params` | Additional parameters not listed above | `{ stop: ["END"] }` | [reference](https://platform.openai.com/docs/api-reference/chat/create)
+</Tab>
+<Tab label="Rust">
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `model_id` | Model identifier | `"gpt-5.4-mini"` |
+| `max_tokens` | Maximum output tokens | `1000` |
+| `temperature` | Sampling temperature | `0.7` |
+| `top_p` | Nucleus sampling ratio | `0.9` |
+| `frequency_penalty` | Repetition penalty for Chat Completions | `0.5` |
+| `presence_penalty` | New-topic penalty for Chat Completions | `0.5` |
+| `params` | Additional JSON request fields | `json!({"stop": ["END"]})` |
+
 </Tab>
 </Tabs>
 
@@ -199,7 +247,27 @@ See the [OpenAI Harmony message format](https://cookbook.openai.com/articles/ope
 
 **Tools with GPT-5.6 and GPT-6 Models**
 
-OpenAI's Chat Completions API accepts tools for GPT-5.6 and GPT-6 models only with reasoning off, and for some of them (such as `gpt-6-astra` and `gpt-6.1-sol`) not at all. With `api: 'chat'` and a client that targets `api.openai.com` or Amazon Bedrock Mantle, `OpenAIModel` therefore sends `reasoning_effort: 'none'`, with a warning, when an agent with tools runs on the first group and `params` sets no `reasoning_effort`. A `reasoning_effort` you set is sent as it is, so OpenAI rejects any value but `'none'`. For the second group, OpenAI rejects every request with tools, and the error `OpenAIModel` throws says so. To use tools on the second group, or tools with reasoning on the first, use the default `api: 'responses'`. Requests to other OpenAI-compatible endpoints are sent as configured.
+OpenAI's Chat Completions API accepts tools for GPT-5.6 and GPT-6 models only
+with reasoning off, and for some of them (such as `gpt-6-astra` and
+`gpt-6.1-sol`) not at all. With `api: 'chat'` and a client that targets
+`api.openai.com` or Amazon Bedrock Mantle, `OpenAIModel` therefore sends
+`reasoning_effort: 'none'`, with a warning, when an agent with tools runs on the
+first group and `params` sets no `reasoning_effort`. A `reasoning_effort` you set
+is sent as it is, so OpenAI rejects any value but `'none'`. For the second group,
+OpenAI rejects every request with tools, and `OpenAIModel` reports that error.
+To use tools on the second group, or tools with reasoning on the first, use the
+default `api: 'responses'`. Requests to other OpenAI-compatible endpoints are
+sent as configured.
+</Tab>
+<Tab label="Rust">
+
+Set `OPENAI_API_KEY`, or pass `api_key` to the builder, to resolve
+authentication errors.
+
+For GPT-OSS on an unmanaged endpoint, pass the endpoint's required stop tokens
+through `params`. For GPT-5.6 and GPT-6 tool calling, the provider applies the
+same Responses versus Chat Completions restrictions described above.
+
 </Tab>
 </Tabs>
 
@@ -252,13 +320,29 @@ Define a Zod schema and pass it as `structuredOutputSchema`. Validated output is
 --8<-- "user-guide/sdk/model-providers/openai.ts:structured_output"
 ```
 </Tab>
+<Tab label="Rust">
+
+Add the schema derives, then request the schema for one invocation:
+
+```bash
+cargo add schemars
+cargo add serde --features derive
+```
+
+```rust
+--8<-- "user-guide/sdk/model-providers/openai.rs:structured_output"
+```
+
+</Tab>
 </Tabs>
 
 For schema patterns, error handling, and per-invocation overrides, see [Structured Output](../agents/structured-output/).
 
 ### Custom client
 
-You can pass your own OpenAI client to the OpenAIModel for Strands Agents to use directly. You are responsible for handling the lifecycle (e.g., closing) of the client.
+Python and TypeScript can pass a preconfigured OpenAI client to `OpenAIModel`;
+the application manages that client's lifecycle. Rust exposes provider
+configuration instead and builds its client internally.
 
 <Tabs>
 <Tab label="Python">
@@ -300,6 +384,13 @@ if __name__ == "__main__":
 
 --8<-- "user-guide/sdk/model-providers/openai.ts:custom_client"
 ```
+</Tab>
+<Tab label="Rust">
+
+The HTTP client implementation is internal. Configure its supported behavior
+through `OpenAIClientConfig`, including the base URL, headers, retries, and
+timeout.
+
 </Tab>
 </Tabs>
 

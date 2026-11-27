@@ -2,14 +2,29 @@
 import { Aside } from '@astrojs/starlight/components';
 
 interface Props {
-  languages: string | string[];
+  languages?: string | string[];
+  unsupportedLanguages?: string | string[];
 }
 
-const { languages } = Astro.props;
+const { languages, unsupportedLanguages } = Astro.props;
 
 const languageText = Array.isArray(languages) ? languages.join(' and ') : languages;
+const unsupportedLanguageText = Array.isArray(unsupportedLanguages)
+  ? unsupportedLanguages.join(' and ')
+  : unsupportedLanguages;
 ---
 
 <Aside type="note" title="Language Support">
-  This feature is only supported in {languageText}.
+  {
+    languageText && unsupportedLanguageText ? (
+      <>
+        This page has verified {languageText} documentation. This feature is not supported
+        in {unsupportedLanguageText}.
+      </>
+    ) : unsupportedLanguageText ? (
+      <>This feature is not supported in {unsupportedLanguageText}.</>
+    ) : (
+      <>This page has verified {languageText} documentation.</>
+    )
+  }
 </Aside>

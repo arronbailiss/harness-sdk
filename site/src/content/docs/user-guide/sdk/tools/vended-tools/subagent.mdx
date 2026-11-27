@@ -1,22 +1,32 @@
 ---
 title: Subagent
 description: "Delegate a self-contained task to a child agent that runs in its own context and returns a final report, keeping intermediate work out of the parent's context."
+languages: [Python, TypeScript, Rust]
 tags: [tool-authoring]
 sourceLinks:
   - path: strands-ts/src/vended-tools/subagent/subagent.ts
   - path: strands-py/src/strands/vended_tools/subagent/subagent.py
+  - path: strands-rs/strands/src/vended_tools/subagent.rs
 ---
 
 Delegates a self-contained task to a child agent that runs in its own context and returns a final report. Use it when a subtask would otherwise flood the parent's context with intermediate work and you only need the conclusion. The model writes the task each time it calls the tool; the child cannot ask follow-up questions, so the task must include all the context it needs.
 
-The <Syntax py="make_subagent" ts="makeSubagent" /> factory uses [axis policies](index.mdx#multi-agent-tools) to control what the model can configure on each child.
+The <Syntax py="make_subagent" ts="makeSubagent" rs="make_subagent" />
+factory uses [axis policies](index.mdx#multi-agent-tools).
 The configurable axes are `instructions`, `tools`, `model`, and `context`. The parent also passes a task to the child.
 
-By default, the child sees only the task (<Syntax py='context=Fixed("none")' ts="context: new Fixed('none')" />), but you can share the parent's conversation by setting `context` to a `Choice` over `"none"`, `"all"` (full history including tool calls), and `"no_tools"` (text turns only). When a non-`"none"` option is available, the model can also pass `last_messages` to limit how many parent messages to share.
+By default, the child sees only the task
+(<Syntax
+  py='context=Fixed("none")'
+  ts="context: new Fixed('none')"
+  rs='Axis::Fixed(Fixed::new("none"))'
+/>), but you can share the parent's conversation with a `Choice` over `"none"`,
+`"all"` (full history including tools), and `"no_tools"` (text turns only).
+The model can also pass `last_messages` to limit the parent messages shared.
 
 Unless you pass your own `builder`, the child inherits the parent's tools, model, and interventions, but not its [hooks](../../agents/hooks.mdx) or [plugins](../../plugins/index.mdx). A hook that logs the parent's tool calls does not see the child's. To give the child hooks or plugins, [replace the default builder](index.mdx#multi-agent-tools).
 
-_Supported in: Python, TypeScript (Node.js, browsers)._
+_Supported in: Python, Rust, and TypeScript (Node.js, browsers)._
 
 **Quickstart example:**
 
@@ -44,9 +54,17 @@ agent("Research the latest Python 3.13 features and summarize them.")
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/subagent.rs:example"
+```
+
+</Tab>
 </Tabs>
 
-**Example — full control with <Syntax py="make_subagent" ts="makeSubagent" />:**
+**Example: full control with
+<Syntax py="make_subagent" ts="makeSubagent" rs="make_subagent" />:**
 
 <Tabs>
 <Tab label="TypeScript">
@@ -86,6 +104,13 @@ subagent = make_subagent(
 )
 agent = Agent(tools=[subagent])
 agent("Review the changes in src/main.py for correctness.")
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/subagent.rs:custom"
 ```
 
 </Tab>

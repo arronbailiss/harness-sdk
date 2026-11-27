@@ -1,6 +1,7 @@
 ---
 title: Persist state across sessions
 description: "Persist agent conversations across sessions. Save and restore chat history, tool state, and context for long-running AI workflows."
+languages: [Python, TypeScript, Rust]
 tags: [session-management, snapshots, state]
 sourceLinks:
   - path: strands-py/src/strands/session/session_manager.py
@@ -9,6 +10,8 @@ sourceLinks:
   - path: strands-py/src/strands/session/s3_session_manager.py
   - path: strands-py/src/strands/storage/storage.py
   - path: strands-ts/src/session/session-manager.ts
+  - path: strands-rs/strands/src/session/session_manager.rs
+  - path: strands-rs/strands/src/storage/local_file_storage.rs
 ---
 
 Keep an agent's state and conversation history across restarts and requests. A session persists what the agent knows, so it can pick up where it left off even when your application restarts or runs across several machines.
@@ -74,11 +77,25 @@ agent("Hello!")  # This conversation is persisted
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```bash
+cargo add tokio --features macros,rt-multi-thread
+```
+
+```rust
+--8<-- "user-guide/sdk/agents/session-management.rs:basic_usage"
+```
+
+</Tab>
 </Tabs>
 
 Strands persists the conversation and its state to the underlying storage backend.
 
-In Python, `SnapshotSessionManager` is the recommended manager for new single-agent sessions. `FileSessionManager` and `S3SessionManager` remain supported as the [compatibility path](#storage-backends) for Graph, Swarm, and existing repository-format sessions. TypeScript uses a single `SessionManager` for both.
+In Python, `SnapshotSessionManager` is the recommended manager for new
+single-agent sessions. `FileSessionManager` and `S3SessionManager` remain
+supported as the [compatibility path](#storage-backends) for Graph, Swarm, and
+existing repository-format sessions. TypeScript and Rust use `SessionManager`.
 
 `FileSessionManager` and `S3SessionManager` remain supported in Python, but use
 `SnapshotSessionManager` for new single-agent sessions.
@@ -145,13 +162,23 @@ Swarm works the same way:
 ```
 
 </Tab>
+<Tab label="Rust">
+
+Graph and Swarm are not available in the Rust SDK. Attach `SessionManager` to
+each single agent that needs persistent state.
+
+</Tab>
 </Tabs>
 
 Multi-agent session managers only track the current state of the Graph/Swarm execution and do not persist individual agent conversation histories.
 
 ## Reading the session ID
 
-An agent exposes its session identifier through a readable <Syntax py="agent.session_id" ts="agent.sessionId" /> property. When a session manager is attached, the property returns the manager's <Syntax py="session_id" ts="sessionId" /> (also readable directly on the session manager). Without a session manager, it returns a random 8-character hex string generated at construction, unique per agent instance but not persisted across restarts.
+An agent exposes its session identifier through
+<Syntax py="agent.session_id" ts="agent.sessionId" rs="agent.session_id()" />.
+When a session manager is attached, the value matches
+<Syntax py="session_id" ts="sessionId" rs="session_id()" /> on the manager.
+Without a session manager, the agent uses a generated, non-persisted identifier.
 
 Snapshot-based session managers accept any [Storage](../storage/index.mdx) backend, including
 `InMemoryStorage`, `LocalFileStorage`, `S3Storage`, and custom implementations. See
@@ -197,13 +224,24 @@ console.log(new Agent().sessionId) // e.g. "a1b2c3d4"
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/session-management.rs:session_id"
+```
+
+</Tab>
 </Tabs>
 
 ## Storage backends
 
 [Storage](../storage/index.mdx) is the single place persistence backends are documented. How session management reaches a backend depends on the manager:
 
-- **`SnapshotSessionManager` (Python) and `SessionManager` (TypeScript)** compose the shared `Storage` abstraction: you pass any `Storage` backend and the manager persists snapshots through it. Manager-level storage takes precedence over an agent-level `storage`. If neither provides storage, Python falls back to `LocalFileStorage("./.strands/")` and TypeScript fails during initialization.
+- **`SnapshotSessionManager` (Python) and `SessionManager` (TypeScript and Rust)**
+  compose the shared `Storage` abstraction. Manager-level storage takes
+  precedence over agent-level storage. Without either, Python falls back to
+  `LocalFileStorage("./.strands/")`; TypeScript and Rust fail during
+  initialization.
 - **`FileSessionManager` and `S3SessionManager` (Python, compatibility path)** configure storage directly with a storage directory or an S3 bucket. They do not take a `Storage` backend.
 
 The examples below show each form.
@@ -267,14 +305,27 @@ Pass storage to `SessionManager` or to the agent. Manager-level storage takes pr
 over agent-level storage. If neither provides storage, initialization fails.
 
 </Tab>
+<Tab label="Rust">
+
+Use `LocalFileStorage` for durable local sessions and `InMemoryStorage` for
+tests or short-lived processes:
+
+```rust
+--8<-- "user-guide/sdk/agents/session-management.rs:storage_backends"
+```
+
+The Rust SDK does not provide an S3 storage backend.
+
+</Tab>
 </Tabs>
 
 ## How session management works
 
 ### Snapshot-based session managers
 
-`SnapshotSessionManager` in Python and `SessionManager` in TypeScript persist a complete
-point-in-time snapshot. For single agents, both restore `snapshot_latest` during
+`SnapshotSessionManager` in Python and `SessionManager` in TypeScript and Rust
+persist a complete point-in-time snapshot. For single agents, they restore
+`snapshot_latest` during
 initialization and support immutable checkpoints. For graph and swarm, both restore the
 latest orchestrator snapshot before the first invocation.
 
@@ -303,6 +354,16 @@ latest orchestrator snapshot before the first invocation.
   strategies, but not for `trigger`.
 
 See [Basic Usage](#basic-usage) for configuration examples.
+
+</Tab>
+<Tab label="Rust">
+
+- **Agent initialization**: restores `snapshot_latest` when it exists.
+- **Agent invocation**: saves `snapshot_latest` after each invocation by default.
+- **Message addition**: saves after each message with `SaveLatestStrategy::Message`.
+- **Snapshot trigger**: creates an immutable snapshot when its callback returns `true`.
+- **Message redaction**: persists redacted content under message and invocation
+  strategies.
 
 </Tab>
 </Tabs>
@@ -334,6 +395,11 @@ See [Basic Usage](#basic-usage) for configuration examples.
 ```
 
 </Tab>
+<Tab label="Rust">
+
+Graph and Swarm session events are not available in the Rust SDK.
+
+</Tab>
 </Tabs>
 
 ### Repository-based session managers
@@ -344,7 +410,9 @@ Repository-based session managers are available in the Python SDK only.
 
 ## Immutable snapshots
 
-A [snapshot](./snapshots.mdx) captures agent state at a point in time. Snapshot-based session managers persist them for you: alongside `snapshot_latest`, `SnapshotSessionManager` (Python) and `SessionManager` (TypeScript) keep **immutable snapshots**, append-only checkpoints identified by UUID v7. These enable time-travel restore: you can restore the agent to any prior checkpoint, not just the latest state.
+A [snapshot](./snapshots.mdx) captures agent state at a point in time.
+Snapshot-based managers persist `snapshot_latest` and append-only immutable
+snapshots identified by UUID v7. You can restore the agent to any checkpoint.
 
 ### Creating immutable snapshots
 
@@ -375,11 +443,22 @@ agent = Agent(session_manager=session_manager)
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/session-management.rs:snapshot_trigger"
+```
+
+</Tab>
 </Tabs>
 
 ### Listing and restoring snapshots
 
-Snapshot IDs are UUID v7, so they sort lexicographically in chronological order. Use <Syntax py="list_snapshot_ids" ts="listSnapshotIds" /> on the session manager to retrieve them, then pass a <Syntax py="snapshot_id" ts="snapshotId" /> to <Syntax py="restore_snapshot" ts="restoreSnapshot" />:
+Snapshot IDs are UUID v7, so they sort lexicographically in chronological
+order. Use
+<Syntax py="list_snapshot_ids" ts="listSnapshotIds" rs="list_snapshot_ids" />
+to retrieve them, then pass the selected ID to
+<Syntax py="restore_snapshot" ts="restoreSnapshot" rs="restore_snapshot" />:
 
 <Tabs>
 <Tab label="Python">
@@ -417,6 +496,13 @@ asyncio.run(restore())
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/session-management.rs:list_and_restore"
+```
+
+</Tab>
 </Tabs>
 
 ## Deleting sessions
@@ -444,6 +530,13 @@ asyncio.run(session_manager.delete_session())
 
 ```typescript
 --8<-- "user-guide/sdk/agents/session-manager.ts:delete_session"
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/session-management.rs:delete_session"
 ```
 
 </Tab>
@@ -518,6 +611,14 @@ There are two kinds of snapshots:
 
 - **`snapshot_latest.json`**: A single mutable file overwritten on each save. Used to resume the most recent state after a restart.
 - **Immutable snapshots** (`immutable_history/snapshot_<uuid7>.json`): Append-only checkpoints created when `snapshotTrigger` fires. Used for time-travel restore.
+
+</Tab>
+<Tab label="Rust">
+
+`SessionManager` stores the versioned `Snapshot` JSON shape. Its data includes
+messages, agent state, system prompt, model state, interrupt state, and
+conversation-manager state. The manager maintains `snapshot_latest.json` and
+optional immutable snapshots under `immutable_history/`.
 
 </Tab>
 </Tabs>
@@ -596,6 +697,12 @@ implement the `SnapshotStorage` interface:
 ```
 
 </Tab>
+<Tab label="Rust">
+
+Implement the `Storage` trait and pass the backend to `SessionManager`. The
+manager owns the key layout, serialization, and snapshot lifecycle.
+
+</Tab>
 </Tabs>
 
 This lets you store session data in any backend while reusing the built-in session management logic.
@@ -659,6 +766,22 @@ Repository-based layout (`FileSessionManager`, `S3SessionManager`):
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```text
+<root>/
+└── session/
+    └── <session_id>/
+        └── scopes/
+            └── agent/
+                └── <agent_id>/
+                    └── snapshots/
+                        ├── snapshot_latest.json
+                        └── immutable_history/
+                            └── snapshot_<uuid7>.json
+```
+
+</Tab>
 </Tabs>
 
 Using the same session ID and storage location does not migrate repository-based Python
@@ -667,7 +790,10 @@ manager, or applications can migrate the required state explicitly.
 
 ## Sessions, agents, and concurrency
 
-Session management is designed around a single live writer per conversation: the session ID plus the agent ID (<Syntax py="agent_id" ts="id" />), or the orchestrator ID for a Graph or Swarm, address one conversation thread in storage.
+Session management is designed around a single live writer per conversation:
+the session ID plus the agent ID
+(<Syntax py="agent_id" ts="id" rs="id" />), or the orchestrator ID for a Graph
+or Swarm, address one conversation thread in storage.
 
 ### One conversation per session
 
@@ -681,7 +807,13 @@ Constructing an agent is cheap: it wires up tools, hooks, and plugins locally an
 
 The built-in session managers take no distributed lock, and the single-instance invocation guard is in-process, so neither can detect a second writer running elsewhere. Two patterns result:
 
-- **Two live agents addressing the same session ID and agent ID.** The default IDs (<Syntax py='agent_id="default"' ts="id: 'agent'" />) make this easy to do by accident, including across separate executions that each build their own agent. Overlapping invocations overwrite each other's turns, sequential ones merge two conversations into one history, and neither call errors.
+- **Two live agents addressing the same session ID and agent ID.** The default
+  IDs
+  (<Syntax py='agent_id="default"' ts="id: 'agent'" rs='.id("agent")' />)
+  make this easy to do by accident, including across separate executions that
+  each build their own agent. Overlapping invocations overwrite each other's
+  turns, sequential ones merge two conversations into one history, and neither
+  call errors.
 - **Two callers creating the same session at the same time.** Session creation is a check followed by a write, not an atomic operation, so simultaneous cold starts on a new session ID can both succeed, with the later write winning.
 
 ## Session persistence best practices
@@ -691,5 +823,7 @@ When implementing session persistence in your applications, consider these best 
 - **Use Unique Session IDs**: Generate unique session IDs for each user or conversation context to prevent data overlap.
 - **Session Cleanup**: Implement a strategy for cleaning up old or inactive sessions. Consider adding TTL (Time To Live) for sessions in production environments.
 - **Understand Persistence Triggers**: Remember that changes to agent state or messages are only persisted during specific lifecycle events.
-- **Concurrent Access**: Session managers are not thread-safe and take no distributed lock. See [Sessions, Agents, and Concurrency](#sessions-agents-and-concurrency).
+- **Concurrent Access**: Built-in session managers provide no cross-process or
+  distributed coordination. Use one live writer per conversation. See
+  [Sessions, Agents, and Concurrency](#sessions-agents-and-concurrency).
 - **Secure Storage Directories**: The session storage directory is a trusted data store. Session state is trusted input, so do not load sessions from untrusted sources, such as session files inside a cloned repository. Restrict filesystem permissions so that only the agent process can read and write to it. The Python `FileSessionManager` creates a new storage directory with mode `0o700`; it leaves an existing directory's permissions unchanged and, on POSIX systems, emits a `UserWarning` if that directory is accessible by group or others. In shared or multi-tenant environments (shared volumes, containers), be aware that the SDK follows symlinks in the session storage directory. The one exception is the Python `FileSessionManager`, which refuses to read or write a session file that is itself a symlink; it still follows symlinked directories. If an attacker with write access to the storage directory creates a symlink (e.g., `message_0.json` pointing to an arbitrary file) and the SDK follows it, sensitive file contents could be loaded into the agent's conversation history.

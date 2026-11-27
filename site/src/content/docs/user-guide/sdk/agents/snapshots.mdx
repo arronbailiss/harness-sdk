@@ -1,9 +1,12 @@
 ---
 title: Snapshots
 description: "Capture and restore agent state at any point in time. Use snapshots for checkpointing, undo/redo, branching conversations, and custom persistence."
+languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/types/_snapshot.py
   - path: strands-ts/src/agent/snapshot.ts
+  - path: strands-rs/strands/src/agent/snapshot.rs
+  - path: strands-rs/strands/src/types/snapshot.rs
 ---
 
 Snapshots capture agent state at a point in time so you can save and restore it later. You choose which fields to include, either by picking a preset (a preconfigured set of fields) or by specifying fields directly, and you can further refine with includes and excludes. Snapshots are plain JSON-serializable objects, so persistence is up to you. For automatic persistence across restarts, [session management](./session-management.mdx) stores and restores snapshots for you.
@@ -12,7 +15,9 @@ Snapshots capture agent state at a point in time so you can save and restore it 
 
 ### Taking a Snapshot
 
-Use the `"session"` preset to capture the most common fields:
+Use the
+<Syntax py='"session"' ts='"session"' rs="SnapshotPreset::Session" />
+preset to capture the most common fields:
 
 <Tabs>
 <Tab label="Python">
@@ -43,6 +48,16 @@ The `"session"` preset captures `messages`, `state`, `conversation_manager_state
 ```
 
 The `"session"` preset captures `messages`, `state`, `systemPrompt`, `modelState`, and `interrupts`.
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/snapshots.rs:take_snapshot"
+```
+
+The `Session` preset captures `messages`, `state`, `systemPrompt`,
+`modelState`, and `interrupts`.
+
 </Tab>
 </Tabs>
 
@@ -81,6 +96,13 @@ print(len(agent.messages))  # Only the messages from before the jokes
 --8<-- "user-guide/sdk/agents/snapshots.ts:load_snapshot"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/snapshots.rs:load_snapshot"
+```
+
+</Tab>
 </Tabs>
 
 Restoring only touches fields present in the snapshot. If you left a field out when you took the snapshot, the agent keeps its current value for that field.
@@ -89,7 +111,7 @@ Restoring only touches fields present in the snapshot. If you left a field out w
 A snapshot's `messages` are loaded into the agent as-is, including any tool-call
 content they carry. Load snapshots only from a source you control. A snapshot
 influenced by an untrusted party is untrusted input: its content reaches the
-model, and in the Python SDK a trailing tool-call block runs a tool directly on
+model, and in the Python and Rust SDKs a trailing tool-call block runs a tool on
 the next invocation. See
 [Trusted Message History](../safety-security/trusted-message-history.md).
 :::
@@ -122,6 +144,17 @@ Select fields through presets, includes, and excludes. The resolution order is *
 | `interrupts` | Human-in-the-loop interrupt state |
 
 </Tab>
+<Tab label="Rust">
+
+| Field | Description |
+|---|---|
+| `Messages` | Conversation history |
+| `State` | Agent application state |
+| `SystemPrompt` | System prompt content |
+| `ModelState` | Model provider state |
+| `Interrupts` | Human-in-the-loop interrupt state |
+
+</Tab>
 </Tabs>
 
 :::note
@@ -152,11 +185,21 @@ snapshot = agent.take_snapshot(preset="session", exclude=["interrupt_state"])
 --8<-- "user-guide/sdk/agents/snapshots.ts:field_selection"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/snapshots.rs:field_selection"
+```
+
+</Tab>
 </Tabs>
 
 ## Application Data
 
-Snapshots carry an <Syntax py="app_data" ts="appData" /> field for storing application-owned data alongside the agent state. Strands passes this data through verbatim, without reading or modifying it.
+Snapshots carry an
+<Syntax py="app_data" ts="appData" rs="app_data" />
+field for storing application-owned data alongside the agent state. Strands
+passes this data through verbatim, without reading or modifying it.
 
 This is useful for attaching metadata like a display name for the snapshot, the current step in a workflow, user preferences, or any other context your application needs to associate with a particular point in time.
 
@@ -185,6 +228,13 @@ print(snapshot.app_data["user_display_name"])  # "Alice"
 
 --8<-- "user-guide/sdk/agents/snapshots.ts:app_data"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/snapshots.rs:app_data"
+```
+
 </Tab>
 </Tabs>
 
@@ -231,6 +281,13 @@ new_agent.load_snapshot(restored_snapshot)
 --8<-- "user-guide/sdk/agents/snapshots.ts:serialization"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/snapshots.rs:serialization"
+```
+
+</Tab>
 </Tabs>
 
 ## Use Cases
@@ -268,6 +325,13 @@ agent("Focus specifically on multi-agent systems and summarize")
 --8<-- "user-guide/sdk/agents/snapshots.ts:checkpointing"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/snapshots.rs:checkpointing"
+```
+
+</Tab>
 </Tabs>
 
 ### Branching Conversations
@@ -304,11 +368,24 @@ casual_snapshot = agent.take_snapshot(preset="session")
 --8<-- "user-guide/sdk/agents/snapshots.ts:branching"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/snapshots.rs:branching"
+```
+
+</Tab>
 </Tabs>
 
 ## Relationship to Session Management
 
-[Session management](./session-management.mdx) handles persistence automatically: it saves and restores state at the right lifecycle points without you writing any persistence code. The snapshot-based session managers (`SnapshotSessionManager` in Python, `SessionManager` in TypeScript) persist these same snapshots to a [Storage](../storage/index.mdx) backend and support time-travel restore from immutable checkpoints. Snapshots give you manual control: you decide when to capture state, what to include, and where to store it. Use session management when you want hands-off persistence, and snapshots when you need precise control over save points.
+[Session management](./session-management.mdx) handles persistence automatically:
+it saves and restores state at the right lifecycle points without you writing any
+persistence code. The snapshot-based session managers (`SnapshotSessionManager`
+in Python and `SessionManager` in TypeScript and Rust) persist these same
+snapshots to a [Storage](../storage/index.mdx) backend and support time-travel
+restore from immutable checkpoints. Snapshots give you manual control: you
+decide when to capture state, what to include, and where to store it.
 
 ## See Also
 

@@ -1,9 +1,13 @@
 ---
 title: Persist sessions
-description: "Give Strands harness a session id to persist and resume a conversation across restarts, choose where session state lives, and understand the two SDKs' storage."
+description: >-
+  Give Strands harness a session id to persist and resume a conversation across
+  restarts, choose where session state lives, and understand each SDK's storage.
+languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-ts/src/agent.ts
+  - path: harness-rs/strands-harness/src/agent.rs
 sidebar:
   label: "Persist sessions"
 ---
@@ -14,9 +18,9 @@ fresh under a new random id.
 
 ## Persist and resume by id
 
-Pass `session={"id": ...}` and Strands harness persists the conversation to disk, then rehydrates it the
-next time you build an agent with the same id. Reuse the id to resume; use a new id to
-start clean.
+Configure a stable session id and Strands harness persists the conversation to disk, then
+rehydrates it the next time you build an agent with the same id. Reuse the id to resume;
+use a new id to start clean.
 
 <Tabs>
   <Tab label="Strands harness">
@@ -41,6 +45,11 @@ start clean.
         // ...later, in a new process...
         const resumed = await createHarness({ session: { id: 'refactor-parser' } })
         await resumed.invoke('Where did we leave off?')
+        ```
+      </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/sessions.rs:harness_resume"
         ```
       </Tab>
     </Tabs>
@@ -81,6 +90,11 @@ start clean.
         await resumed.invoke('Where did we leave off?')
         ```
       </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/sessions.rs:sdk_resume"
+        ```
+      </Tab>
     </Tabs>
   </Tab>
 </Tabs>
@@ -90,8 +104,8 @@ The id is sanitized to lowercase alphanumerics, hyphens, and underscores, so
 
 ## Choose where session state lives
 
-By default session state is written under `./.agent/sessions`. Set `session={"dir": ...}` to put
-it elsewhere:
+By default session state is written under `./.agent/sessions`. Configure the session
+directory to put it elsewhere:
 
 <Tabs>
   <Tab label="Strands harness">
@@ -111,6 +125,11 @@ it elsewhere:
         const agent = await createHarness({
           session: { id: 'refactor-parser', dir: '/var/lib/agent/sessions' },
         })
+        ```
+      </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/sessions.rs:harness_dir"
         ```
       </Tab>
     </Tabs>
@@ -137,6 +156,11 @@ it elsewhere:
         const session = new SessionManager({ sessionId: 'refactor-parser',
           storage: { snapshot: new FileStorage('/var/lib/agent/sessions') } })
         const agent = new Agent({ sessionManager: session })
+        ```
+      </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/sessions.rs:sdk_dir"
         ```
       </Tab>
     </Tabs>
@@ -180,18 +204,21 @@ distills durable facts that the agent recalls across every conversation, with or
 session. Use a session to continue a specific task; rely on memory to carry knowledge
 between unrelated runs.
 
-## How the two SDKs store sessions
+## How the SDKs store sessions
 
-Both SDKs write session snapshots to local files, but through different classes. The
+All three SDKs write session snapshots to local files, but through different classes. The
 Python SDK uses a `SnapshotSessionManager` backed by `LocalFileStorage`. The TypeScript
 SDK composes the shared `Storage` abstraction, using a `SessionManager` whose snapshot
-storage is a file storage under the session directory. Either way the on-disk result is a local
-session store rooted at the session directory.
+storage is a file storage under the session directory. Rust uses `SessionManager` with
+`LocalFileStorage`. In every case, the on-disk result is a local session store rooted at
+the session directory.
 
-To supply your own session manager (for example an S3-backed one), pass it through to the
-`Agent`; your explicit manager wins over the one Strands harness would build from `session`. Pass
-`storage` along with it too: without it, offloaded tool results are embedded in every snapshot the
-manager writes instead of being stored once. For the storage backends, see
+To supply your own session manager, pass it through to the `Agent`; your explicit
+manager wins over the one Strands harness would build from `session`. Python and
+TypeScript ship an S3 backend; Rust accepts any implementation of `Storage`. Pass
+`storage` along with the manager too: without it, offloaded tool results are embedded in
+every snapshot the manager writes instead of being stored once. For the storage
+backends, see
 [storage](../../../sdk/storage/). For the full
 option list, see the
 [configuration reference](../../reference/configuration/).

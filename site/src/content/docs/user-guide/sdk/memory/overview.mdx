@@ -2,11 +2,14 @@
 title: Give your agent long-term memory
 description: "Give agents long-term memory across sessions: store facts to configurable backends, recall them via tools or injection, and extract them automatically."
 tags: [memory]
+languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/memory/memory_manager.py
   - path: strands-py/src/strands/memory/types.py
   - path: strands-ts/src/memory/memory-manager.ts
   - path: strands-ts/src/memory/types.ts
+  - path: strands-rs/strands/src/memory/memory_manager.rs
+  - path: strands-rs/strands/src/memory/types.rs
 addedDate: 2026-06-17
 ---
 
@@ -54,7 +57,10 @@ Recall and injection are enabled by default when you attach a store; writing mem
 
 ## A running agent with memory
 
-Attach a memory manager to an agent through the <Syntax py="memory_manager" ts="memoryManager" /> parameter. The [test store](./test-memory-store) needs no cloud account and persists to disk by default, so this agent remembers across restarts with no setup:
+Attach a memory manager to an agent through the
+<Syntax py="memory_manager" ts="memoryManager" rs="memory_manager" /> parameter.
+The [test store](./test-memory-store) needs no cloud account and persists to disk
+by default, so this agent remembers across restarts with no setup:
 
 <Tabs>
 <Tab label="Python">
@@ -76,6 +82,12 @@ agent = Agent(memory_manager=MemoryManager(stores=[store]))
 --8<-- "user-guide/sdk/memory/overview_imports.ts:getting_started_imports"
 
 --8<-- "user-guide/sdk/memory/overview.ts:getting_started"
+```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/memory/overview.rs:getting_started"
 ```
 </Tab>
 </Tabs>

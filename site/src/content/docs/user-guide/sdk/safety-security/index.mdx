@@ -4,6 +4,11 @@ description: "Run a Strands agent safely in production: add guardrails, harden p
 sidebar:
   label: Overview
 tags: [safety]
+languages: [Python, TypeScript, Rust]
+sourceLinks:
+  - path: strands-py/src/strands/models/bedrock.py
+  - path: strands-ts/src/models/bedrock.ts
+  - path: strands-rs/strands/src/models/bedrock/mod.rs
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components'
@@ -76,6 +81,13 @@ agent("Summarize our refund policy for a customer.")
 --8<-- "user-guide/sdk/safety-security/index_imports.ts:guardrail_agent_imports"
 
 --8<-- "user-guide/sdk/safety-security/index.ts:guardrail_agent"
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/safety-security/index.rs:guardrail_agent"
 ```
 
 </Tab>

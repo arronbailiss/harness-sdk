@@ -1,8 +1,13 @@
 ---
 title: Sandbox
 description: "Configure where an agent runs shell commands, executes code, and accesses a filesystem. Swap between Docker, SSH, or custom environments."
+languages: [Python, TypeScript, Rust]
 tags: [sandbox, tool-execution]
 addedDate: 2026-06-17
+sourceLinks:
+  - path: strands-py/src/strands/sandbox/base.py
+  - path: strands-ts/src/sandbox/base.ts
+  - path: strands-rs/strands/src/sandbox/base.rs
 sidebar:
   label: "Overview"
 ---
@@ -26,16 +31,21 @@ Strands implements the second pattern. The agent process runs on your host and h
 
 All Sandbox implementations share the same abstract interface:
 
-| Method | Description |
-| --- | --- |
-| <Syntax py="execute_streaming" ts="executeStreaming" /> | Run a shell command, stream output |
-| <Syntax py="execute_code_streaming" ts="executeCodeStreaming" /> | Run code via an interpreter, stream output |
-| <Syntax py="read_file" ts="readFile" /> | Read a file as bytes |
-| <Syntax py="write_file" ts="writeFile" /> | Write bytes to a file |
-| <Syntax py="remove_file" ts="removeFile" /> | Delete a file |
-| <Syntax py="list_files" ts="listFiles" /> | List directory contents |
+- <Syntax py="execute_streaming" ts="executeStreaming" rs="execute_streaming" />:
+  run a shell command and stream output.
+- <Syntax
+    py="execute_code_streaming"
+    ts="executeCodeStreaming"
+    rs="execute_code_streaming"
+  />: run code through an interpreter and stream output.
+- <Syntax py="read_file" ts="readFile" rs="read_file" />: read bytes.
+- <Syntax py="write_file" ts="writeFile" rs="write_file" />: write bytes.
+- <Syntax py="remove_file" ts="removeFile" rs="remove_file" />: delete a file.
+- <Syntax py="list_files" ts="listFiles" rs="list_files" />: list a directory.
 
-The execution methods accept optional parameters: `timeout` (seconds, throws `SandboxTimeoutError` when exceeded), `cwd` (working directory override), `env` (environment variables), and <Syntax py="cancel_signal" ts="signal" /> (a <Syntax py="threading.Event" ts="AbortSignal" />, throws `SandboxAbortError` when it fires).
+The execution methods accept `timeout`, `cwd`, `env`, and
+<Syntax py="cancel_signal" ts="signal" rs="signal" />. Cancellation uses
+<Syntax py="threading.Event" ts="AbortSignal" rs="CancelSignal" />.
 
 ## Getting started
 
@@ -55,6 +65,16 @@ Pass a sandbox to an agent through the `sandbox` parameter, and the agent's comm
 
 ```python
 --8<-- "user-guide/sdk/sandbox/index.py:basic_usage"
+```
+
+</Tab>
+<Tab label="Rust">
+
+Rust exposes `Sandbox` for custom backends. This example explicitly selects the
+host environment, which provides no isolation:
+
+```rust
+--8<-- "user-guide/sdk/sandbox/index.rs:basic_usage"
 ```
 
 </Tab>
@@ -101,9 +121,19 @@ If a tool with the same name is already registered on the agent, the sandbox-ven
 ```
 
 </Tab>
+<Tab label="Rust">
+
+Register a tool with the same name before sandbox initialization:
+
+```rust
+--8<-- "user-guide/sdk/sandbox/index.rs:tool_override"
+```
+
+</Tab>
 </Tabs>
 
-Custom sandbox implementations can also override <Syntax py="get_tools()" ts="getTools()" /> to vend their own tools entirely.
+Custom sandbox implementations can override
+<Syntax py="get_tools()" ts="getTools()" rs="get_tools()" /> to vend tools.
 
 ### Custom tools
 
@@ -123,6 +153,13 @@ You can add your own tools alongside the auto-vended ones by creating a tool tha
 
 ```python
 --8<-- "user-guide/sdk/sandbox/index.py:custom_tool"
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/sandbox/index.rs:custom_tool"
 ```
 
 </Tab>

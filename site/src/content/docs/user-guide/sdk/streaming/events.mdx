@@ -1,12 +1,14 @@
 ---
 title: Stream event types
 description: "Reference for every event a Strands agent stream emits: lifecycle, model output, tool activity, and multi-agent coordination events, plus how to serialize them."
+languages: [Python, TypeScript, Rust]
 sidebar:
   label: "Event types"
 tags: [streaming]
 sourceLinks:
   - path: strands-py/src/strands/event_loop/streaming.py
   - path: strands-ts/src/models/streaming.ts
+  - path: strands-rs/strands/src/hooks/stream_events.rs
 ---
 
 Every way of consuming a Strands stream yields the same set of events: [async iterators](./async-iterators.md) and, in Python, [callback handlers](./callback-handlers.md). They differ in their execution model, not in what they emit. This page is the reference for every event type the stream produces: lifecycle signals, model output, tool activity, and multi-agent coordination, plus how to serialize events when forwarding them over the wire.
@@ -48,6 +50,20 @@ Each event emitted from the TypeScript agent is a class with a `type` attribute 
 - **`AgentResultEvent`**: Final agent result
     - **`result`**: The `AgentResult` with `stopReason`, `lastMessage`, and optional `structuredOutput`
 </Tab>
+<Tab label="Rust">
+
+Rust streams the `AgentStreamEvent` enum. Match its variants directly:
+
+- **`BeforeInvocation`** and **`AfterInvocation`**: Invocation boundaries
+- **`BeforeModelCall`** and **`AfterModelCall`**: Model-call boundaries
+- **`BeforeTools`** and **`AfterTools`**: Tool-batch boundaries
+- **`MessageAdded`**: A message was added to the agent history
+- **`Interrupt`**: The invocation paused for an interrupt
+- **`AgentResult`**: The final `AgentResult`
+
+Each variant serializes with a camel-cased `type` discriminator such as
+`beforeInvocationEvent`.
+</Tab>
 </Tabs>
 
 ### Model Stream Events
@@ -74,6 +90,14 @@ Each event emitted from the TypeScript agent is a class with a `type` attribute 
 - **`ContentBlockEvent`**: Wraps a fully assembled content block (TextBlock, ToolUseBlock, ReasoningBlock). Access via `.contentBlock`
 - **`ModelMessageEvent`**: Wraps the complete model message after all blocks are assembled. Access via `.message`
 </Tab>
+<Tab label="Rust">
+
+- **`ModelStreamUpdate`**: Wraps one provider stream event. Call
+  `text_delta()` to read a text delta when present.
+- **`ContentBlock`**: Carries a fully assembled content block.
+- **`ModelMessage`**: Carries the complete model message and stop reason.
+
+</Tab>
 </Tabs>
 
 ### Tool Events
@@ -97,6 +121,14 @@ Each event emitted from the TypeScript agent is a class with a `type` attribute 
 - **`ToolStreamUpdateEvent`**: Wraps streaming progress events from a tool. Access via `.event`:
     - **`data`**: The data streamed from the tool
 - **`ToolResultEvent`**: Wraps a completed tool result. Access via `.result`
+</Tab>
+<Tab label="Rust">
+
+- **`BeforeToolCall`**: Carries the `ToolUse` before execution.
+- **`AfterToolCall`**: Carries the `ToolUse`, result, and optional error.
+- **`ToolStreamUpdate`**: Carries progress data emitted by a streaming tool.
+- **`ToolResult`**: Carries the completed `ToolResultBlock`.
+
 </Tab>
 </Tabs>
 
@@ -175,6 +207,14 @@ Multi-agent systems ([Graph](../multi-agent/graph.md) and [Swarm](../multi-agent
 
 See [Graph streaming](../multi-agent/graph.md#streaming-events) and [Swarm streaming](../multi-agent/swarm.md#streaming-events) for usage examples.
 </Tab>
+<Tab label="Rust">
+
+Graph and Swarm orchestrators are not available in the Rust SDK, so Rust does
+not emit their coordination events. An [agent used as a
+tool](../multi-agent/agents-as-tools.md) forwards its stream through the parent
+agent's `ToolStreamUpdate` events.
+
+</Tab>
 </Tabs>
 
 ### Event Serialization
@@ -225,10 +265,28 @@ You can filter which events to forward to the client:
 --8<-- "user-guide/sdk/streaming/overview.ts:event_serialization"
 ```
 </Tab>
+<Tab label="Rust">
+
+`AgentStreamEvent` implements `Serialize`. Add `serde_json` when forwarding
+events as JSON:
+
+```bash
+cargo add serde_json
+```
+
+Filter variants before serialization when a client only needs part of the
+stream:
+
+```rust
+--8<-- "user-guide/sdk/streaming/events.rs:event_serialization"
+```
+</Tab>
 </Tabs>
 
 ## Next Steps
 
 - Consume these events in async frameworks with [Async Iterators](./async-iterators.md).
 - Intercept them with a function in synchronous Python via [Callback Handlers](./callback-handlers.md).
-- See the Agent API Reference for complete method documentation: [Python](@api/python/strands.agent.agent) | [TypeScript](@api/typescript/Agent)
+- See the Agent API Reference for complete method documentation:
+  [Python](@api/python/strands.agent.agent) |
+  [TypeScript](@api/typescript/Agent).

@@ -1,9 +1,11 @@
 ---
 title: Programmatic tool calling
 description: "Strands harness's programmatic_tool_caller lets the model orchestrate its other tools by writing code, returning only what the code prints. The code runs in Monty, isolated from the host."
+languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/tools/programmatic_tool_caller.py
   - path: harness-ts/src/tools/programmatic-tool-caller.ts
+  - path: harness-rs/strands-harness/src/tools/programmatic_tool_caller.rs
 sidebar:
   label: "Programmatic tool calling"
 ---
@@ -37,7 +39,9 @@ that way raises a catchable error rather than pausing for input.
 The code runs in [Monty](https://github.com/pydantic/monty), a Python interpreter that
 isolates the code it runs. Filesystem, environment, network, and process access do not exist
 in it, so the only thing model-authored code can reach is the set of tool functions handed
-in. Monty runs in a separate worker process with memory, time, and recursion limits.
+in. Python and TypeScript package the worker with their runtime. Rust uses a worker when
+the matching `monty` binary is available, and otherwise falls back to in-process
+execution with a warning.
 
 :::caution[Isolation for the code, not the tools]
 Monty bounds the code, not the tools it calls: `shell` still runs commands on the host. For
@@ -48,9 +52,42 @@ an OS boundary around the tools themselves, run the agent inside a Strands Harne
 Output is capped (a runaway print cannot blow up the context window), and awaited code is
 bounded by a default timeout.
 
+## Set up the Rust worker
+
+Install the worker version that matches the Rust crate:
+
+```bash
+cargo install monty-runtime --version 1.5.0 --locked
+```
+
+The harness finds it through `MONTY_BIN`, `PATH`, or the running application's Cargo
+workspace. Set `MONTY_BIN` when you want to pin the exact binary:
+
+```bash
+export MONTY_BIN="$(command -v monty)"
+```
+
+Worker execution needs the `monty-pool` Cargo feature, which is on by default. If you
+disable default features, include it explicitly:
+
+```bash
+cargo add strands-harness --no-default-features \
+  --features openai,monty-pool
+```
+
+You can also choose the worker path in code:
+
+```rust
+--8<-- "user-guide/harness/tools/programmatic-tool-calling.rs:worker"
+```
+
+Without `monty-pool` or a worker binary, the interpreter runs in process. That mode keeps
+the Python subset and per-step limits, but it cannot enforce a hard total-memory cap or
+isolate an interpreter crash from the agent process.
+
 ## Selecting it
 
-The tool is selected by name through `builtin_tools`. Drop `programmatic_tool_caller` from
-the list to turn it off; see
+The built-in-tools option selects this tool by name. Remove
+`programmatic_tool_caller` from the list to turn it off; see
 [add tools and instructions](../../configure/tools-and-instructions/) for
 how selection works.

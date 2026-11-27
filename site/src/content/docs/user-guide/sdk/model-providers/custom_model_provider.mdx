@@ -2,6 +2,7 @@
 title: Creating a Custom Model Provider
 description: 'Build a custom model provider for the Strands Agents SDK. Implement the Model interface to run agents against your own LLM service.'
 tags: [tool-execution]
+languages: [Python, TypeScript, Rust]
 sidebar:
   label: "Custom Providers"
 integrationType: model-provider
@@ -10,6 +11,8 @@ sourceLinks:
   - path: strands-ts/src/models/model.ts
   - path: strands-py/src/strands/models/_model_info.py
   - path: strands-ts/src/models/model-info.ts
+  - path: strands-rs/strands/src/models/model.rs
+  - path: strands-rs/strands/src/models/model_info.rs
 ---
 
 When Strands Agents doesn't ship a provider for the model you want to run, implement the `Model` interface yourself. A custom model provider connects any LLM service to the agent loop while keeping the integration private to your codebase.
@@ -25,7 +28,7 @@ The agent loop consumes those events to assemble the response and run requested 
 
 ## Implementation Overview
 
-The interface is the same in both SDKs:
+The interface follows the same contract across SDKs:
 
 <Tabs>
 <Tab label="Python">
@@ -56,6 +59,17 @@ The base class also provides optional methods you can override:
 - `countTokens()`: Estimate input token count (defaults to a character-based heuristic).
 - `estimateUtilization()`: Compute the ratio of input tokens to `contextWindowLimit` (defaults to 200,000 when not configured). See [Utilization Estimation](../agents/conversation-management/#utilization-estimation).
 - `modelInfo`: Report what your service supports, such as turning off server-side summary. See [Model info](#model-info).
+</Tab>
+<Tab label="Rust">
+
+Implement the `Model` trait:
+
+- `stream()`: Return a `Send` stream of `ModelStreamEvent` values.
+- `update_config()`: Merge configuration changes.
+- `get_config()`: Return the current `BaseModelConfig`.
+
+The trait also provides `count_tokens()`, `estimate_utilization()`, `summarize()`,
+and `model_info()` defaults that you can override.
 </Tab>
 </Tabs>
 
@@ -147,6 +161,15 @@ Create a TypeScript module that extends the `Model` class. Define an interface f
 
 ```typescript
 --8<-- "user-guide/sdk/model-providers/custom_model_provider.ts:create_model_class"
+```
+</Tab>
+<Tab label="Rust">
+
+Store mutable configuration behind synchronization because agents share models
+through `Arc<dyn Model>`:
+
+```rust
+--8<-- "user-guide/sdk/model-providers/custom_model_provider.rs:create_model_class"
 ```
 </Tab>
 </Tabs>
@@ -278,6 +301,14 @@ The `stream` method is the core interface that handles model invocation and retu
 
 ```typescript
 --8<-- "user-guide/sdk/model-providers/custom_model_provider.ts:implement_stream"
+```
+</Tab>
+<Tab label="Rust">
+
+`stream()` receives a `ModelRequest` and returns a boxed event stream:
+
+```rust
+--8<-- "user-guide/sdk/model-providers/custom_model_provider.rs:implement_stream"
 ```
 </Tab>
 </Tabs>
@@ -477,6 +508,14 @@ const metadata: ModelMetadataEventData = {
 }
 ```
 </Tab>
+<Tab label="Rust">
+
+Construct typed events from the `strands::models::streaming` module:
+
+```rust
+--8<-- "user-guide/sdk/model-providers/custom_model_provider.rs:stream_events"
+```
+</Tab>
 </Tabs>
 
 ### 4. Use Your Custom Model Provider
@@ -513,6 +552,12 @@ response = agent("Hello, how are you today?")
 --8<-- "user-guide/sdk/model-providers/custom_model_provider.ts:usage_example"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/custom_model_provider.rs:usage_example"
+```
+</Tab>
 </Tabs>
 
 ## Key Implementation Considerations
@@ -532,7 +577,8 @@ Map your API's failures onto the SDK's exceptions so the agent loop can react. H
 ### Model Info
 
 To tell the agent what your service supports, report it through
-<Syntax py="model_info" ts="modelInfo" />. The base `Model` class fills in what the SDK
+<Syntax py="model_info" ts="modelInfo" rs="model_info" />. The base `Model`
+class fills in what the SDK
 already knows about your configured model, such as its context window, by looking up the
 model ID in
 [`shared/model-info.json`](https://github.com/strands-agents/harness-sdk/blob/main/shared/model-info.json).
@@ -540,12 +586,15 @@ Python reads the ID from `get_config()["model_id"]`; TypeScript reads the `model
 getter. Store your default model ID in the config so an unconfigured provider still gets
 those facts.
 
-Override <Syntax py="model_info" ts="modelInfo" /> for what your service does differently.
+Override <Syntax py="model_info" ts="modelInfo" rs="model_info" /> for what your
+service does differently.
 Put your facts over the base result and the user's
-<Syntax py="model_info" ts="modelInfo" /> config over yours, so their override still
+<Syntax py="model_info" ts="modelInfo" rs="model_info" /> config over yours, so
+their override still
 wins. Most providers need at least this one: turn off
-<Syntax py="server_side_summary" ts="serverSideSummary" /> unless your service summarizes
-server-side and you override <Syntax py="summarize" ts="summarize" /> to use it. Every
+<Syntax py="server_side_summary" ts="serverSideSummary"
+rs="server_side_summary" /> unless your service summarizes server-side and you
+override <Syntax py="summarize" ts="summarize" rs="summarize" /> to use it. Every
 built-in provider except Anthropic turns it off.
 
 <Tabs>
@@ -574,14 +623,24 @@ class CustomModel(Model):
 --8<-- "user-guide/sdk/model-providers/custom_model_provider.ts:model_info"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/custom_model_provider.rs:model_info"
+```
+</Tab>
 </Tabs>
 
-Report <Syntax py="stateful" ts="stateful" /> as `true` only if your service keeps
+Report <Syntax py="stateful" ts="stateful" rs="stateful" /> as `true` only if
+your service keeps
 conversation state: the agent then sends only the latest message and rejects a
 conversation or context manager. Don't read
-<Syntax py="self.stateful" ts="this.stateful" /> inside the override, because it reads
-<Syntax py="model_info" ts="modelInfo" />. Limits you report win over the user's
-<Syntax py="context_window_limit" ts="contextWindowLimit" />. If they don't depend on
+<Syntax py="self.stateful" ts="this.stateful" rs="self.stateful()" /> inside the
+override, because it reads
+<Syntax py="model_info" ts="modelInfo" rs="model_info" />. Limits you report win
+over the user's
+<Syntax py="context_window_limit" ts="contextWindowLimit"
+rs="context_window_limit" />. If they don't depend on
 your service, contribute the model to
 [`shared/model-info.json`](https://github.com/strands-agents/harness-sdk/blob/main/shared/model-info.json)
 so every provider and the user's setting can use them; until that ships, reporting them

@@ -76,7 +76,10 @@ const example = "This code will be included"
 // --8<-- [end:section_name]
 ```
 
-Rust `.rs` files use the same `// --8<--` region markers. TypeScript and Rust snippets are compiled by `npm run typecheck:snippets`.
+Rust `.rs` files use the same `// --8<--` region markers and live beside the
+page that includes them. The site-owned `rust-snippets` Cargo crate discovers
+and compiles them. TypeScript and Rust snippets are checked by
+`npm run typecheck:snippets`.
 
 ### 5. Relative Link Resolution (`src/util/links.ts`, `src/components/PageLink.astro`)
 

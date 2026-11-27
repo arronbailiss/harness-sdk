@@ -1,9 +1,11 @@
 ---
 title: Take Strands harness to production
 description: "Strands harness returns a plain Agent, so deploying, observing, and securing it are the Strands Harness SDK's run guides. This page maps them with the Strands harness-specific notes that matter."
+languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-ts/src/agent.ts
+  - path: harness-rs/strands-harness/src/agent.rs
 sidebar:
   label: "Take Strands harness to production"
 ---
@@ -39,14 +41,14 @@ things specific to Strands harness's defaults.
 
 Because Strands harness returns an ordinary `Agent`, every deployment target in the
 [deploy guides](../../sdk/deploy/) works with it unchanged: build the agent with
-`create_harness()` where the guide builds one with `Agent()`.
+the language's harness factory where the guide builds an SDK `Agent`.
 
 Two of Strands harness's defaults write to the local filesystem, which matters when the deployment
 target has ephemeral storage. [Sessions](../configure/sessions/) and
 [long-term memory](../configure/memory/) default to directories under
-`./.agent`. On a container or serverless target, point `session={"dir": ...}` and
-`memory={"dir": ...}` at durable storage (a mounted volume, or a backend you supply through
-`memory={"stores": [...]}` or a session manager) so state survives past a single instance.
+`./.agent`. On a container or serverless target, configure their directories to use
+durable storage, or supply a custom memory store or session manager, so state survives
+past a single instance.
 
 ## Observe
 

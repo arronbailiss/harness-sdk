@@ -48,8 +48,12 @@ agent("Explain the agent loop in one sentence.")
 </Tab>
 <Tab label="Rust">
 
+```bash
+cargo add tokio --features macros,rt-multi-thread
+```
+
 ```rust
---8<-- "../../../../strands-rs/strands/examples/docs_quickstart.rs:basic"
+--8<-- "user-guide/sdk/index.rs:basic"
 ```
 
 </Tab>
@@ -111,7 +115,7 @@ Weighing Strands against other frameworks or a hand-written loop instead? See [c
   <LinkCard
     title="Deploy to production"
     href="./deploy/operating-agents-in-production/"
-    description="Ship to Lambda, Fargate, EKS, Bedrock AgentCore, and more."
+    description="Ship to Lambda, Fargate, EKS, Amazon Bedrock AgentCore, and more."
   />
   <LinkCard
     title="Observe your agent"

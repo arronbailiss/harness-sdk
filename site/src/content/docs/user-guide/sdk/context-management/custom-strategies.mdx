@@ -2,6 +2,7 @@
 title: Custom Strategies
 description: "Build custom context management strategies with the Offload builder API, conditions, targets, and storage of offloaded content."
 tags: [conversation-management, token-management]
+languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/_context_manager/strategies/offload/base.py
   - path: strands-py/src/strands/_context_manager/strategies/offload/truncate.py
@@ -12,6 +13,10 @@ sourceLinks:
   - path: strands-ts/src/context-manager/strategies/offload/target.ts
   - path: strands-ts/src/context-manager/strategies/offload/summarize.ts
   - path: strands-py/src/strands/models/_summarize.py
+  - path: strands-rs/strands/src/context_manager/strategies/offload/mod.rs
+  - path: strands-rs/strands/src/context_manager/strategies/offload/conditions.rs
+  - path: strands-rs/strands/src/context_manager/strategies/offload/target.rs
+  - path: strands-rs/strands/src/context_manager/types.rs
 addedDate: 2026-09-14
 ---
 
@@ -59,19 +64,31 @@ agent = Agent(
 --8<-- "user-guide/sdk/context-management/custom-strategies.ts:basic_config"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/context-management/custom-strategies.rs:basic_config"
+```
+</Tab>
 </Tabs>
 
 :::note
-Both SDKs accept a config object with a <Syntax py="strategies" ts="strategies" /> key. The SDK constructs the `ContextManager` internally.
+Each SDK accepts a config object with a
+<Syntax py="strategies" ts="strategies" rs="strategies" /> key. The SDK
+constructs the `ContextManager` internally.
 :::
 
 ## Offload builder
 
-The `Offload` namespace exposes three methods. Each returns a strategy builder that can be chained with <Syntax py=".when()" ts=".when()" /> to add conditions.
+The `Offload` namespace exposes three methods. Each returns a strategy builder
+that can be chained with
+<Syntax py=".when()" ts=".when()" rs=".when()" /> to add conditions.
 
 ### Truncate
 
-Replaces oversized content with a head/tail preview. The original content is stored in the <Syntax py="stash" ts="archive" /> for later retrieval.
+Replaces oversized content with a head/tail preview. The original content is
+stored in the <Syntax py="stash" ts="archive" rs="archive" /> for later
+retrieval.
 
 <Tabs>
 <Tab label="Python">
@@ -91,6 +108,12 @@ Offload.truncate(
 --8<-- "user-guide/sdk/context-management/custom-strategies_imports.ts:truncate_imports"
 
 --8<-- "user-guide/sdk/context-management/custom-strategies.ts:truncate"
+```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/context-management/custom-strategies.rs:truncate"
 ```
 </Tab>
 </Tabs>
@@ -114,9 +137,18 @@ Offload.truncate(
 | Preview mode | `preview` | `"headTail"` |
 
 </Tab>
+<Tab label="Rust">
+
+| Parameter | Key | Default |
+|-----------|-----|---------|
+| Preview size | `preview_tokens` | 1,000 |
+| Preview mode | `preview` | `PreviewMode::HeadTail` |
+
+</Tab>
 </Tabs>
 
-Preview modes: `"head"`, `"tail"`, <Syntax py='"head_tail"' ts='"headTail"' />.
+Preview modes: `"head"`, `"tail"`,
+<Syntax py='"head_tail"' ts='"headTail"' rs="PreviewMode::HeadTail" />.
 
 ### Summarize
 
@@ -146,6 +178,12 @@ Offload.summarize("*").when(
 --8<-- "user-guide/sdk/context-management/custom-strategies.ts:summarize"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/context-management/custom-strategies.rs:summarize"
+```
+</Tab>
 </Tabs>
 
 **Summarize configuration:**
@@ -171,11 +209,26 @@ A batched summary resends the conversation with the agent's system prompt and to
 A batched summary resends the conversation with the agent's system prompt and tools, followed by the summarization instructions. When it runs on the agent's model, it can reuse the agent's prompt cache. If the summary leaves out messages it keeps, such as a pinned message or one under the `threshold`, it sends only the first message and the messages it replaces. Custom instructions replace the default guidance, but the client-side request always tells the model not to act on the conversation or call tools.
 
 </Tab>
+<Tab label="Rust">
+
+| Parameter | Key | Default |
+|-----------|-----|---------|
+| Model | `model` | `agent.model()` |
+| Summarization instructions | `system_prompt` | Built-in |
+
+A batched summary resends the conversation with the agent's system prompt and
+tools, followed by the summarization instructions. When it runs on the agent's
+model, it can reuse the agent's prompt cache. Custom instructions replace the
+default guidance, but the client-side request always tells the model not to act
+on the conversation or call tools.
+
+</Tab>
 </Tabs>
 
 ### Drop
 
-Removes matching content entirely. No preview, no <Syntax py="stash" ts="archive" /> entry.
+Removes matching content entirely. No preview, no
+<Syntax py="stash" ts="archive" rs="archive" /> entry.
 
 <Tabs>
 <Tab label="Python">
@@ -194,17 +247,30 @@ Offload.drop("tool_results").when(preserve_recent=5)
 --8<-- "user-guide/sdk/context-management/custom-strategies.ts:drop"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/context-management/custom-strategies.rs:drop"
+```
+</Tab>
 </Tabs>
 
 ## Conditions
 
-Chain <Syntax py=".when()" ts=".when()" /> to control when a strategy fires.
+Chain <Syntax py=".when()" ts=".when()" rs=".when()" /> to control when a
+strategy fires.
 
 | Condition | Behavior |
 |-----------|----------|
-| <Syntax py="threshold" ts="blockThreshold" /> | Minimum size to act on |
-| <Syntax py="utilization" ts="contextUtilization" /> | Context usage that triggers it |
-| <Syntax py="preserve_recent" ts="preserveRecent" /> | Newest matches to skip |
+| Threshold | Minimum size to act on |
+| Utilization | Context usage that triggers it |
+| Preserve recent | Newest matches to skip |
+
+The condition keys are
+<Syntax py="threshold" ts="blockThreshold" rs="block_threshold" />,
+<Syntax py="utilization" ts="contextUtilization"
+rs="context_utilization" />, and
+<Syntax py="preserve_recent" ts="preserveRecent" rs="preserve_recent" />.
 
 Granularity — whether a strategy acts on whole messages or on individual
 blocks — is decided differently in each SDK.
@@ -234,6 +300,16 @@ and `contextUtilization`, of the matching messages for `preserveRecent`. Decimal
 throw, so write `'85%'` rather than `0.85`.
 
 </Tab>
+<Tab label="Rust">
+
+The target decides granularity. `OffloadTarget::All` acts on whole messages;
+every other target acts on individual blocks. `context_utilization` controls
+when a strategy fires, and `preserve_recent` controls what is protected.
+
+Each value is a whole number in the condition's unit, or an `"N%"` share of the
+context window or matching messages.
+
+</Tab>
 </Tabs>
 
 ### Per-block example
@@ -255,6 +331,12 @@ Offload.truncate("tool_results").when(threshold=2000)
 --8<-- "user-guide/sdk/context-management/custom-strategies_imports.ts:conditions_imports"
 
 --8<-- "user-guide/sdk/context-management/custom-strategies.ts:conditions_threshold"
+```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/context-management/custom-strategies.rs:conditions_threshold"
 ```
 </Tab>
 </Tabs>
@@ -283,6 +365,12 @@ Offload.summarize("*").when(
 --8<-- "user-guide/sdk/context-management/custom-strategies.ts:conditions_utilization"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/context-management/custom-strategies.rs:conditions_utilization"
+```
+</Tab>
 </Tabs>
 
 ### Combined example
@@ -307,6 +395,12 @@ Offload.truncate("tool_results").when(
 --8<-- "user-guide/sdk/context-management/custom-strategies_imports.ts:conditions_imports"
 
 --8<-- "user-guide/sdk/context-management/custom-strategies.ts:conditions_both"
+```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/context-management/custom-strategies.rs:conditions_both"
 ```
 </Tab>
 </Tabs>
@@ -342,23 +436,45 @@ Targets specify which content a strategy applies to.
 | Exclude tools | `["!tool::bash"]` |
 
 </Tab>
+<Tab label="Rust">
+
+| Target | Value |
+|--------|-------|
+| All content | `OffloadTarget::All` |
+| Tool results | `OffloadTarget::ToolResults` |
+| Failed tool results | `OffloadTarget::ToolResultErrors` |
+| Assistant text | `OffloadTarget::AssistantText` |
+| User text | `OffloadTarget::UserText` |
+| Specific tools | `OffloadTarget::tools(["bash", "read_file"])` |
+| Exclude tools | `OffloadTarget::tools(["!bash"])` |
+
+</Tab>
 </Tabs>
 
 Tool name lists use the `tool::` prefix. Prefix a name with `!` to exclude it (apply to all tools *except* the listed ones).
 
 ## Storing originals
 
-The <Syntax py="stash" ts="archive" /> stores all message content on arrival as JSON, before any strategy runs. Truncated or summarized content can be retrieved on demand through the `retrieve_context` tool, which the SDK registers by default.
+The <Syntax py="stash" ts="archive" rs="archive" /> stores all message content
+on arrival as JSON, before any strategy runs. Truncated or summarized content
+can be retrieved on demand through the `retrieve_context` tool, which the SDK
+registers by default.
 
 :::note
-Configure the <Syntax py="stash" ts="archive" /> through the key below, but treat the object itself as internal. The `Offload` builders read and write it for you, and its methods are not a stable contract for code outside the SDK.
+Configure the <Syntax py="stash" ts="archive" rs="archive" /> through the key
+below, but treat the object itself as internal. The `Offload` builders read and
+write it for you, and its methods are not a stable contract for code outside
+the SDK.
 :::
 
-The <Syntax py="stash" ts="archive" /> uses in-memory storage by default. Configure it through the <Syntax py="stash" ts="archive" /> key:
+The <Syntax py="stash" ts="archive" rs="archive" /> uses in-memory storage by
+default. Configure it through the
+<Syntax py="stash" ts="archive" rs="archive" /> key:
 
 - Omit or pass `true` for defaults (in-memory storage)
 - Pass a config with a custom storage backend
-- Pass `false` to disable the <Syntax py="stash" ts="archive" /> entirely
+- Pass `false` to disable the
+  <Syntax py="stash" ts="archive" rs="archive" /> entirely
 
 <Tabs>
 <Tab label="Python">
@@ -382,6 +498,12 @@ agent = Agent(
 --8<-- "user-guide/sdk/context-management/custom-strategies.ts:archive_disabled"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/context-management/custom-strategies.rs:archive_disabled"
+```
+</Tab>
 </Tabs>
 
 ## Emergency truncation
@@ -396,9 +518,20 @@ Claude models that preserve thinking bind each thinking block to the prefix that
 
 Whether a strategy keeps thinking valid depends on its granularity:
 
-- **Message-level summaries keep thinking when they run server-side.** When the summarizing model (the agent's own model by default) and the agent's model both support <Syntax py="server_side_summary" ts="serverSideSummary" />, a message-level summary goes through the model provider's summarization API instead of a client-side summarization request. The provider returns the summary as a single block that stands in for the start of the conversation, so the thinking after it stays valid. The [Anthropic model provider](../model-providers/anthropic#server-side-summarization) supports server-side summary. The [Amazon Bedrock model provider](../model-providers/amazon-bedrock) (`BedrockModel`) does not, so its message-level summaries are always client-side.
-- **Eager per-block strategies keep thinking.** A per-block strategy with only a <Syntax py="threshold" ts="blockThreshold" /> acts on each message as it is added, for any per-block [target](#targets). It rewrites a tool result or user message before the model sees it, and an assistant message before any later thinking exists, so no thinking block's prefix changes.
-- **Other strategies drop thinking.** A per-block strategy with <Syntax py="preserve_recent" ts="preserveRecent" />, or a message-level truncate or drop strategy, rewrites older content that later thinking blocks are bound to. Claude skips those thinking blocks, and the prompt cache restarts at the rewrite.
+- **Message-level summaries keep thinking when they run server-side.** When the
+  summarizing model (the agent's own model by default) and the agent's model
+  both support <Syntax py="server_side_summary" ts="serverSideSummary"
+  rs="server_side_summary" />, a message-level summary goes through the model
+  provider's summarization API instead of a client-side summarization request.
+  The provider returns the summary as a single block that stands in for the
+  start of the conversation, so the thinking after it stays valid.
+- **Eager per-block strategies keep thinking.** A per-block strategy with only
+  a <Syntax py="threshold" ts="blockThreshold" rs="block_threshold" /> acts on
+  each message as it is added, for any per-block [target](#targets).
+- **Other strategies drop thinking.** A per-block strategy with
+  <Syntax py="preserve_recent" ts="preserveRecent" rs="preserve_recent" />, or
+  a message-level truncate or drop strategy, rewrites older content that later
+  thinking blocks are bound to.
 - **Emergency truncation drops thinking.** It removes the oldest messages when the context still overflows, so the thinking after them goes stale.
 
 To keep thinking blocks on these models, summarize or truncate tool results eagerly and leave message-level summaries to models that support server-side summary. See [Server-side summarization](../model-providers/anthropic#server-side-summarization) for an example.

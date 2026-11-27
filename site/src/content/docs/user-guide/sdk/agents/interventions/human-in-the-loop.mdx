@@ -2,11 +2,14 @@
 title: Human in the loop
 tags: [interventions, tool-execution]
 description: "Gate agent tool execution behind human approval. Configurable modes for CLI, web, and custom UIs with optional session trust."
+languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/vended_interventions/hitl/hitl.py
   - path: strands-py/src/strands/vended_interventions/hitl/classifier.py
   - path: strands-ts/src/vended-interventions/hitl/hitl.ts
   - path: strands-ts/src/vended-interventions/hitl/classifier.ts
+  - path: strands-rs/strands/src/vended_interventions/hitl/mod.rs
+  - path: strands-rs/strands/src/vended_interventions/hitl/classifier.rs
   - path: strands-py/src/strands/decisions/llm_decision_model.py
   - path: strands-ts/src/decisions/llm-decision-model.ts
   - path: strands-py/src/strands/decisions/typesafe_decision_model.py
@@ -58,11 +61,25 @@ Without an `ask` option, the handler raises an interrupt and the agent pauses. T
 --8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.ts:basic_interrupt"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.rs:basic_interrupt"
+```
+
+</Tab>
 </Tabs>
 
 ### Stdio Mode
 
-For CLI applications, pass <Syntax py='ask="stdio"' ts="ask: 'stdio'" /> to prompt the user inline via stdin. The agent blocks until the user responds, so no interrupt handling is needed on the caller side.
+For CLI applications, pass
+<Syntax
+  py='ask="stdio"'
+  ts="ask: 'stdio'"
+  rs="ask: Some(HumanInTheLoopAsk::Stdio)"
+/>
+to prompt the user inline via stdin. The agent blocks until the user responds,
+so no interrupt handling is needed on the caller side.
 
 <Tabs>
 <Tab label="Python">
@@ -78,6 +95,13 @@ For CLI applications, pass <Syntax py='ask="stdio"' ts="ask: 'stdio'" /> to prom
 
 --8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.ts:stdio_mode"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.rs:stdio_mode"
+```
+
 </Tab>
 </Tabs>
 
@@ -100,14 +124,23 @@ For web UIs, Slack bots, or other custom interfaces, pass a function to `ask`. T
 --8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.ts:custom_ask"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.rs:custom_ask"
+```
+
+</Tab>
 </Tabs>
 
 ### Auto Mode
 
-Pass <Syntax py='"auto"' ts="'auto'" /> to let the SDK decide which tool calls need a
-human, using the approval strategy it currently considers the best available. Today that
-is the built-in [risk classifier](#risk-classifier): low-risk calls run on their own and
-risky ones are escalated.
+Pass
+<Syntax py='"auto"' ts="'auto'" rs="HumanInTheLoop::auto" />
+to let the SDK decide which tool calls need a human, using the approval strategy
+it currently considers the best available. Today that is the built-in
+[risk classifier](#risk-classifier): low-risk calls run on their own and risky
+ones are escalated.
 
 <Tabs>
 <Tab label="Python">
@@ -124,11 +157,24 @@ risky ones are escalated.
 --8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.ts:auto_mode"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.rs:auto_mode"
+```
+
+</Tab>
 </Tabs>
 
 Two options compose with it, since neither decides the strategy: `ask` for how the human
-is reached, and <Syntax py="allowed_tools" ts="allowedTools" /> for calls that skip the
-decision entirely. Like plain <Syntax py="HumanInTheLoop()" ts="new HumanInTheLoop()" />,
+is reached, and
+<Syntax py="allowed_tools" ts="allowedTools" rs="allowed_tools" />
+for calls that skip the decision entirely. Like plain
+<Syntax
+  py="HumanInTheLoop()"
+  ts="new HumanInTheLoop()"
+  rs="HumanInTheLoop::new(HumanInTheLoopConfig::default())"
+/>,
 auto mode uses interrupt/resume unless you pass `ask`.
 
 <Tabs>
@@ -146,25 +192,46 @@ auto mode uses interrupt/resume unless you pass `ask`.
 --8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.ts:auto_mode_options"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.rs:auto_mode_options"
+```
+
+</Tab>
 </Tabs>
 
 The options that *do* decide the strategy — `classifier`, trust, and `evaluate` — are
-rejected alongside <Syntax py='"auto"' ts="'auto'" />: pick either the SDK's judgment or
-your own, never both. To configure the strategy yourself, omit the mode and use the
-options below.
+rejected alongside
+<Syntax py='"auto"' ts="'auto'" rs="HumanInTheLoop::auto" />:
+pick either the SDK's judgment or your own, never both. To configure the
+strategy yourself, omit the mode and use the options below.
 
 :::caution
-What <Syntax py='"auto"' ts="'auto'" /> resolves to can change in a minor release as
+What
+<Syntax py='"auto"' ts="'auto'" rs="HumanInTheLoop::auto" />
+resolves to can change in a minor release as
 better approaches become available, and a change can move calls in either direction:
 some that used to run on their own may start asking, and some that used to ask may stop.
 Every change is named in that version's release notes.
 
 To fix the mechanism, configure the strategy explicitly:
-<Syntax py="classifier=True" ts="classifier: true" /> always means the built-in LLM
+<Syntax
+  py="classifier=True"
+  ts="classifier: true"
+  rs="classifier: Some(ClassifierConfig::llm())"
+/>
+always means the built-in LLM
 classifier. Note that this pins the mechanism, not its verdicts — the default risk prompt
-is SDK-owned and can change, and the classifier runs on <Syntax py="agent.aux_model" ts="agent.auxModel" />.
+is SDK-owned and can change, and the classifier runs on
+<Syntax py="agent.aux_model" ts="agent.auxModel" rs="agent.aux_model()" />.
 To fix the criteria as well, pass your own prompt and model
-(<Syntax py="LLMClassifierConfig" ts="LlmClassifierConfig" />) or your own `DecisionModel`.
+(<Syntax
+  py="LLMClassifierConfig"
+  ts="LlmClassifierConfig"
+  rs="LlmClassifierConfig"
+/>)
+or your own classifier. Decision models are not available in Rust.
 :::
 
 ### Risk Classifier
@@ -187,6 +254,13 @@ the classifier entirely (fast path for known-safe tools).
 
 --8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.ts:classifier"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.rs:classifier"
+```
+
 </Tab>
 </Tabs>
 
@@ -215,6 +289,12 @@ use another one, such as a local
 --8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.ts:classifier_decision_model"
 ```
 </Tab>
+<Tab label="Rust">
+
+Rust supports the built-in LLM classifier and custom async classifiers.
+Decision-model classifiers are not available in the Rust SDK.
+
+</Tab>
 </Tabs>
 
 A small model can rate more risky calls safe than an LLM judge, so check its answers on
@@ -238,19 +318,66 @@ provide your own classification function:
 --8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.ts:classifier_custom"
 ```
 </Tab>
+<Tab label="Rust">
+
+Implement `HumanInTheLoopClassifier` directly or pass an async closure:
+
+```rust
+--8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.rs:classifier_custom"
+```
+
+</Tab>
 </Tabs>
 
 ## Configuration
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `mode` | <Syntax py='"auto"' ts="'auto'" /> | <Syntax py="None" ts="undefined" /> | Positional. Lets the SDK pick the approval strategy; see [Auto Mode](#auto-mode). Only `ask` and <Syntax py="allowed_tools" ts="allowedTools" /> may be passed alongside it. |
-| <Syntax py="allowed_tools" ts="allowedTools" /> | <Syntax py="list[str]" ts="string[]" /> | <Syntax py="None" ts="undefined" /> | Tools that bypass approval. Supports `"*"` (all) and `"!tool_name"` (negation). |
-| `classifier` | <Syntax py="bool, LLMClassifierConfig, DecisionModel, or callable" ts="boolean, LlmClassifierConfig, { decisionModel }, or function" /> | <Syntax py="None" ts="undefined" /> | Risk classifier. <Syntax py="True" ts="true" /> for built-in defaults, a config object for a custom prompt or model, a decision model, or a custom function. |
-| <Syntax py="enable_trust" ts="enableTrust" /> | <Syntax py="bool" ts="boolean" /> | <Syntax py="False" ts="false" /> | When enabled, trust responses are remembered for the session. |
-| <Syntax py="evaluate_trust" ts="evaluateTrust" /> | Function | Accepts `"t"` or `"trust"` | Custom validator for trust responses. Only evaluated when trust is enabled. |
-| `evaluate` | Function | Accepts <Syntax py='True, "y", or "yes"' ts="true, 'y', or 'yes'" /> | Custom validator for approval responses. |
-| `ask` | <Syntax py='Function or "stdio"' ts="Function or 'stdio'" /> | <Syntax py="None" ts="undefined" /> | Pass a function for custom UIs, `"stdio"` for CLI prompting, or omit for interrupt/resume. |
+- **`mode`**
+  - **Type:** <Syntax py='"auto"' ts="'auto'" rs="HumanInTheLoop::auto" />
+  - **Default:** <Syntax py="None" ts="undefined" rs="not set" />
+  - Lets the SDK pick the approval strategy. Only `ask` and
+    <Syntax py="allowed_tools" ts="allowedTools" rs="allowed_tools" /> may be
+    passed alongside it.
+- **<Syntax py="allowed_tools" ts="allowedTools" rs="allowed_tools" />**
+  - **Type:** <Syntax py="list[str]" ts="string[]" rs="Vec<String>" />
+  - **Default:** <Syntax py="None" ts="undefined" rs="empty vector" />
+  - Tools that bypass approval. Supports `"*"` and `"!tool_name"`.
+- **`classifier`**
+  - **Type:**
+    <Syntax
+      py="bool, LLMClassifierConfig, DecisionModel, or callable"
+      ts="boolean, LlmClassifierConfig, { decisionModel }, or function"
+      rs="ClassifierConfig or async classifier"
+    />
+  - **Default:** <Syntax py="None" ts="undefined" rs="None" />
+  - Risk classifier.
+    <Syntax py="True" ts="true" rs="ClassifierConfig::llm()" /> uses built-in
+    defaults.
+- **<Syntax py="enable_trust" ts="enableTrust" rs="enable_trust" />**
+  - **Type:** <Syntax py="bool" ts="boolean" rs="bool" />
+  - **Default:** <Syntax py="False" ts="false" rs="false" />
+  - Remembers trust responses for the session.
+- **<Syntax py="evaluate_trust" ts="evaluateTrust" rs="evaluate_trust" />**
+  - **Type:** Function
+  - **Default:** Accepts `"t"` or `"trust"`.
+  - Custom validator for trust responses.
+- **`evaluate`**
+  - **Type:** Function
+  - **Default:**
+    <Syntax
+      py='True, "y", or "yes"'
+      ts="true, 'y', or 'yes'"
+      rs='true, "y", or "yes"'
+    />
+  - Custom approval validator.
+- **`ask`**
+  - **Type:**
+    <Syntax
+      py='Function or "stdio"'
+      ts="Function or 'stdio'"
+      rs="HumanInTheLoopAsk"
+    />
+  - **Default:** <Syntax py="None" ts="undefined" rs="None" />
+  - Custom callback, stdio, or interrupt/resume.
 
 ### Allowed Tools
 
@@ -271,13 +398,24 @@ Use the allowed tools list to skip approval for safe, read-only tools:
 --8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.ts:allowed_tools"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.rs:allowed_tools"
+```
+
+</Tab>
 </Tabs>
 
 ### Trust Mode
 
 When trust is enabled, a human can respond with `'t'` or `'trust'` to approve the current tool call AND remember that decision for the rest of the session. Subsequent calls to the same tool skip the prompt entirely. Trust works in all modes: interrupt/resume, stdio, and custom callbacks.
 
-Trust state is stored in <Syntax py="agent.state" ts="agent.appState" /> and persists across turns within a session but resets when the agent is re-created. It is only read while trust is enabled. Negated tools (`"!tool_name"`) cannot be trusted and always prompt.
+Trust state is stored in
+<Syntax py="agent.state" ts="agent.appState" rs="agent.app_state()" />
+and persists across turns within a session but resets when the agent is
+re-created. It is only read while trust is enabled. Negated tools
+(`"!tool_name"`) cannot be trusted and always prompt.
 
 <Tabs>
 <Tab label="Python">
@@ -294,11 +432,25 @@ Trust state is stored in <Syntax py="agent.state" ts="agent.appState" /> and per
 --8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.ts:trust_mode"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.rs:trust_mode"
+```
+
+</Tab>
 </Tabs>
 
 ### Custom Evaluate
 
-By default, the handler accepts <Syntax py='True, "y", or "yes"' ts="true, 'y', or 'yes'" /> as approval. Use `evaluate` to define your own approval logic, for example requiring the user to type "confirm":
+By default, the handler accepts
+<Syntax
+  py='True, "y", or "yes"'
+  ts="true, 'y', or 'yes'"
+  rs='true, "y", or "yes"'
+/>
+as approval. Use `evaluate` to define your own approval logic, for example
+requiring the user to type "confirm":
 
 <Tabs>
 <Tab label="Python">
@@ -315,6 +467,13 @@ By default, the handler accepts <Syntax py='True, "y", or "yes"' ts="true, 'y', 
 --8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.ts:custom_evaluate"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/interventions/human-in-the-loop.rs:custom_evaluate"
+```
+
+</Tab>
 </Tabs>
 
 ## When to Use
@@ -325,5 +484,6 @@ Use `HumanInTheLoop` when you want tool-level approval gating with minimal code:
 
 - [Interventions](./index.mdx): The intervention handler framework that HITL is built on
 - [Interrupts](../../interrupts): Low-level interrupt/resume mechanism
-- [Agent State](../state): How trust decisions persist via <Syntax py="agent.state" ts="agent.appState" />
+- [Agent State](../state): How trust decisions persist via
+  <Syntax py="agent.state" ts="agent.appState" rs="agent.app_state()" />
 - [Session Management](../session-management): Persisting interrupt state across sessions

@@ -1,11 +1,13 @@
 ---
 title: Anthropic
 description: 'Run Strands agents on Claude models through the Anthropic API. Install the provider, configure AnthropicModel, and enable structured output and caching.'
+languages: [Python, TypeScript, Rust]
 tags: [structured-output, caching]
 integrationType: model-provider
 sourceLinks:
   - path: strands-py/src/strands/models/anthropic.py
   - path: strands-ts/src/models/anthropic.ts
+  - path: strands-rs/strands/src/models/anthropic/mod.rs
 ---
 
 [Anthropic](https://docs.anthropic.com/en/home) is an AI safety and research company and the maker of the Claude family of models. The Strands Agents SDK implements an Anthropic provider, letting you run agents against Claude models directly.
@@ -26,6 +28,16 @@ pip install 'strands-agents[anthropic]'
 ```bash
 npm install @strands-agents/sdk @anthropic-ai/sdk
 ```
+</Tab>
+<Tab label="Rust">
+
+Enable the optional provider feature:
+
+```bash
+cargo add strands --features anthropic
+cargo add tokio --features macros,rt-multi-thread
+```
+
 </Tab>
 </Tabs>
 
@@ -63,6 +75,15 @@ print(response)
 --8<-- "user-guide/sdk/model-providers/anthropic.ts:basic_usage"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/anthropic.rs:basic_usage"
+```
+
+Set `ANTHROPIC_API_KEY` instead of passing `api_key` in application code.
+
+</Tab>
 </Tabs>
 
 ## Configuration
@@ -77,6 +98,12 @@ The `client_args` configure the underlying Anthropic client. For a complete list
 <Tab label="TypeScript">
 
 The `clientConfig` configures the underlying Anthropic client. You can also pass a pre-configured `client` instance directly (see [Custom Client](#custom-client)). For a complete list of available options, please refer to the [Anthropic TypeScript SDK docs](https://platform.claude.com/docs/en/api/sdks/typescript).
+</Tab>
+<Tab label="Rust">
+
+`AnthropicClientConfig` configures the base URL, default headers, retries, and
+timeout. `ANTHROPIC_BASE_URL` and `ANTHROPIC_CUSTOM_HEADERS` provide defaults.
+
 </Tab>
 </Tabs>
 
@@ -107,6 +134,20 @@ The `model_config` configures the underlying model selected for inference. The s
 | `anthropicTools` | [Built-in tools](#built-in-tools), appended to the agent's function tools | `[{ type: 'web_search_20260318', name: 'web_search' }]` | [reference](https://platform.claude.com/docs/en/docs/agents-and-tools/tool-use/overview) |
 | `cacheConfig` | Enables [prompt caching](#prompt-caching) on the tool definitions, the system prompt, and the conversation | `{ ttl: '1h' }` | [reference](https://docs.claude.com/en/docs/build-with-claude/prompt-caching) |
 </Tab>
+<Tab label="Rust">
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `model_id` | Model identifier | `"claude-sonnet-4-6"` |
+| `max_tokens` | Maximum output tokens | `1024` |
+| `temperature` | Sampling temperature | `0.7` |
+| `top_p` | Nucleus sampling ratio | `0.9` |
+| `stop_sequences` | Sequences that stop generation | `vec!["END".into()]` |
+| `params` | Additional JSON request fields | `json!({"metadata": {}})` |
+| `anthropic_tools` | Anthropic server-side tools | `vec![json!({...})]` |
+| `cache_config` | Prompt caching settings | `CacheConfig::default()` |
+
+</Tab>
 </Tabs>
 
 ## Troubleshooting
@@ -123,6 +164,13 @@ If you encounter the error `ModuleNotFoundError: No module named 'anthropic'`, t
 ### Import Errors
 
 If you encounter import errors for `@anthropic-ai/sdk`, ensure the package is installed: `npm install @anthropic-ai/sdk`.
+</Tab>
+<Tab label="Rust">
+
+If `strands::models::anthropic` is unavailable, enable the `anthropic` Cargo
+feature. Set `ANTHROPIC_API_KEY`, or pass `api_key` to the builder, before
+constructing the model.
+
 </Tab>
 </Tabs>
 
@@ -146,6 +194,14 @@ If you encounter import errors for `@anthropic-ai/sdk`, ensure the package is in
 - **Documents in assistant messages.** API version `2026-10-21` rejects a `document` block placed directly in an assistant message, so the provider drops those blocks and logs a warning. Put documents in user messages.
 - **Injected clients.** With a `client` you pass in, the provider doesn't know which API version it sends, so neither check above runs and the API's own error surfaces instead.
 - **Authentication.** From 1.0 the API key is sent as `Authorization: Bearer`, which matters behind a proxy that reads `X-Api-Key`. A client also holds one credential, so pass either `apiKey` or `authToken` in `clientConfig`, not both.
+</Tab>
+<Tab label="Rust">
+
+The Rust provider includes its own HTTP transport and does not depend on the
+Anthropic Python or TypeScript SDK. Pin the API version through the
+`anthropic-version` default header when a model still supports the older
+sampling behavior.
+
 </Tab>
 </Tabs>
 
@@ -179,9 +235,11 @@ model instance is discarded. Requests before the first rejection are sent unchan
   `block_binding`, the provider sends it as written and does not retry. Set it yourself
   to choose the behavior up front or to keep the error.
 - **Existing betas are kept.** The beta is added to the betas the model already sends,
-  from <Syntax py="extra_headers" ts="betas" /> or, when that is not set, from the
-  `anthropic-beta` default header of the client. A pre-configured client does not expose
-  its default headers, so set its betas with <Syntax py="extra_headers" ts="betas" />.
+  from <Syntax py="extra_headers" ts="betas" rs="betas" /> or, when that is not
+  set, from the `anthropic-beta` default header of the client. In Python and
+  TypeScript, a preconfigured client does not expose its default headers. Set
+  betas explicitly with
+  <Syntax py="extra_headers" ts="betas" rs="betas" />.
 - **Dropping has a cost.** Claude loses the reasoning in the dropped blocks, the prompt
   cache restarts at the edited message, and responses can use more output tokens.
 - **Some models require adaptive thinking.** Claude Sonnet 5.5 and Claude Haiku 5.5
@@ -196,7 +254,9 @@ for when it does.
 
 ### Custom Client
 
-You can pass a pre-configured Anthropic client directly to `AnthropicModel`. You are responsible for managing the client's lifecycle.
+Python and TypeScript can pass a preconfigured Anthropic client to
+`AnthropicModel`; the application manages that client's lifecycle. Rust exposes
+provider configuration instead and builds its client internally.
 
 <Tabs>
 <Tab label="Python">
@@ -228,6 +288,13 @@ For the `bedrock-mantle` client and the differences from the Anthropic API, see 
 
 --8<-- "user-guide/sdk/model-providers/anthropic.ts:custom_client"
 ```
+</Tab>
+<Tab label="Rust">
+
+The HTTP client trait is internal. Configure the provider through
+`AnthropicClientConfig`. To reach Claude through Amazon Bedrock, use
+`AnthropicModel::bedrock` instead of injecting a client.
+
 </Tab>
 </Tabs>
 
@@ -286,6 +353,20 @@ Define a Zod schema and pass it as `structuredOutputSchema`. Validated output is
 --8<-- "user-guide/sdk/model-providers/anthropic.ts:structured_output"
 ```
 </Tab>
+<Tab label="Rust">
+
+Add the schema derives, then request the schema for one invocation:
+
+```bash
+cargo add schemars
+cargo add serde --features derive
+```
+
+```rust
+--8<-- "user-guide/sdk/model-providers/anthropic.rs:structured_output"
+```
+
+</Tab>
 </Tabs>
 
 For schema patterns, error handling, and per-invocation overrides, see [Structured Output](../agents/structured-output/).
@@ -323,6 +404,19 @@ Anthropic's built-in server-side tools (web search, web fetch, code execution) c
 --8<-- "user-guide/sdk/model-providers/anthropic.ts:builtin_tools"
 ```
 </Tab>
+<Tab label="Rust">
+
+Pass Anthropic server-side tools through `anthropic_tools`:
+
+```bash
+cargo add serde_json
+```
+
+```rust
+--8<-- "user-guide/sdk/model-providers/anthropic.rs:built_in_tools"
+```
+
+</Tab>
 </Tabs>
 
 Web search results are surfaced as citations on the response text when Claude calls the tool directly (`allowed_callers: ["direct"]`). On `web_search_20260318` the default is dynamic filtering, which runs the search inside code execution and returns no citations. For available built-in tools and their versioned `type` strings, see the [Anthropic tool use documentation](https://platform.claude.com/docs/en/docs/agents-and-tools/tool-use/overview).
@@ -341,7 +435,8 @@ Claude reuse an already-processed prefix of your prompt instead of reprocessing 
 every call. The mechanism, the cost model, and the cache metrics match
 [Amazon Bedrock](./amazon-bedrock-prompt-caching); this section covers what differs here.
 
-Caching is off by default. Set <Syntax py="cache_config" ts="cacheConfig" /> to cache
+Caching is off by default. Set
+<Syntax py="cache_config" ts="cacheConfig" rs="cache_config" /> to cache
 the system prompt and add a cache point to the last user message, which caches
 everything before it:
 
@@ -375,6 +470,13 @@ print(result.metrics.accumulated_usage)
 --8<-- "user-guide/sdk/model-providers/anthropic.ts:prompt_caching"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/anthropic.rs:prompt_caching"
+```
+
+</Tab>
 </Tabs>
 
 Cache activity is reported in the usage metrics, in the same fields Bedrock uses: see
@@ -407,6 +509,13 @@ a provider switch unchanged.
 
 `strategy` is ignored by this provider.
 </Tab>
+<Tab label="Rust">
+
+One `CacheConfig` covers tool definitions, the system prompt, and the
+conversation. Use `tools_ttl`, `system_prompt_ttl`, and `messages_ttl` to
+configure each section independently. `strategy` is ignored.
+
+</Tab>
 </Tabs>
 
 #### Placing cache points by hand
@@ -435,7 +544,13 @@ for per-model thresholds.
 
 ### Server-side summarization
 
-The provider supports <Syntax py="server_side_summary" ts="serverSideSummary" /> for
+The provider supports
+<Syntax
+  py="server_side_summary"
+  ts="serverSideSummary"
+  rs="ModelCapabilities::server_side_summary"
+/>
+for
 Claude Opus 5.5, Claude Sonnet 5.5, Claude Haiku 5.5, Claude Fable 5.1, Claude Fable 5.2,
 and Claude Mythos 5.2. For these models, a message-level summary from
 [context management](../context-management/) goes through Anthropic's compaction API
@@ -484,6 +599,17 @@ agent = Agent(
 --8<-- "user-guide/sdk/model-providers/anthropic.ts:server_side_summary"
 ```
 </Tab>
+<Tab label="Rust">
+
+Configure message-level summarization through context management. When model
+metadata advertises server-side summaries, the provider uses Anthropic
+compaction automatically:
+
+```rust
+--8<-- "user-guide/sdk/model-providers/anthropic.rs:server_side_summary"
+```
+
+</Tab>
 </Tabs>
 
 The summarizing model, the agent's own model by default,
@@ -527,6 +653,17 @@ const model = new AnthropicModel({
 ```
 
 When disabled (or if the API call fails), falls back to estimation with a character-based heuristic (characters ÷ 4 for text, characters ÷ 2 for JSON).
+</Tab>
+<Tab label="Rust">
+
+Enable the native token-counting API on the model:
+
+```rust
+--8<-- "user-guide/sdk/model-providers/anthropic.rs:token_counting"
+```
+
+The provider falls back to estimation if the API call fails.
+
 </Tab>
 </Tabs>
 

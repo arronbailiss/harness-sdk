@@ -4,12 +4,14 @@ description: >-
   Choose how to coordinate agents: delegate through tools, write a workflow,
   define a Graph, or use a Swarm. Let an agent build a Graph with the vended tool.
 tags: [multi-agent]
+languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/multiagent/base.py
   - path: strands-py/src/strands/multiagent/graph.py
   - path: strands-py/src/strands/multiagent/swarm.py
   - path: strands-ts/src/multiagent/graph.ts
   - path: strands-ts/src/multiagent/swarm.ts
+  - path: strands-rs/strands/src/agent/agent_as_tool.rs
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components'
@@ -77,6 +79,13 @@ orchestrator("What should I pack for Seattle this weekend?")
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/multi-agent/multi-agent-patterns.rs:agents_as_tools_hub"
+```
+
+</Tab>
 </Tabs>
 
 When one orchestrator calling specialists on demand is no longer enough (when
@@ -95,8 +104,8 @@ of three phases: **research** (gather), **analysis** (reason), and **review**
 |---|---|---|
 | **[Agents as tools](./agents-as-tools.md)** | The orchestrator LLM picks a specialist per query. | One agent delegates a research or analysis sub-question to an expert, then folds the answer back in. |
 | **[Workflow in your code](./workflow.md)** | Your application calls agents in a defined order and passes results between them. | Research, analysis, and review always run in the same sequence. Your code handles failures and decides whether to continue. |
-| **[Graph](./graph.md)** | Developer-defined edges. Unconditional edges are always followed; a conditional edge is followed only when your predicate, which can inspect model output or app state, returns true. Fixed, parallel, and cyclic flows. | Research feeds analysis feeds review as a fixed chain, or a conditional edge loops the work back for another pass when the review's verdict is a rejection (Python and TypeScript resolve nodes with several incoming edges differently; see [Graph](./graph.md#sdk-differences)). |
-| **[Swarm](./swarm.md)** | Emergent. Agents hand off autonomously through shared context, with no fixed path. | A research, analysis, and review team that reorders itself; review can hand straight back to research. |
+| **[Graph](./graph.md)** | Fixed edges (not in Rust). | Parallel or cyclic flows. |
+| **[Swarm](./swarm.md)** | Handoffs (not in Rust). | Self-routing teams. |
 
 <CardGrid>
   <LinkCard
@@ -335,14 +344,28 @@ else:
 ```
 
 </Tab>
+<Tab label="Rust">
+
+The Rust SDK supports agents as tools and workflows in application code.
+The Graph and Swarm orchestrators used by this supervisor are not available.
+
+</Tab>
 </Tabs>
 
 ### How each guardrail works
 
 - **Deadlines**:
-  <Syntax py="builder.set_node_timeout(seconds)" ts="nodeTimeout" />
+  <Syntax
+    py="builder.set_node_timeout(seconds)"
+    ts="nodeTimeout"
+    rs="not available"
+  />
   bounds any single node and
-  <Syntax py="builder.set_execution_timeout(seconds)" ts="timeout" />
+  <Syntax
+    py="builder.set_execution_timeout(seconds)"
+    ts="timeout"
+    rs="not available"
+  />
   bounds the whole run. A timeout fails the run; it is not routed to another
   node. In Python, a node timeout raises from the graph call, while the
   execution timeout is checked before each batch of nodes and returns a
@@ -351,7 +374,12 @@ else:
   settles, and the timeouts are cooperative: a tool or model call that ignores
   its cancel signal can still run past the deadline.
 - **Cancellation with a recorded reason**: setting
-  <Syntax py="event.cancel_node" ts="event.cancel" /> to a message skips the
+  <Syntax
+    py="event.cancel_node"
+    ts="event.cancel"
+    rs="not available"
+  />
+  to a message skips the
   node and records that message. In Python, the graph call raises a
   `RuntimeError` carrying the message and the run ends `FAILED`. In TypeScript,
   the node and the run end `CANCELLED` and a `NodeCancelEvent` carries the
@@ -360,6 +388,7 @@ else:
   <Syntax
     py="event.interrupt(name, reason=...)"
     ts="event.interrupt({ name, reason })"
+    rs="not available"
   />
   on `BeforeNodeCallEvent` halts the orchestrator before the gated node. The run
   returns with `Status.INTERRUPTED`; you answer each interrupt by id and resume
@@ -369,8 +398,13 @@ else:
 - **Handoff logging**: because `BeforeNodeCallEvent` fires before every node, a
   single callback records each transition. If you prefer to consume handoffs
   from the event stream instead, watch for the
-  <Syntax py="multiagent_handoff" ts="multiAgentHandoffEvent" /> event in
-  <Syntax py="stream_async" ts="stream" /> (see
+  <Syntax
+    py="multiagent_handoff"
+    ts="multiAgentHandoffEvent"
+    rs="not available"
+  />
+  event in
+  <Syntax py="stream_async" ts="stream" rs="not available" /> (see
   [Graph](./graph.md#streaming-events)).
 
 A [Swarm](./swarm.md) supports the same `BeforeNodeCallEvent` hook and
@@ -380,7 +414,12 @@ this supervision to autonomous handoffs as well.
 ## Shared state across multi-agent patterns
 
 Both Graph and Swarm support passing shared state to every agent through
-<Syntax py="invocation_state" ts="invocationState" />. This shares context and
+<Syntax
+  py="invocation_state"
+  ts="invocationState"
+  rs="not available"
+/>.
+This shares context and
 configuration across agents without exposing it to the LLM. Use it for things
 like user ids, feature flags, or a database handle, kept separate from the
 data the model should reason about.
@@ -468,6 +507,13 @@ and a `StateStore` (`app`) for custom shared data.
 
 --8<-- "user-guide/sdk/multi-agent/multi-agent-patterns.ts:multi_agent_state"
 ```
+
+</Tab>
+<Tab label="Rust">
+
+Graph and Swarm shared state is not available in Rust. For agents used as
+tools, pass per-invocation application data through `InvokeOptions` and read it
+from `ToolContext`.
 
 </Tab>
 </Tabs>

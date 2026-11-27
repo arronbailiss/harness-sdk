@@ -1,11 +1,14 @@
 ---
 title: OpenAI Responses API
 description: 'Use the OpenAI Responses API with Strands agents for built-in tools like web search and code interpreter, plus server-side conversation state.'
+languages: [Python, TypeScript, Rust]
 tags: [mcp, state]
 integrationType: model-provider
 sourceLinks:
   - path: strands-py/src/strands/models/openai_responses.py
   - path: strands-ts/src/models/openai/responses-adapter.ts
+  - path: strands-rs/strands/src/models/openai/mod.rs
+  - path: strands-rs/strands/src/models/openai/responses.rs
 ---
 
 The [Responses API](https://platform.openai.com/docs/api-reference/responses) is OpenAI's interface for generating model responses and building agents. It is a superset of the [Chat Completions](./openai) API, with additional support for [built-in tools](#built-in-tools), server-side conversation state management, and multi-modal inputs.
@@ -26,6 +29,16 @@ Requires `openai>=2.0.0`. Install or upgrade with `pip install -U openai`.
 ```bash
 npm install @strands-agents/sdk openai
 ```
+</Tab>
+<Tab label="Rust">
+
+Enable the optional provider feature:
+
+```bash
+cargo add strands --features openai
+cargo add tokio --features macros,rt-multi-thread
+```
+
 </Tab>
 </Tabs>
 
@@ -60,6 +73,17 @@ print(response)
 
 In TypeScript, both the Responses API and Chat Completions API are available through a single `OpenAIModel` class. The Responses API is selected by default. Pass `api: 'chat'` to use [Chat Completions](./openai) instead.
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/openai-responses.rs:basic_usage"
+```
+
+Rust also uses one `OpenAIModel` type for both APIs. The Responses API is the
+default. Pass `OpenAIApi::Chat` to use
+[Chat Completions](./openai) instead.
+
+</Tab>
 </Tabs>
 
 To run OpenAI models on Amazon Bedrock, see
@@ -80,6 +104,16 @@ To reuse a client you built yourself, such as an `openai.AsyncOpenAI` pointed at
 <Tab label="TypeScript">
 
 The `clientConfig` configures the underlying OpenAI client. For a complete list of available options, refer to the [OpenAI TypeScript SDK](https://github.com/openai/openai-node).
+</Tab>
+<Tab label="Rust">
+
+`OpenAIClientConfig` configures the base URL, organization, project, default
+headers, retries, and timeout:
+
+```rust
+--8<-- "user-guide/sdk/model-providers/openai-responses.rs:client_config"
+```
+
 </Tab>
 </Tabs>
 
@@ -106,6 +140,18 @@ The model configuration sets parameters for inference:
 | `topP` | Nucleus sampling (0-1) | `0.9` | [reference](https://platform.openai.com/docs/api-reference/responses/create) |
 | `stateful` | Enable server-side conversation state | `true` | `true` / `false` |
 | `params` | Additional parameters (e.g., built-in tools) | `{ tools: [{ type: 'web_search' }] }` | [reference](https://platform.openai.com/docs/api-reference/responses/create) |
+</Tab>
+<Tab label="Rust">
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `model_id` | Model ID | `"gpt-4o"` |
+| `max_tokens` | Maximum tokens to generate | `1000` |
+| `temperature` | Randomness | `0.7` |
+| `top_p` | Nucleus sampling | `0.9` |
+| `stateful` | Server-side conversation state | `true` |
+| `params` | Additional request parameters | `json!({...})` |
+
 </Tab>
 </Tabs>
 
@@ -135,6 +181,13 @@ response = agent("What are the latest developments in AI?")
 --8<-- "user-guide/sdk/model-providers/openai-responses.ts:web_search"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/openai-responses.rs:web_search"
+```
+
+</Tab>
 </Tabs>
 
 Web search responses include URL citations that are streamed through the SDK's citation system.
@@ -163,6 +216,13 @@ response = agent("What does the document say about pricing?")
 --8<-- "user-guide/sdk/model-providers/openai-responses.ts:file_search"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/openai-responses.rs:file_search"
+```
+
+</Tab>
 </Tabs>
 
 File search requires a [vector store](https://platform.openai.com/docs/guides/tools-file-search) with uploaded files. Text responses stream correctly; file citation annotations are not yet mapped to the SDK citation schema.
@@ -190,6 +250,13 @@ response = agent("Calculate the SHA-256 hash of 'hello world'")
 ```typescript
 --8<-- "user-guide/sdk/model-providers/openai-responses.ts:code_interpreter"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/openai-responses.rs:code_interpreter"
+```
+
 </Tab>
 </Tabs>
 
@@ -228,6 +295,13 @@ response = agent("Using deepwiki, what language is the strands-agents/harness-sd
 --8<-- "user-guide/sdk/model-providers/openai-responses.ts:remote_mcp"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/openai-responses.rs:remote_mcp"
+```
+
+</Tab>
 </Tabs>
 
 The model discovers and calls tools exposed by the remote MCP server. The approval flow is not currently surfaced, so `require_approval` must be set to `"never"`.
@@ -257,6 +331,13 @@ response = agent("Use the shell to compute the md5sum of the string 'hello world
 ```typescript
 --8<-- "user-guide/sdk/model-providers/openai-responses.ts:shell"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/openai-responses.rs:shell"
+```
+
 </Tab>
 </Tabs>
 
@@ -290,6 +371,13 @@ response = agent("What is my name?")
 --8<-- "user-guide/sdk/model-providers/openai-responses.ts:stateful"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/openai-responses.rs:stateful"
+```
+
+</Tab>
 </Tabs>
 
 When using a stateful model, the agent automatically uses a null conversation manager and throws an error if a conversation manager is also supplied.
@@ -319,6 +407,13 @@ model = OpenAIResponsesModel(
 --8<-- "user-guide/sdk/model-providers/openai-responses.ts:prompt_caching"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/openai-responses.rs:prompt_caching"
+```
+
+</Tab>
 </Tabs>
 
 The cache configuration maps onto the request as follows on models that take cache points:
@@ -332,7 +427,10 @@ The cache configuration maps onto the request as follows on models that take cac
 
 On older models, only `ttl` values `"in_memory"` and `"24h"` apply, through `prompt_cache_retention`. Any other TTL is ignored with a warning. `tools_ttl` / `toolsTTL` and `system_prompt_ttl` / `systemPromptTTL` have no effect. Caching fields you set in `params`, such as `prompt_cache_options`, take precedence over the cache configuration.
 
-The provider decides from model info, not from the model ID. If you call a model that takes cache points through an alias the SDK does not recognize, such as a proxy or gateway name, opt in with a [`model_info` (`modelInfo`)](index.mdx#model-info) override:
+The provider decides from model info, not from the model ID. If you call a model
+that takes cache points through an alias the SDK does not recognize, such as a
+proxy or gateway name, opt in with a
+[`model_info` (`modelInfo`)](index.mdx#model-info) override:
 
 <Tabs>
 <Tab label="Python">
@@ -352,6 +450,13 @@ model = OpenAIResponsesModel(
 ```typescript
 --8<-- "user-guide/sdk/model-providers/openai-responses.ts:prompt_caching_alias"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/openai-responses.rs:prompt_caching_alias"
+```
+
 </Tab>
 </Tabs>
 
@@ -384,6 +489,13 @@ When disabled (or if the API call fails), falls back to estimation with a charac
 <Tab label="TypeScript">
 
 The OpenAI Responses provider does not currently implement native token counting in the TypeScript SDK. It uses estimation with a character-based heuristic (characters ÷ 4 for text, characters ÷ 2 for JSON).
+</Tab>
+<Tab label="Rust">
+
+The Rust provider uses the character-based heuristic: characters divided by four
+for text and by two for JSON. It does not currently call OpenAI's native token
+counting API.
+
 </Tab>
 </Tabs>
 

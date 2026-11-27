@@ -1,15 +1,18 @@
 ---
 title: Notebook
 description: "Give a Strands agent persistent notebooks to plan multi-step tasks and track progress. Notebook state lives in agent state and persists with session management."
+languages: [Python, TypeScript, Rust]
 tags: [tool-authoring]
 sourceLinks:
   - path: strands-ts/src/vended-tools/notebook/notebook.ts
   - path: strands-py/src/strands/vended_tools/notebook/notebook.py
+  - path: strands-rs/strands/src/vended_tools/notebook.rs
 ---
 
 A scratchpad the agent can read and write across invocations. The most effective use is giving the agent a notebook at the start of a task and instructing it to plan its work there. It can break the task into steps, check things off as it goes, and always have a clear picture of what's left. Notebook state is part of the agent's state, so it persists automatically with [Session Management](../../agents/session-management.mdx).
 
-_Supported in: Node.js, modern browsers (TypeScript); all platforms (Python)._
+_Supported in: Node.js and modern browsers (TypeScript); all platforms
+(Python and Rust)._
 
 **Example - Task Management:**
 
@@ -31,6 +34,13 @@ from strands.vended_tools import notebook
 
 agent = Agent(tools=[notebook])
 agent('Create a notebook called "tasks" with "# Daily Tasks" and add "- [ ] Review code" to it')
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/notebook.rs:example"
 ```
 
 </Tab>
@@ -63,6 +73,15 @@ print(notebooks.get("tasks"))
 ```
 
 </Tab>
+<Tab label="Rust">
+
+Read notebook state through the agent's app state:
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/notebook.rs:state"
+```
+
+</Tab>
 </Tabs>
 
 **Example - Custom configuration:**
@@ -88,6 +107,13 @@ notes = make_notebook(
     max_notebook_size_bytes=64 * 1024,  # 64 KiB
 )
 agent = Agent(tools=[notes])
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/notebook.rs:custom"
 ```
 
 </Tab>

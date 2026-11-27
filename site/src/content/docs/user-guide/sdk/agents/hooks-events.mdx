@@ -1,17 +1,55 @@
 ---
 title: Hook events
 description: "Reference for every hook event a Strands agent emits: when each fires across the single-agent and multi-agent lifecycle, and which event properties you can modify."
+languages: [Python, TypeScript, Rust]
 sidebar:
   label: "Hook events"
 tags: [hooks, event-loop, tool-execution]
 sourceLinks:
   - path: strands-py/src/strands/hooks/events.py
   - path: strands-ts/src/hooks/events.ts
+  - path: strands-rs/strands/src/hooks/events.rs
 ---
 
 import Diagram from '@components/Diagram.astro'
 
 A hook callback subscribes to a specific event type and runs when that event fires during agent execution. This page is the reference for every event: when each one fires across the lifecycle, the full catalogue of event types, and which properties you can modify to change agent behavior. To write and register a callback, see [Hooks](hooks.md).
+
+## Register an Event Callback
+
+Register a callback for the event type you want to observe or modify:
+
+<Tabs>
+<Tab label="Python">
+
+```python
+from strands import Agent
+from strands.hooks import BeforeToolCallEvent
+
+agent = Agent()
+
+def block_delete(event: BeforeToolCallEvent) -> None:
+    if event.tool_use["name"] == "delete_file":
+        event.cancel_tool = "Deleting files is disabled"
+
+agent.add_hook(BeforeToolCallEvent, block_delete)
+```
+</Tab>
+<Tab label="TypeScript">
+
+```typescript
+--8<-- "user-guide/sdk/agents/hooks_imports.ts:register_event_imports"
+
+--8<-- "user-guide/sdk/agents/hooks.ts:register_event"
+```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks-events.rs:register_event"
+```
+</Tab>
+</Tabs>
 
 ## Hook Event Lifecycle
 
@@ -34,6 +72,17 @@ The following diagram shows when hook events are emitted during a typical agent 
   alt="Hook events in a single-agent invocation, in TypeScript. Each stage groups its events in firing order. Request start: BeforeInvocationEvent, then MessageAddedEvent for the user's prompt. Then the agent loop. Model call: BeforeModelCallEvent, then ModelStreamUpdateEvent and ContentBlockEvent while the response streams, ModelMessageEvent, and AfterModelCallEvent. If the model makes tool calls, tool execution runs: BeforeToolsEvent; then, for each tool call, BeforeToolCallEvent, ToolStreamUpdateEvent, AfterToolCallEvent, and ToolResultEvent; then AfterToolsEvent, MessageAddedEvent for the model's message, and MessageAddedEvent for the tool results, which go back to the model for the next model call. When the model makes no tool calls, MessageAddedEvent fires for the model's message as the loop exits, and the request ends: AfterInvocationEvent, then AgentResultEvent. If tool execution is interrupted, InterruptEvent fires once per unanswered interrupt before the request ends."
 />
 </Tab>
+<Tab label="Rust">
+
+The single-agent lifecycle emits events in this order:
+
+1. `InitializedEvent` when the agent initializes.
+2. `BeforeInvocationEvent` and `MessageAddedEvent` when an invocation starts.
+3. `BeforeModelCallEvent`, streaming events, and `AfterModelCallEvent`.
+4. `BeforeToolsEvent`, per-tool events, and `AfterToolsEvent` for tool batches.
+5. `AfterInvocationEvent` and `AgentResultEvent` when the invocation ends.
+
+</Tab>
 </Tabs>
 
 ### Multi-Agent Lifecycle
@@ -54,6 +103,12 @@ The following diagram shows when multi-agent hook events are emitted during orch
   name="hooks-events-multi-agent-typescript"
   alt="Multi-agent hook events, in TypeScript. Each stage groups its events in firing order. Initialization, once when the orchestrator is initialized: MultiAgentInitializedEvent. Then, for each invocation: invocation start, BeforeMultiAgentInvocationEvent; node execution, BeforeNodeCallEvent, NodeStreamUpdateEvent while the node streams, NodeResultEvent, and AfterNodeCallEvent for every node the orchestrator runs; when execution moves on to the next node, MultiAgentHandoffEvent fires and node execution repeats; and invocation end, AfterMultiAgentInvocationEvent, then MultiAgentResultEvent."
 />
+</Tab>
+<Tab label="Rust">
+
+Graph and Swarm orchestration are not available in the Rust SDK, so Rust does not
+emit multi-agent lifecycle events.
+
 </Tab>
 </Tabs>
 
@@ -113,6 +168,29 @@ All events extend `HookableEvent`, making them both streamable via `agent.stream
 | `NodeResultEvent`                  | Wraps a completed node result. Access via `.result`                                                  |
 | `MultiAgentHandoffEvent`           | Triggered when execution transitions between nodes                                                   |
 | `MultiAgentResultEvent`            | Wraps the final multi-agent result at the end of orchestration. Access via `.result`                 |
+</Tab>
+<Tab label="Rust">
+
+| Event | Description |
+|-------|-------------|
+| `InitializedEvent` | Fires when the agent initializes |
+| `BeforeInvocationEvent` | Fires before an invocation starts |
+| `AfterInvocationEvent` | Fires after an invocation ends |
+| `MessageAddedEvent` | Fires when conversation history gains a message |
+| `BeforeModelCallEvent` | Fires before a model call |
+| `AfterModelCallEvent` | Fires after a model call |
+| `ModelStreamUpdateEvent` | Wraps each transient model stream update |
+| `ContentBlockEvent` | Wraps each assembled content block |
+| `ModelMessageEvent` | Wraps the complete model message |
+| `BeforeToolsEvent` | Fires before a batch of tool calls |
+| `AfterToolsEvent` | Fires after a batch of tool calls |
+| `BeforeToolCallEvent` | Fires before one tool call |
+| `AfterToolCallEvent` | Fires after one tool call |
+| `ToolStreamUpdateEvent` | Wraps a streaming tool update |
+| `ToolResultEvent` | Wraps a completed tool result |
+| `AgentResultEvent` | Wraps the final agent result |
+| `InterruptEvent` | Fires for an unanswered interrupt |
+
 </Tab>
 </Tabs>
 
@@ -184,10 +262,38 @@ Most event properties are read-only to prevent unintended modifications. However
 - `AfterInvocationEvent`
     - `resume` - Trigger a follow-up agent invocation with new input. Setting it re-enters the agent loop under the same invocation lock. See [Invocation resume](hooks.md#invocation-resume).
 </Tab>
+<Tab label="Rust">
+
+- `BeforeInvocationEvent`
+    - `set_cancel` cancels the invocation with a message.
+    - `agent_mut` provides mutable access to messages, tools, state, and the
+      system prompt.
+- `BeforeModelCallEvent`
+    - `set_cancel` cancels the model call.
+- `AfterModelCallEvent`
+    - `set_retry` requests another model call.
+- `BeforeToolsEvent`
+    - `set_cancel` cancels the tool batch.
+- `BeforeToolCallEvent`
+    - `set_cancel` cancels the tool call.
+    - `set_selected_tool` replaces the selected tool.
+    - `tool_use_mut` modifies the tool name, ID, or input.
+- `AfterToolCallEvent`
+    - `set_result` replaces the tool result.
+    - `set_retry` requests another tool call.
+- `AfterToolsEvent`
+    - `set_end_turn` ends the turn after the tool batch.
+- `AfterInvocationEvent`
+    - `set_resume` starts a follow-up invocation.
+
+</Tab>
 </Tabs>
 
 ## Next Steps
 
 - Write and register a callback against any of these events in [Hooks](hooks.md).
 - Bundle several callbacks together with [Plugins](../plugins/index.md).
-- See the Agent API Reference for complete method documentation: [Python](@api/python/strands.agent.agent) | [TypeScript](@api/typescript/Agent)
+- See the Agent API Reference for complete method documentation:
+  [Python](@api/python/strands.agent.agent) |
+  [TypeScript](@api/typescript/Agent) |
+  [Rust](../../../api/rust/)

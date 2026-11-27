@@ -1,10 +1,12 @@
 ---
 title: Manage context and caching
 description: "Strands harness manages the context window and offloads bulky tool results as tasks grow, and caches the reused parts of each request where the provider allows."
+languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-py/src/strands_harness/models.py
   - path: harness-ts/src/agent.ts
+  - path: harness-rs/strands-harness/src/agent.rs
 sidebar:
   label: "Manage context and caching"
 ---
@@ -16,13 +18,15 @@ are on by default and need no configuration for the common case.
 
 ## Context management
 
-With `context_manager` on, Strands harness keeps the relevant history in the model's window,
-summarizing older turns as the conversation grows so a long task does not overflow the
-context. It also offloads bulky tool results: each is replaced with a short preview and a
-reference, and the full content stays in the context manager's stash, where the agent reads
-it back with the `retrieve_context` tool when it actually needs it.
+With context management on, Strands harness keeps the relevant history in the
+model's window, summarizing older turns as the conversation grows so a long task does
+not overflow the context. It also offloads bulky tool results: each is replaced with a
+short preview and a reference, and the full content stays in offloaded storage, where
+the agent reads it back with the `retrieve_context` tool when it actually needs it.
 
-The option takes `"auto"` (the default), `"agentic"`, or off:
+In Python and TypeScript, the option takes `"auto"` (the default), `"agentic"`,
+or an off value. Rust uses `ContextManagerStrategy::Auto`,
+`ContextManagerStrategy::Agentic`, or `ContextManagerStrategy::Disabled`:
 
 <Tabs>
   <Tab label="Strands harness">
@@ -39,6 +43,11 @@ The option takes `"auto"` (the default), `"agentic"`, or off:
         import { createHarness } from '@strands-agents/harness'
 
         const agent = await createHarness({ contextManager: 'agentic' })
+        ```
+      </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/context-and-caching.rs:harness_context"
         ```
       </Tab>
     </Tabs>
@@ -66,14 +75,20 @@ The option takes `"auto"` (the default), `"agentic"`, or off:
         const agent = new Agent({ conversationManager })
         ```
       </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/context-and-caching.rs:sdk_context"
+        ```
+      </Tab>
     </Tabs>
   </Tab>
 </Tabs>
 
-`"auto"` and `"agentic"` select the Strands Harness SDK's context-management strategy; both
-offload bulky tool results. Turning context management off (`False`/`null`, or `off` on the CLI)
-disables offloading too, so the full history stays in the window and you own the size of
-it.
+The auto and agentic choices select the Strands Harness SDK's context-management
+strategy; both offload bulky tool results. Turning context management off
+(`False`/`null` in Python and TypeScript,
+`ContextManagerStrategy::Disabled` in Rust, or `off` on the CLI) disables
+offloading too, so the full history stays in the window and you own its size.
 
 When a [session](../sessions/) is active, offloaded artifacts
 persist under the session directory; without a session they stay in memory and do not
@@ -101,7 +116,8 @@ On models with only implicit caching, such as OpenAI models on the Amazon Bedroc
 context Strands harness injects each turn changes the request and breaks the cache. See
 [Prompt caching: known gaps](../../../sdk/model-providers/prompt-caching/#known-gaps).
 
-Pass `caching` off to disable what Strands harness configures:
+Set `caching` to `False`/`false` to disable what Strands harness configures
+(`None`/`null` also disables it in Python and TypeScript):
 
 <Tabs>
   <Tab label="Strands harness">
@@ -118,6 +134,11 @@ Pass `caching` off to disable what Strands harness configures:
         import { createHarness } from '@strands-agents/harness'
 
         const agent = await createHarness({ caching: false })
+        ```
+      </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/context-and-caching.rs:harness_caching"
         ```
       </Tab>
     </Tabs>
@@ -145,6 +166,11 @@ Pass `caching` off to disable what Strands harness configures:
           cacheConfig: { ttl: '1h' },
         })
         const agent = new Agent({ model: bedrockModel })
+        ```
+      </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/context-and-caching.rs:sdk_caching"
         ```
       </Tab>
     </Tabs>

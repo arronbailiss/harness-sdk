@@ -85,7 +85,7 @@ cargo add tokio --features macros,rt-multi-thread
 ```
 
 ```rust
---8<-- "../../../../strands-rs/strands/examples/docs_overviews.rs:streaming_overview"
+--8<-- "user-guide/sdk/streaming/index.rs:streaming_overview"
 ```
 
 </Tab>
@@ -94,13 +94,6 @@ cargo add tokio --features macros,rt-multi-thread
 Each emitted text delta is one piece of the model's output. The
 [event reference](./events.md) lists everything else the stream carries: tool
 calls, lifecycle signals, and multi-agent events.
-
-:::note[Rust guide coverage]
-This overview and the Rust quickstart include Rust examples. Linked streaming
-guides currently cover Python and TypeScript unless they show a Rust tab. Use
-the [Rust API reference](../../../api/rust/index.md) for the complete Rust
-surface.
-:::
 
 ## Where to go next
 

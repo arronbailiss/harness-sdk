@@ -8,7 +8,7 @@ import fastGlob from 'fast-glob'
 import { pathToDocsSlug } from './util/links'
 import { TagSchema } from './config/tags'
 import { SDK_META, hasLanguageStreams, type Sdk } from './config/changelog'
-import { DEFAULT_DOC_LANGUAGES, SDK_LANGUAGES, normalizeSdkLanguage } from './config/languages'
+import { DEFAULT_DOC_LANGUAGES, SDK_LANGUAGES, normalizeSdkLanguage, normalizeSdkLanguages } from './config/languages'
 
 export const ALL_SDK_LANGUAGES = SDK_LANGUAGES
 
@@ -50,6 +50,47 @@ export const docsLanguagesSchema = z
       })
     }
   })
+
+export const docsUnsupportedLanguagesSchema = z
+  .union([docsLanguageSchema, z.array(docsLanguageSchema).min(1)])
+  .optional()
+  .superRefine((value, ctx) => {
+    if (!Array.isArray(value)) return
+    const normalized = value.map(normalizeSdkLanguage).filter(Boolean)
+    if (new Set(normalized).size !== normalized.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'unsupportedLanguages must not contain duplicates',
+      })
+    }
+  })
+
+function validateDocsLanguageSupport(
+  data: {
+    languages?: string | string[] | undefined
+    unsupportedLanguages?: string | string[] | undefined
+  },
+  ctx: z.RefinementCtx
+) {
+  const documented = normalizeSdkLanguages(data.languages ?? DEFAULT_DOC_LANGUAGES)
+  const unsupported = normalizeSdkLanguages(data.unsupportedLanguages ?? [])
+  for (const language of unsupported) {
+    if (documented.includes(language)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['unsupportedLanguages'],
+        message: `${language} cannot be both documented and unsupported`,
+      })
+    }
+  }
+}
+
+export const docsLanguageSupportSchema = z
+  .object({
+    languages: docsLanguagesSchema,
+    unsupportedLanguages: docsUnsupportedLanguagesSchema,
+  })
+  .superRefine(validateDocsLanguageSupport)
 
 const authorSchema = z.object({
   name: z.string(),
@@ -431,43 +472,46 @@ export const collections = {
     }),
     schema: docsSchema({
       // We have certain flags/behavior based on the following properties; see CMS-README.md for more info
-      extend: z.object({
-        languages: docsLanguagesSchema,
-        community: z.boolean().default(false),
-        experimental: z.boolean().default(false),
-        // Drives the derived "New" sidebar badge for NEW_BADGE_DAYS after this
-        // date (see route-middleware.ts). Never hand-write a literal New badge.
-        addedDate: z.coerce.date().optional(),
-        // Category for TypeScript API docs (classes, interfaces, type-aliases, functions)
-        category: z.string().optional(),
-        // Integration type for filtering (e.g., 'model-provider' for model providers)
-        integrationType: z
-          .enum([
-            'model-provider',
-            'decision-model',
-            'tool',
-            'session-manager',
-            'memory-store',
-            'storage',
-            'integration',
-            'plugin',
-            'observability',
-            'agent-extension',
-            'intervention',
-          ])
-          .optional(),
-        // Short description for catalog listings
-        description: z.string().optional(),
-        // Array of slugs that should redirect to this page (e.g., old URLs)
-        redirectFrom: z.array(z.string()).optional(),
-        // Tags from src/config/tags.yml — drive the build-time "Related pages" block
-        tags: z.array(TagSchema).default([]),
-        // Pointers to the SDK implementation behind this page. Rendered as an
-        // "Implementation" section on headless surfaces only (index.md, llms-full.txt).
-        sourceLinks: z.array(sourceLinkSchema).optional(),
-        // Provenance for generated pages imported from another repository.
-        externalDocs: externalDocsSchema.optional(),
-      }),
+      extend: z
+        .object({
+          languages: docsLanguagesSchema,
+          unsupportedLanguages: docsUnsupportedLanguagesSchema,
+          community: z.boolean().default(false),
+          experimental: z.boolean().default(false),
+          // Drives the derived "New" sidebar badge for NEW_BADGE_DAYS after this
+          // date (see route-middleware.ts). Never hand-write a literal New badge.
+          addedDate: z.coerce.date().optional(),
+          // Category for TypeScript API docs (classes, interfaces, type-aliases, functions)
+          category: z.string().optional(),
+          // Integration type for filtering (e.g., 'model-provider' for model providers)
+          integrationType: z
+            .enum([
+              'model-provider',
+              'decision-model',
+              'tool',
+              'session-manager',
+              'memory-store',
+              'storage',
+              'integration',
+              'plugin',
+              'observability',
+              'agent-extension',
+              'intervention',
+            ])
+            .optional(),
+          // Short description for catalog listings
+          description: z.string().optional(),
+          // Array of slugs that should redirect to this page (e.g., old URLs)
+          redirectFrom: z.array(z.string()).optional(),
+          // Tags from src/config/tags.yml — drive the build-time "Related pages" block
+          tags: z.array(TagSchema).default([]),
+          // Pointers to the SDK implementation behind this page. Rendered as an
+          // "Implementation" section on headless surfaces only (index.md, llms-full.txt).
+          sourceLinks: z.array(sourceLinkSchema).optional(),
+          // Provenance for generated pages imported from another repository.
+          externalDocs: externalDocsSchema.optional(),
+        })
+        .superRefine(validateDocsLanguageSupport),
     }),
   }),
 }

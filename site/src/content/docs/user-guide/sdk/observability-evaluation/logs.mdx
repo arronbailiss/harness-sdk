@@ -1,9 +1,18 @@
 ---
 title: Logging
-description: 'Configure logging for Strands agents in Python and TypeScript: set log levels, add handlers, and capture debug output from SDK operations.'
+description: >-
+  Configure logging for Strands agents: set log levels, add handlers, and
+  capture debug output from SDK operations.
+languages: [Python, TypeScript, Rust]
 sidebar:
   label: "Logs"
 tags: [observability, pii]
+sourceLinks:
+  - path: strands-py/src/strands/agent/agent.py
+  - path: strands-py/src/strands/tools/registry.py
+  - path: strands-ts/src/logging/logger.ts
+  - path: strands-rs/strands/src/agent/agent.rs
+  - path: strands-rs/strands/src/tools/registry.rs
 ---
 
 To see what the SDK is doing internally, turn on its logging. Strands ships logging infrastructure that plugs into your application's existing setup.
@@ -28,6 +37,19 @@ Strands Harness SDK provides a simple logging infrastructure with a global logge
 2. **Global Logger**: A single global logger instance configured via `configureLogging()`.
 
 3. **Default Behavior**: By default, the SDK only logs warnings and errors to the console. Debug and info logs are no-ops unless you configure a custom logger.
+</Tab>
+<Tab label="Rust">
+
+The Rust SDK emits structured events through the
+[`tracing`](https://docs.rs/tracing/) ecosystem.
+
+1. **Structured fields**: Events carry fields such as tool names, IDs, and
+   error details separately from the message.
+2. **Subscriber integration**: Your application chooses a subscriber for
+   filtering and output formatting.
+3. **Default behavior**: Without a subscriber, emitted events are not written
+   anywhere.
+
 </Tab>
 </Tabs>
 
@@ -73,15 +95,28 @@ To enable logging for the Strands Agents SDK, use the `configureLogging` functio
 - Debug and info logs are no-ops by default (zero performance overhead)
 - Configure a custom logger with appropriate log levels to enable debug/info logging
 </Tab>
+<Tab label="Rust">
+
+Install and initialize a tracing subscriber before you create the agent:
+
+```bash
+cargo add tracing-subscriber
+```
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/logs.rs:basic_logging"
+```
+
+</Tab>
 </Tabs>
 
 ### Log Levels
 
-The Strands Agents SDK uses standard log levels:
+The Strands Agents SDKs use their language's standard log levels:
 
 - **DEBUG**: Detailed operational information for troubleshooting. Extensively used for tool registration, discovery, configuration, and execution flows.
 
-- **INFO**: General informational messages. Currently not used.
+- **INFO**: General informational messages.
 
 - **WARNING**: Potential issues that don't prevent operation, such as validation failures, specification errors, and compatibility warnings.
 
@@ -91,7 +126,10 @@ The Strands Agents SDK uses standard log levels:
 
 In the Python SDK, notices about *how the SDK is being used* (an unset `context_window_limit`, an unknown cache strategy, a graph built without execution limits) are emitted through Python's [`warnings`](https://docs.python.org/3/library/warnings.html) module instead of the logger. The standard library deduplicates repeats, so each warning surfaces once rather than on every call. The TypeScript SDK reports these through its logger.
 
-Control them with `-W` or `PYTHONWARNINGS`, like any other warning:
+Rust uses `TRACE`, `DEBUG`, `INFO`, `WARN`, and `ERROR` through `tracing`;
+there is no separate `CRITICAL` level.
+
+Control Python warnings with `-W` or `PYTHONWARNINGS`:
 
 ```bash
 # Promote all UserWarnings, including SDK usage warnings, to errors (useful in CI)
@@ -193,6 +231,21 @@ WARN event_type=<unknown_type> | unsupported bedrock event type
 
 Future versions will include more detailed logging for tool operations and event loop processing.
 </Tab>
+<Tab label="Rust">
+
+Rust emits structured events around model calls, tool registration and
+execution, retries, session work, and agent lifecycle operations. Fields use
+snake case and messages use the shared structured format:
+
+```text
+tool_name=<weather>, tool_use_id=<tool-123> | tool call started
+attempt=<2>, error=<service unavailable> | retrying model call
+```
+
+Set the subscriber to `DEBUG` for operational details or `TRACE` for the most
+verbose diagnostics.
+
+</Tab>
 </Tabs>
 
 ## Advanced Configuration
@@ -250,6 +303,19 @@ You can implement your own logger to integrate with your application's logging s
 --8<-- "user-guide/sdk/observability-evaluation/logs.ts:custom_logger"
 ```
 </Tab>
+<Tab label="Rust">
+
+Configure targets, thread metadata, formatting, and filters through the
+subscriber:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/logs.rs:advanced_logging"
+```
+
+For production, compose `tracing` with a subscriber or exporter that matches
+your application's logging pipeline.
+
+</Tab>
 </Tabs>
 
 ## Best Practices
@@ -270,5 +336,17 @@ You can implement your own logger to integrate with your application's logging s
 3. **Production Performance**: Debug and info logs are no-ops by default, minimizing performance impact
 4. **Compatible Libraries**: Use established logging libraries like Pino or Winston for production deployments
 5. **Consistent Format**: Ensure your custom logger maintains consistent formatting across log levels
+</Tab>
+<Tab label="Rust">
+
+1. **Configure early**: Install one global subscriber before creating agents.
+2. **Use filters**: Keep production levels focused and enable `DEBUG` or
+   `TRACE` temporarily when troubleshooting.
+3. **Preserve fields**: Choose an output layer that retains structured fields.
+4. **Redact sensitive values**: Treat prompts, tool inputs, and provider
+   errors as potentially sensitive.
+5. **Flush exporters**: Shut down telemetry providers cleanly before process
+   exit.
+
 </Tab>
 </Tabs>

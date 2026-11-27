@@ -1,21 +1,26 @@
 ---
 title: Connect MCP servers
-description: "Give Strands harness MCP tools by passing a standard mcpServers config, as a path to a JSON file or an inline mapping. A failed server yields no tools, not a crash."
+description: >-
+  Give Strands harness MCP tools from a JSON file or inline portable
+  configuration. A failed server yields no tools instead of stopping construction.
+languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-ts/src/agent.ts
+  - path: harness-rs/strands-harness/src/agent.rs
 sidebar:
   label: "Connect MCP servers"
 ---
 
 [MCP tools](../../../sdk/tools/mcp-tools/) let the agent use tools served by
-a Model Context Protocol server. Strands harness connects them from a standard `mcpServers` config,
-the same shape other MCP clients use, and adds every discovered tool to the agent's tool
-list.
+a Model Context Protocol server. Strands harness reads a standard MCP server
+configuration, adds every discovered tool to the agent, and manages its lifecycle.
 
 ## Pass a config file or an inline mapping
 
-`mcp_servers` accepts either a path to a JSON file or the mapping itself. The mapping can
+The
+<Syntax py="mcp_servers" ts="mcpServers" rs=".mcp_servers" />
+option accepts either a path to a JSON file or the mapping itself. The mapping can
 be a flat `{name: {...}}` map, or that map nested under an `mcpServers` key:
 
 <Tabs>
@@ -51,6 +56,11 @@ be a flat `{name: {...}}` map, or that map nested under an `mcpServers` key:
             filesystem: { command: 'npx', args: ['-y', '@modelcontextprotocol/server-filesystem', '.'] },
           },
         })
+        ```
+      </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/mcp-servers.rs:harness"
         ```
       </Tab>
     </Tabs>
@@ -89,6 +99,11 @@ be a flat `{name: {...}}` map, or that map nested under an `mcpServers` key:
         await agent.invoke('list the files in this project')
         ```
       </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/mcp-servers.rs:sdk"
+        ```
+      </Tab>
     </Tabs>
   </Tab>
 </Tabs>
@@ -99,7 +114,7 @@ The Strands Harness SDK connects each server, discovers its tools, and manages i
 
 Each server defaults to continuing on error, so a server that fails to start yields no
 tools rather than taking construction down with it. Make a specific server's failure fatal
-by setting `"continue_on_error": false` on it in the config.
+by setting `"continueOnError": false` on it in the portable config.
 
 If two servers, or a server and a local tool, would register the same tool name, set a
 server's `"prefix"` in the config so its tools are namespaced and cannot clash.

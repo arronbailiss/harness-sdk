@@ -64,6 +64,18 @@ const sleep = new FunctionTool({
 // Basic Usage Examples
 // =====================
 
+async function registerEventExample() {
+  // --8<-- [start:register_event]
+  const agent = new Agent()
+
+  agent.addHook(BeforeToolCallEvent, (event) => {
+    if (event.toolUse.name === 'delete_file') {
+      event.cancel = 'Deleting files is disabled'
+    }
+  })
+  // --8<-- [end:register_event]
+}
+
 async function individualCallbackExample() {
   // --8<-- [start:individual_callback]
   const agent = new Agent()

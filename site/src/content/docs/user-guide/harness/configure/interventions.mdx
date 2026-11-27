@@ -1,10 +1,12 @@
 ---
 title: Gate tool calls with interventions
 description: "Gate Strands harness's tool calls behind human approval or a policy: an ask/smart preset, a natural-language rule, a Cedar policy, or a Strands Harness SDK handler."
+languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/interventions.py
   - path: harness-ts/src/interventions.ts
   - path: harness-py/src/strands_harness/agent.py
+  - path: harness-rs/strands-harness/src/interventions.rs
 sidebar:
   label: "Gate tool calls with interventions"
 ---
@@ -40,6 +42,11 @@ The two presets cover the common cases:
         const agent = await createHarness({ interventions: 'ask' })
         ```
       </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/interventions.rs:harness_ask"
+        ```
+      </Tab>
     </Tabs>
   </Tab>
   <Tab label="SDK">
@@ -70,6 +77,11 @@ The two presets cover the common cases:
         const agent = new Agent({ tools: [bash], interventions: [new HumanInTheLoop()] })
         const result = await agent.invoke('Delete the temp files')
         // result.stopReason === 'interrupt': present the prompt, then resume
+        ```
+      </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/interventions.rs:sdk_ask"
         ```
       </Tab>
     </Tabs>
@@ -106,32 +118,45 @@ own rubric:
         })
         ```
       </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/interventions.rs:natural_language"
+        ```
+      </Tab>
     </Tabs>
   </Tab>
   <Tab label="SDK">
+    The SDKs expose the underlying LLM classifier configuration rather than
+    Strands harness's string shortcut:
+
     <Tabs>
       <Tab label="Python">
         ```python
-        # pip install strands-agents
         from strands import Agent
-        from strands.vended_tools import shell
-        from strands.vended_interventions.hitl import HumanInTheLoop
+        from strands.vended_interventions.hitl import HumanInTheLoop, LLMClassifierConfig
 
-        # The Strands Harness SDK has no natural-language risk policy (a Strands harness convenience).
-        # Gate tool calls with a HumanInTheLoop handler instead.
-        agent = Agent(tools=[shell], interventions=[HumanInTheLoop()])
+        policy = "Ask before deleting files or making any network request."
+        approval = HumanInTheLoop(
+            classifier=LLMClassifierConfig(system_prompt=policy),
+        )
+        agent = Agent(interventions=[approval])
         ```
       </Tab>
       <Tab label="TypeScript">
         ```typescript
-        // npm install @strands-agents/sdk
         import { Agent } from '@strands-agents/sdk'
-        import { bash } from '@strands-agents/sdk/vended-tools/bash'
         import { HumanInTheLoop } from '@strands-agents/sdk/vended-interventions/hitl'
 
-        // The Strands Harness SDK has no natural-language risk policy (a Strands harness convenience).
-        // Gate tool calls with a HumanInTheLoop handler instead.
-        const agent = new Agent({ tools: [bash], interventions: [new HumanInTheLoop()] })
+        const policy = 'Ask before deleting files or making any network request.'
+        const approval = new HumanInTheLoop({
+          classifier: { systemPrompt: policy },
+        })
+        const agent = new Agent({ interventions: [approval] })
+        ```
+      </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/interventions.rs:sdk_policy"
         ```
       </Tab>
     </Tabs>
@@ -142,7 +167,8 @@ own rubric:
 
 A string ending in `.cedar` loads a [Cedar](../../../sdk/agents/interventions/cedar-authorization/)
 policy file for programmatic authorization. Cedar needs an optional dependency:
-`strands-agents[cedar]` in Python, or the `@cedar-policy/cedar-wasm` package in TypeScript.
+`strands-agents[cedar]` in Python, the `@cedar-policy/cedar-wasm` package in TypeScript,
+or the `cedar` Cargo feature in Rust.
 
 <Tabs>
   <Tab label="Python">
@@ -157,6 +183,11 @@ policy file for programmatic authorization. Cedar needs an optional dependency:
     import { createHarness } from '@strands-agents/harness'
 
     const agent = await createHarness({ interventions: './policies/agent.cedar' })
+    ```
+  </Tab>
+  <Tab label="Rust">
+    ```rust
+    --8<-- "user-guide/harness/configure/interventions.rs:cedar"
     ```
   </Tab>
 </Tabs>

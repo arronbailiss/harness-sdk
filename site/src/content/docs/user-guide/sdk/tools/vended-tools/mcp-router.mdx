@@ -1,10 +1,12 @@
 ---
 title: MCP Router
 description: "Let a Strands agent connect to MCP servers at runtime, list and call their tools, and disconnect, limited to a developer-configured allowlist of servers."
+languages: [Python, TypeScript, Rust]
 tags: [tool-authoring]
 sourceLinks:
   - path: strands-ts/src/vended-tools/mcp-router/mcp-router.ts
   - path: strands-py/src/strands/vended_tools/mcp_router/mcp_router.py
+  - path: strands-rs/strands/src/vended_tools/mcp_router/mod.rs
 ---
 
 Lets your agent connect to Model Context Protocol servers at runtime, list the tools they expose, invoke one, and disconnect. The factory takes a developer-set allowlist of server configurations; the model can only initiate connections to servers on that list.
@@ -13,7 +15,7 @@ The tool exposes five commands: `connect` (opens a named connection to an allowl
 
 Connections are scoped per agent and persist across invocations on the same agent instance. A connection is closed when the model calls `disconnect` explicitly, or when the agent is garbage collected. The connection remains open otherwise.
 
-_Supported in: Node.js (TypeScript); all platforms (Python)._
+_Supported in: Node.js (TypeScript); all platforms (Python and Rust)._
 
 :::caution[Security Warning]
 The allowlist controls which servers the model may connect to. For HTTP servers, treat this like any network request — egress control belongs at the encapsulation layer. For stdio servers, the allowlisted command is spawned as a local process with access to the host filesystem, environment variables, and network. Only allowlist commands you would run directly on the host.
@@ -49,6 +51,13 @@ agent(
     "Connect to 'files', list its tools, "
     "call the read_file tool on /tmp/hello.txt, then disconnect."
 )
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/mcp-router.rs:example"
 ```
 
 </Tab>

@@ -84,7 +84,7 @@ Run it with `tsx server.ts`.
 </Tab>
 <Tab label="Rust">
 ```rust
---8<-- "../../../../strands-rs/strands/examples/docs_quickstart.rs:request_handler"
+--8<-- "user-guide/sdk/quickstart/overview.rs:request_handler"
 ```
 
 Call `chat()` from the request handler in your Rust web framework.
@@ -185,10 +185,16 @@ Ollama runs in the Python SDK only.
 Amazon Bedrock is enabled by default. For Anthropic or OpenAI, select the
 provider's Cargo feature when you add the SDK.
 
+The examples use Tokio for their async entry points:
+
+```bash
+cargo add tokio --features macros,rt-multi-thread
+```
+
 <Tabs>
 <Tab label="Amazon Bedrock">
 ```rust
---8<-- "../../../../strands-rs/strands/examples/docs_quickstart.rs:provider_bedrock"
+--8<-- "user-guide/sdk/quickstart/overview.rs:provider_bedrock"
 ```
 </Tab>
 <Tab label="Anthropic">
@@ -197,7 +203,7 @@ cargo add strands --no-default-features --features anthropic
 ```
 
 ```rust
---8<-- "../../../../strands-rs/strands/examples/docs_anthropic.rs:provider_anthropic"
+--8<-- "user-guide/sdk/quickstart/overview.rs:provider_anthropic"
 ```
 </Tab>
 <Tab label="OpenAI">
@@ -206,7 +212,7 @@ cargo add strands --no-default-features --features openai
 ```
 
 ```rust
---8<-- "../../../../strands-rs/strands/examples/docs_openai.rs:provider_openai"
+--8<-- "user-guide/sdk/quickstart/overview.rs:provider_openai"
 ```
 </Tab>
 <Tab label="Google">
@@ -219,8 +225,8 @@ Ollama is not available in the Rust developer preview.
 </Tab>
 </Tabs>
 
-See [model providers](../model-providers/) for Python and TypeScript configuration.
-For Rust provider builders and feature flags, use the
+See [model providers](../model-providers/) for provider installation,
+configuration, and language availability. For exact Rust APIs, use the
 [Rust API reference](../../../api/rust/).
 
 ## Strands harness or the Strands Harness SDK?
@@ -244,8 +250,9 @@ preview.
 
 The table below compares feature availability across the SDKs.
 
-The linked feature guides currently cover Python and TypeScript unless they
-include a Rust tab. Use the [Rust quickstart](./rust/) and
+Feature guides include tabs for every documented SDK. The language selector
+distinguishes features that an SDK does not support from features whose examples
+are not documented yet. Use the [Rust quickstart](./rust/) and
 [Rust API reference](../../../api/rust/) for compile-checked Rust examples and
 exact APIs during the developer preview.
 
@@ -273,7 +280,7 @@ exact APIs during the developer preview.
 |  | [Custom hook providers][hooks] | Yes | Yes | Yes |
 | **Multi-agent** | [Swarms][swarm] | Yes | Yes | No |
 |  | [Graphs][graph] | Yes | Yes | No |
-|  | [Workflows][workflow] | Yes | Yes | No |
+|  | [Workflows][workflow] | Yes | Yes | Yes |
 |  | [Agents as tools][agents-as-tools] | Yes | Yes | Yes |
 |  | [Agent-to-Agent (A2A)][a2a] | Yes | Yes | No |
 | **Session management** | [Storage managers][sessions] | Yes | Yes | Partial |

@@ -1,15 +1,22 @@
 ---
 title: Build a custom plugin
 description: "Write your own Strands plugin: attach it to an agent, register hooks and tools, manage state, and initialize asynchronously."
+languages: [Python, TypeScript, Rust]
 tags: [hooks, event-loop]
 sourceLinks:
   - path: strands-py/src/strands/plugins/plugin.py
   - path: strands-ts/src/plugins/plugin.ts
+  - path: strands-rs/strands/src/plugins/plugin.rs
 ---
 
 import Diagram from '@components/Diagram.astro'
 
-A plugin bundles hooks and tools into one reusable object you attach to an agent. It works against the low-level primitives the Agent class exposes: `model`, <Syntax py="system_prompt" ts="systemPrompt" />, `messages`, `tools`, and `hooks`. When the built-in plugins don't fit, you build and distribute your own. See [Get Featured](/docs/integrations/get-featured) to share your plugins with the community.
+A plugin bundles hooks and tools into one reusable object you attach to an
+agent. It works against `model`,
+<Syntax py="system_prompt" ts="systemPrompt" rs="system_prompt" />, `messages`,
+`tools`, and `hooks`. When the built-in plugins do not fit, build your own.
+See [Get Featured](/docs/integrations/get-featured) to share it with the
+community.
 
 ## Using Plugins
 
@@ -36,6 +43,13 @@ agent = Agent(
 
 --8<-- "user-guide/sdk/plugins/custom-plugins.ts:using_plugins"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/plugins/custom-plugins.rs:using_plugins"
+```
+
 </Tab>
 </Tabs>
 
@@ -92,6 +106,13 @@ agent("Calculate 2 + 2 and print the result")
 --8<-- "user-guide/sdk/plugins/custom-plugins.ts:basic_plugin"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/plugins/custom-plugins.rs:basic_plugin"
+```
+
+</Tab>
 </Tabs>
 
 ### What Happens on Attach
@@ -114,6 +135,13 @@ When you create a plugin and attach it to an agent, the following happens:
 3. **Tool Registration**: The `getTools()` method is called to get tools provided by the plugin
 
 **Note**: TypeScript does not use `@hook` or `@tool` decorators. Instead, tools are returned from `getTools()` and hooks are registered manually in `initAgent()`.
+
+</Tab>
+<Tab label="Rust">
+
+1. **Initialization**: `init_agent` runs for hook registration and setup.
+2. **Hook Registration**: `init_agent` calls `agent.add_hook()`.
+3. **Tool Registration**: `get_tools()` returns the plugin's tools.
 
 </Tab>
 </Tabs>
@@ -162,11 +190,21 @@ TypeScript plugins register hooks manually in the `initAgent` method using `agen
 --8<-- "user-guide/sdk/plugins/custom-plugins.ts:hook_decorator_alternative"
 ```
 </Tab>
+<Tab label="Rust">
+
+#### Hook registration in `init_agent`
+
+```rust
+--8<-- "user-guide/sdk/plugins/custom-plugins.rs:hooks"
+```
+
+</Tab>
 </Tabs>
 
 ### Manual Hook and Tool Registration
 
-For more control, you can manually register hooks and tools in the <Syntax py="init_agent" ts="initAgent" /> method:
+For more control, register hooks and tools in the
+<Syntax py="init_agent" ts="initAgent" rs="init_agent" /> method:
 
 <Tabs>
 <Tab label="Python">
@@ -201,6 +239,13 @@ class ManualPlugin(Plugin):
 
 --8<-- "user-guide/sdk/plugins/custom-plugins.ts:manual_registration"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/plugins/custom-plugins.rs:manual"
+```
+
 </Tab>
 </Tabs>
 
@@ -245,6 +290,13 @@ print(f"Tool calls: {agent.state.get('metrics_call_count')}")
 --8<-- "user-guide/sdk/plugins/custom-plugins.ts:state_management"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/plugins/custom-plugins.rs:state"
+```
+
+</Tab>
 </Tabs>
 
 See [Agent State](../agents/state.mdx) for more information on state management.
@@ -284,6 +336,13 @@ class AsyncConfigPlugin(Plugin):
 
 --8<-- "user-guide/sdk/plugins/custom-plugins.ts:async_initialization"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/plugins/custom-plugins.rs:async_init"
+```
+
 </Tab>
 </Tabs>
 

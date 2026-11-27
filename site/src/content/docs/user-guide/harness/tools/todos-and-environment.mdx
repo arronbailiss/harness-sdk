@@ -1,18 +1,22 @@
 ---
 title: Task tracking and environment
-description: "Strands harness's two built-in plugins: environment injects the platform, date, working directory, and AGENTS.md, and the deprecated todos has moved to the SDK."
+description: >-
+  Use the environment plugin for runtime context and the SDK Todos plugin for
+  task tracking.
+languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/plugins/todos.py
   - path: harness-py/src/strands_harness/plugins/environment.py
   - path: harness-ts/src/plugins/todos.ts
+  - path: harness-rs/strands-harness/src/plugins/environment.rs
 sidebar:
   label: "Task tracking and environment"
 ---
 
-Two of Strands harness's built-ins are plugins rather than tools: `environment` and
-`todos`. Both are selected through `builtin_plugins` and shape how the agent works without
-being things the model calls the way it calls `shell` or `read`. `environment` is on by
-default; `todos` is opt-in and deprecated in favor of the SDK plugin.
+The `environment` integration is a plugin rather than a tool. It shapes how the agent
+works without being something the model calls like `shell` or `read`, and it is on by
+default. Python and TypeScript also keep an opt-in, deprecated harness `todos` plugin.
+Rust uses the SDK `Todos` plugin directly.
 
 ## todos
 
@@ -23,9 +27,10 @@ plugin now ships in the SDK as `Todos`: construct it yourself and pass it in `pl
 [issue #5279](https://github.com/strands-agents/harness-sdk/issues/5279) tracks the move.
 :::
 
-Naming `todos` in `builtin_plugins` still adds the `todo_write` tool and still keeps the
-list in view, but it warns on construction. The SDK plugin is the same plugin, so moving
-to it changes how you attach it and nothing about how the agent behaves:
+In Python and TypeScript, naming `todos` in the harness built-in plugins still adds the
+`todo_write` tool and keeps the list in view, but it warns on construction. Rust exposes
+task tracking only through the SDK plugin. Moving to the SDK plugin changes how you attach
+it and nothing about how the agent behaves:
 
 <Tabs>
   <Tab label="Python">
@@ -44,10 +49,16 @@ to it changes how you attach it and nothing about how the agent behaves:
     const agent = new Agent({ plugins: [new Todos()] })
     ```
   </Tab>
+  <Tab label="Rust">
+    ```rust
+    --8<-- "user-guide/harness/tools/todos-and-environment.rs:todos"
+    ```
+  </Tab>
 </Tabs>
 
-Drop `"todos"` from `builtin_plugins` when you do. Both register a `todo_write` tool, so
-keeping each one leaves them in conflict over that name.
+In Python and TypeScript, drop `todos` from the harness built-in plugins when you add the
+SDK plugin. Keeping both registers `todo_write` twice and creates a name conflict. Rust
+has no harness `todos` entry to remove.
 
 ## environment
 
@@ -68,8 +79,9 @@ change the cached prompt prefix; the rest is discovered once and reused.
 
 ## Select or disable them
 
-`builtin_plugins` selects these by name, defaulting to `["environment"]`. Name both to add
-todos, or pass an empty list to turn both off:
+The built-in-plugins option selects these by name and defaults to `["environment"]`.
+Python and TypeScript can still name `todos` during the deprecation window. Rust uses
+the SDK `Todos` plugin directly. Pass an empty list to turn the harness plugins off:
 
 <Tabs>
   <Tab label="Python">
@@ -84,6 +96,11 @@ todos, or pass an empty list to turn both off:
     import { createHarness } from '@strands-agents/harness'
 
     const agent = await createHarness({ builtinPlugins: ['todos', 'environment'] })
+    ```
+  </Tab>
+  <Tab label="Rust">
+    ```rust
+    --8<-- "user-guide/harness/tools/todos-and-environment.rs:environment"
     ```
   </Tab>
 </Tabs>

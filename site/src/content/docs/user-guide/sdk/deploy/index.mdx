@@ -4,6 +4,11 @@ description: "Take a Strands agent to production: pick a target such as Bedrock 
 sidebar:
   label: Overview
 tags: [deployment]
+languages: [Python, TypeScript, Rust]
+sourceLinks:
+  - path: strands-py/src/strands/agent/agent.py
+  - path: strands-ts/src/agent/agent.ts
+  - path: strands-rs/strands/src/agent/agent.rs
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components'
@@ -104,6 +109,17 @@ def ping():
 --8<-- "user-guide/sdk/deploy/deploy_imports.ts:deploy_ready_agent_imports"
 
 --8<-- "user-guide/sdk/deploy/deploy.ts:deploy_ready_agent"
+```
+
+</Tab>
+<Tab label="Rust">
+
+Wire these handlers to `/invocations` and `/ping` with your Rust HTTP
+framework. Keep one agent per concurrent request, or guard a shared agent so
+invocations do not overlap.
+
+```rust
+--8<-- "user-guide/sdk/deploy/index.rs:deploy_ready_agent"
 ```
 
 </Tab>

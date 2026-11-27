@@ -11,6 +11,8 @@ export const SDK_LANGUAGE_LABELS = {
 
 export type SdkLanguageLabel = (typeof SDK_LANGUAGE_LABELS)[SdkLanguage]
 
+export type SdkLanguageAvailability = 'available' | 'undocumented' | 'unsupported'
+
 export const SDK_LANGUAGE_LABEL_LIST = SDK_LANGUAGES.map(
   (language) => SDK_LANGUAGE_LABELS[language]
 ) as SdkLanguageLabel[]
@@ -38,4 +40,15 @@ export function sdkLanguageLabel(language: SdkLanguage): SdkLanguageLabel {
 export function sdkLanguageFromLabel(label: string): SdkLanguage | undefined {
   const normalized = label.trim().toLowerCase()
   return SDK_LANGUAGES.find((language) => SDK_LANGUAGE_LABELS[language].toLowerCase() === normalized)
+}
+
+export function sdkLanguageAvailability(
+  language: SdkLanguage,
+  documentedLanguages: readonly SdkLanguage[],
+  unsupportedLanguages: readonly SdkLanguage[],
+  hasSwitchTarget = false
+): SdkLanguageAvailability {
+  if (documentedLanguages.includes(language) || hasSwitchTarget) return 'available'
+  if (unsupportedLanguages.includes(language)) return 'unsupported'
+  return 'undocumented'
 }

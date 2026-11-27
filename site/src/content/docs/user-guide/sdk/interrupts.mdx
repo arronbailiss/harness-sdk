@@ -2,11 +2,15 @@
 title: Interrupts
 tags: [event-loop, hooks, tool-execution, error-handling]
 description: "Pause AI agents mid-execution for human approval, input, or review. Build human-in-the-loop workflows with interrupt and resume patterns."
+languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/interrupt.py
   - path: strands-py/src/strands/types/interrupt.py
   - path: strands-ts/src/interrupt.ts
   - path: strands-ts/src/types/interrupt.ts
+  - path: strands-rs/strands/src/interrupt.rs
+  - path: strands-rs/strands/src/hooks/events.rs
+  - path: strands-rs/strands/src/tools/tool.rs
 ---
 
 import Diagram from '@components/Diagram.astro'
@@ -173,6 +177,16 @@ Both `BeforeToolCallEvent` and `BeforeToolsEvent` are interruptible. Interruptin
 --8<-- "user-guide/sdk/interrupts.ts:hooks_before_tools"
 ```
 </Tab>
+<Tab label="Rust">
+
+Both `BeforeToolCallEvent` and `BeforeToolsEvent` expose `interrupt()`.
+The first scopes approval to one tool call; the second pauses the whole batch.
+
+```rust
+--8<-- "user-guide/sdk/interrupts.rs:hooks"
+```
+
+</Tab>
 </Tabs>
 
 ### Components
@@ -209,6 +223,18 @@ For additional details on each of these components, refer to the [Python API Ref
 - `InterruptResponseContent`: content block type for resuming from an interrupt
     - Pass an array of these to `agent.invoke()` to resume. Each response is keyed by the interrupt's `id` and will be returned from the associated `interrupt()` call when the tool/hook re-executes. The `response` must be JSON-serializable.
 </Tab>
+<Tab label="Rust">
+
+- `BeforeToolCallEvent::interrupt()` and `BeforeToolsEvent::interrupt()` raise
+  named interrupts with optional JSON reasons.
+- `AgentResult::stop_reason()` returns `StopReason::Interrupt`, and
+  `AgentResult::interrupts()` returns the pending interrupts.
+- Resume with a `Vec<InterruptResponse>`. Each response is keyed by interrupt
+  id and returned from the matching `interrupt()` call when the hook runs
+  again.
+- `set_cancel()` rejects one tool call or the whole batch after a response.
+
+</Tab>
 </Tabs>
 
 ### Rules
@@ -238,6 +264,18 @@ Strands enforces the following rules for interrupts:
 - `AfterToolsEvent` fires once per event-loop cycle rather than once per logical batch. A per-tool interrupt splits a batch across cycles, so it fires on the interrupt cycle (carrying only the results collected so far) and again on resume (carrying the results produced that cycle): a hook with side effects there can run more than once for one assistant message
 - When an interrupt fires mid-batch, completed tool results are preserved so the agent skips the model call on resume and only executes remaining tools
 - Both assistant and tool result messages are appended only after tool execution completes, preventing dangling `toolUse` blocks without matching results
+</Tab>
+<Tab label="Rust">
+
+- Every callback on the interrupted event still runs and may raise an interrupt.
+- A callback may raise several uniquely named interrupts. The result returns all
+  pending interrupts together.
+- A per-tool interrupt prevents that tool's `AfterToolCallEvent`, while
+  `AfterToolsEvent` still fires for the cycle.
+- Completed tool results are preserved. On resume, the loop runs only the
+  remaining tools before returning to the model.
+- A batch interrupt runs before any tool or per-tool callback in that batch.
+
 </Tab>
 </Tabs>
 
@@ -299,6 +337,18 @@ The tool callback receives a `context` parameter (the second argument) which pro
 --8<-- "user-guide/sdk/interrupts.ts:tools_example"
 ```
 </Tab>
+<Tab label="Rust">
+
+The tool receives a `ToolContext`. Propagate the `InterruptError` with `?` so
+the agent loop can pause and resume the tool:
+
+```rust
+--8<-- "user-guide/sdk/interrupts.rs:tool_interrupt"
+```
+
+Direct tool calls return an error result when a tool tries to interrupt.
+
+</Tab>
 </Tabs>
 
 ### Components
@@ -317,6 +367,14 @@ Tool interrupts work like hook interrupts, with two differences: tools receive `
 - [`ToolContext`](@api/typescript/ToolContext): the second argument passed to the tool callback, providing access to the `interrupt` method
     - `context.interrupt({ name, reason? })`: halts the agent loop. `name` is a string identifier and `reason` is an optional JSON-serializable value.
     - The `name` must be unique only among interrupt calls configured in the same tool definition. It is still advisable however to namespace your interrupts so as to more easily distinguish the calls when constructing responses outside the agent.
+</Tab>
+<Tab label="Rust">
+
+- `ToolContext` provides `interrupt(InterruptParams)`.
+- Names must be unique within that tool execution. Prefix names when the
+  application combines interrupts from several tools.
+- Reasons and responses are `JsonValue`s.
+
 </Tab>
 </Tabs>
 
@@ -344,6 +402,16 @@ Strands enforces the following rules for tool interrupts:
 
 --8<-- "user-guide/sdk/interrupts.ts:tools_rethrow"
 ```
+</Tab>
+<Tab label="Rust">
+
+- A tool may raise several interrupts in sequence, one at a time.
+- Concurrent tools that finish before the pause keep their results; the
+  interrupted tool runs again from the start after resume.
+- `ToolContext::interrupt()` returns `InterruptError` until a response exists.
+  Propagate it with `?`; if surrounding code catches errors, preserve the
+  interrupt rather than turning it into a normal tool failure.
+
 </Tab>
 </Tabs>
 
@@ -451,6 +519,13 @@ print(f"MESSAGE: {json.dumps(result.message)}")
 --8<-- "user-guide/sdk/interrupts.ts:session_management"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/interrupts.rs:session_management"
+```
+
+</Tab>
 </Tabs>
 
 ### Components
@@ -472,6 +547,13 @@ Session managing interrupts involves the following key components:
 - `agent.appState` - General purpose key-value store that can be used to persist interrupt responses
     - On subsequent tool calls, you can reference the responses stored in `appState` to decide whether another interrupt is necessary. See [Agent State](./agents/state.md#agent-state) for more.
 </Tab>
+<Tab label="Rust">
+
+- `SessionManager` persists the snapshot containing interrupt state.
+- `agent.app_state()` can persist a trusted response such as a session-wide
+  approval. See [Agent State](./agents/state.md#agent-state).
+
+</Tab>
 </Tabs>
 
 ## MCP Elicitation
@@ -480,4 +562,8 @@ To collect additional information from a user during an MCP tool call, use elici
 
 ## Multi-Agent Systems
 
-Interrupts work across swarm and graph orchestration too, using the same interfaces shown here. You raise them from a `BeforeNodeCallEvent` hook or from within a node. See [Interrupts in multi-agent systems](./interrupts-multi-agent.md) for the swarm and graph examples.
+Python and TypeScript support interrupts across swarm and graph orchestration
+with `BeforeNodeCallEvent`. Rust propagates interrupts through agents used as
+tools, but does not provide Graph or Swarm. See
+[Interrupts in multi-agent systems](./interrupts-multi-agent.md) for the
+Python and TypeScript examples.

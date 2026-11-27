@@ -1,6 +1,7 @@
 ---
 title: State Management
 description: 'Maintain state in Strands agents across turns and sessions: conversation history, key-value agent state, and per-request invocation state.'
+languages: [Python, TypeScript, Rust]
 sidebar:
   label: "State"
 tags: [state, snapshots, session-management]
@@ -8,6 +9,8 @@ sourceLinks:
   - path: strands-py/src/strands/agent/state.py
   - path: strands-py/src/strands/types/json_dict.py
   - path: strands-ts/src/agent/agent.ts
+  - path: strands-rs/strands/src/state_store.rs
+  - path: strands-rs/strands/src/agent/invocation_state.rs
 ---
 
 A Strands agent carries state in three forms, each with its own lifetime and job:
@@ -47,10 +50,18 @@ print(agent.messages)  # Shows all messages exchanged so far
 --8<-- "user-guide/sdk/agents/state.ts:conversation_history"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/state.rs:conversation_history"
+```
+
+</Tab>
 </Tabs>
 
-`agent.messages` contains every user and assistant message, including tool calls and
-tool results. It's the primary way to inspect what happened in a conversation.
+<Syntax py="agent.messages" ts="agent.messages" rs="agent.messages()" />
+contains every user and assistant message, including tool calls and tool results.
+It is the primary way to inspect what happened in a conversation.
 
 Initialize an agent with existing messages to continue a prior conversation or
 pre-fill its context:
@@ -76,6 +87,13 @@ agent("What's my name?")
 ```typescript
 --8<-- "user-guide/sdk/agents/state.ts:message_initialization"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/state.rs:message_initialization"
+```
+
 </Tab>
 </Tabs>
 
@@ -118,6 +136,16 @@ does not, because it passes `record_direct_tool_call=False`.
 --8<-- "user-guide/sdk/agents/state.ts:direct_tool_calling"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/state.rs:direct_tool_calling"
+```
+
+The first direct call is recorded. The second passes
+`record_direct_tool_call: Some(false)`, so it is not.
+
+</Tab>
 </Tabs>
 
 ### Conversation Manager
@@ -149,6 +177,13 @@ agent = Agent(conversation_manager=conversation_manager)
 --8<-- "user-guide/sdk/agents/state.ts:conversation_manager_import"
 --8<-- "user-guide/sdk/agents/state.ts:conversation_manager"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/state.rs:conversation_manager"
+```
+
 </Tab>
 </Tabs>
 
@@ -203,6 +238,13 @@ agent.state.delete("last_action")
 --8<-- "user-guide/sdk/agents/state.ts:agent_state_basic"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/state.rs:agent_state_basic"
+```
+
+</Tab>
 </Tabs>
 
 ### State Validation and Safety
@@ -237,6 +279,17 @@ except ValueError as e:
 ```typescript
 --8<-- "user-guide/sdk/agents/state.ts:state_validation"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/state.rs:state_validation"
+```
+
+`StateStore::set()` accepts values that implement `Serialize`. Types that do
+not implement it are rejected by the compiler; serialization failures return
+an error without changing the stored value.
+
 </Tab>
 </Tabs>
 
@@ -296,12 +349,19 @@ print(f"Last action: {agent.state.get('last_action')}")
 --8<-- "user-guide/sdk/agents/state.ts:state_in_tools"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/state.rs:state_in_tools"
+```
+
+</Tab>
 </Tabs>
 
 ## Invocation State
 
-Each agent interaction maintains an invocation state dictionary that persists across the
-agent loop cycles and is **not** included in the agent's context:
+Each agent interaction maintains invocation state that persists across the agent
+loop cycles and is **not** included in the agent's context:
 
 <Tabs>
 <Tab label="Python">
@@ -328,14 +388,33 @@ result = agent("Who am I?", invocation_state={"request_id": "r-42", "user_id": "
 --8<-- "user-guide/sdk/agents/state.ts:invocation_state"
 ```
 </Tab>
+<Tab label="Rust">
+
+Rust invocation state is a typed map. Store one cloneable, thread-safe value per
+type and read it from hooks or tools:
+
+```rust
+--8<-- "user-guide/sdk/agents/state.rs:invocation_state"
+```
+
+</Tab>
 </Tabs>
 
-Invocation state (<Syntax py="invocation_state" ts="invocationState" />):
+Invocation state
+(<Syntax py="invocation_state" ts="invocationState" rs="InvocationState" />):
 
-- Comes from the <Syntax py="invocation_state" ts="invocationState" /> argument you pass to the invocation, and defaults to `{}` when omitted
+- Comes from the
+  <Syntax
+    py="invocation_state"
+    ts="invocationState"
+    rs="InvokeOptions::invocation_state"
+  />
+  option you pass to the invocation and is empty when omitted
 - Persists through the recursive agent loop cycles within a single invocation
 - Is shared by reference across all hook events and tools, so mutations are visible to later hooks and tools in the same invocation
-- Surfaces on the result: TypeScript returns the full invocation state as `result.invocationState`; Python returns its `request_state` slot as `result.state`
+- Surfaces on the result: TypeScript returns `result.invocationState`, Python
+  returns its `request_state` slot as `result.state`, and Rust returns
+  `result.invocation_state()`
 - Is **not** included in the agent's model context
 
 ## Persisting State Across Sessions

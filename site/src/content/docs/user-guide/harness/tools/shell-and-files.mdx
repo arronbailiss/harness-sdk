@@ -1,10 +1,12 @@
 ---
 title: Shell and file tools
 description: "Strands harness's default shell and read, write, and edit tools let the agent run commands and change files, all routed through the agent's sandbox."
+languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/tools/file_tools.py
   - path: harness-ts/src/tools/file-tools.ts
   - path: harness-py/src/strands_harness/agent.py
+  - path: harness-rs/strands-harness/src/tools/file_tools.rs
 sidebar:
   label: "Shell and file tools"
 ---
@@ -50,9 +52,13 @@ working directory, and files the agent sees describe where it actually runs. To 
 what the agent can touch, run it under a [sandbox](../../../sdk/sandbox/)
 rather than trying to restrict the tools themselves.
 
+Python and TypeScript ship Docker and SSH sandbox implementations. Rust exposes
+`Sandbox` and `PosixShellSandbox` for custom backends, but does not yet ship those two
+implementations.
+
 ## Select or disable them
 
-These tools are selected by name through `builtin_tools`, alongside the other built-ins.
-To run without a shell, or with only `read`, narrow the list; see
+Select these tools by name through the built-in-tools option. To run without a shell,
+or with only `read`, narrow the list; see
 [add tools and instructions](../../configure/tools-and-instructions/) for
 how selection works.

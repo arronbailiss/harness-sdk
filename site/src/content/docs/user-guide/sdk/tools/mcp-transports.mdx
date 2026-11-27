@@ -1,10 +1,13 @@
 ---
 title: MCP Transports
 description: "How a Strands agent reaches an MCP server: stdio for local processes, Streamable HTTP and SSE for remote servers, with OAuth and AWS IAM authentication."
+languages: [Python, TypeScript, Rust]
 tags: [tool-authoring, mcp]
 sourceLinks:
   - path: strands-py/src/strands/tools/mcp/mcp_client.py
   - path: strands-ts/src/mcp/client.ts
+  - path: strands-rs/strands/src/mcp/transport.rs
+  - path: strands-rs/strands/src/mcp/http.rs
 ---
 
 A transport carries messages between the agent and an MCP server. Which one you use
@@ -58,6 +61,12 @@ with stdio_mcp_client:
 
 ```typescript
 --8<-- "user-guide/sdk/tools/mcp-transports.ts:stdio_transport"
+```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/mcp-transports.rs:stdio"
 ```
 </Tab>
 </Tabs>
@@ -191,6 +200,15 @@ mcp_client = MCPClient(lambda: aws_iam_streamablehttp_client(
 --8<-- "user-guide/sdk/tools/mcp-transports.ts:streamable_http"
 ```
 </Tab>
+<Tab label="Rust">
+
+Enable the `mcp` Cargo feature, then configure the URL, headers, and optional OAuth
+client credentials:
+
+```rust
+--8<-- "user-guide/sdk/tools/mcp-transports.rs:streamable_http"
+```
+</Tab>
 </Tabs>
 
 ## Server-Sent Events (SSE)
@@ -216,6 +234,12 @@ with sse_mcp_client:
 
 ```typescript
 --8<-- "user-guide/sdk/tools/mcp-transports.ts:sse_transport"
+```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/mcp-transports.rs:sse"
 ```
 </Tab>
 </Tabs>

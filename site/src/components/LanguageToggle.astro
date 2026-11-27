@@ -15,6 +15,7 @@ import {
   SDK_LANGUAGE_LABEL_LIST,
   SDK_LANGUAGE_LABELS,
   normalizeSdkLanguages,
+  sdkLanguageAvailability,
 } from '../config/languages'
 import { getApiCounterpartMap } from '../util/api-counterparts'
 import { getBase, pathWithBase } from '../util/links'
@@ -65,6 +66,9 @@ try {
 const pageLanguages = routeData?.languages
   ? normalizeSdkLanguages(routeData.languages)
   : undefined
+const unsupportedLanguages = routeData?.unsupportedLanguages
+  ? normalizeSdkLanguages(routeData.unsupportedLanguages)
+  : []
 const pathLanguage = currentPath
   .split('/')
   .find((segment): segment is LanguageSlug => (SDK_LANGUAGES as readonly string[]).includes(segment))
@@ -83,10 +87,22 @@ const sampleLanguageAvailable = (language: LanguageSlug) =>
   currentSampleGuide?.data.language === language ||
   (currentSampleGuide !== undefined &&
     sampleGuideSwitchPath(sampleGuides, currentSampleGuide.data.slug, language) !== undefined)
-const languageDisabled = (language: LanguageSlug, switchTarget: string | undefined) =>
-  currentSampleGuide
-    ? !sampleLanguageAvailable(language)
-    : !resolvedLanguages.includes(language) && switchTarget === undefined
+const languageAvailability = (language: LanguageSlug, switchTarget: string | undefined) => {
+  if (currentSampleGuide) {
+    return sampleLanguageAvailable(language) ? 'available' : 'unavailable'
+  }
+  return sdkLanguageAvailability(
+    language,
+    resolvedLanguages,
+    unsupportedLanguages,
+    switchTarget !== undefined
+  )
+}
+const unavailableLanguageText = {
+  undocumented: 'Documentation is not available yet',
+  unsupported: 'This feature is not supported',
+  unavailable: 'No sample is available',
+} as const
 const languageOptions = [
   { slug: 'typescript', label: SDK_LANGUAGE_LABELS.typescript, icon: typescriptIcon },
   { slug: 'python', label: SDK_LANGUAGE_LABELS.python, icon: pythonIcon },
@@ -102,17 +118,21 @@ const languageOptions = [
   {
     languageOptions.map(({ slug, label, icon }) => {
       const target = switchHref(slug)
-      const disabled = languageDisabled(slug, target)
+      const availability = languageAvailability(slug, target)
+      const disabled = availability !== 'available'
+      const unavailableText =
+        availability === 'available' ? undefined : unavailableLanguageText[availability]
       return (
         <button
           class="lang-option"
           role="radio"
           aria-checked="false"
-          aria-label={label}
+          aria-label={unavailableText ? `${label}: ${unavailableText}` : label}
           data-lang={label}
+          data-language-availability={availability}
           data-switch-href={target}
           disabled={disabled}
-          title={disabled ? `This page is not available in ${label}` : undefined}
+          title={unavailableText ? `${label}: ${unavailableText}` : undefined}
         >
           <span class="lang-icon" set:html={icon} />
           <span class="lang-label">{label}</span>

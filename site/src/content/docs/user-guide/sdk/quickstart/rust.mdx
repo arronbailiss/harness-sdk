@@ -8,7 +8,7 @@ sidebar:
   label: "Rust"
 tags: [quickstart]
 sourceLinks:
-  - path: strands-rs/strands/examples/docs_quickstart.rs
+  - path: strands-rs/strands/src/agent/mod.rs
 ---
 
 This quickstart takes you to a running Rust agent with one custom tool. You install
@@ -39,7 +39,7 @@ Create `src/main.rs` with an agent that uses Amazon Bedrock, the default model
 provider:
 
 ```rust
---8<-- "../../../../strands-rs/strands/examples/docs_quickstart.rs:basic"
+--8<-- "user-guide/sdk/quickstart/rust.rs:basic"
 ```
 
 The default model is Claude Sonnet 4.6 on Amazon Bedrock. Give the SDK AWS
@@ -71,7 +71,7 @@ Replace `src/main.rs` with a typed tool and pass its generated tool struct to th
 agent:
 
 ```rust
---8<-- "../../../../strands-rs/strands/examples/docs_quickstart.rs:custom_tool"
+--8<-- "user-guide/sdk/quickstart/rust.rs:custom_tool"
 ```
 
 Run the project again:

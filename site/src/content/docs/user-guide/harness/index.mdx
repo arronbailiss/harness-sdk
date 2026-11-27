@@ -1,6 +1,8 @@
 ---
 title: Strands harness
-description: "Strands harness is a state-of-the-art, fully assembled agent harness built on the Strands Harness SDK. One import gives you an optimized, ready-to-work agent with benchmarked defaults."
+description: >-
+  Strands harness is a fully assembled agent harness built on the Strands
+  Harness SDK, with benchmarked defaults for tools, memory, and context.
 languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
@@ -14,7 +16,7 @@ sidebar:
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components'
 
-**Strands harness** is a state-of-the-art, fully assembled harness you can use in one import. It
+**Strands harness** is a fully assembled harness you can use with one import. It
 comes with benchmarked defaults for tools, context management, sessions, memory, and hooks,
 plus a tuned system prompt, so you start with an optimized agent instead of assembling an
 agent harness yourself piece by piece.
@@ -43,8 +45,13 @@ You do not have to pass anything. Import it, instantiate it, then give the agent
     ```
   </Tab>
   <Tab label="Rust">
+    ```bash
+    cargo add strands-harness
+    cargo add tokio --features macros,rt-multi-thread
+    ```
+
     ```rust
-    --8<-- "../../../../harness-rs/strands-harness/examples/docs_quickstart.rs:basic"
+    --8<-- "user-guide/harness/index.rs:basic"
     ```
   </Tab>
 </Tabs>
@@ -54,19 +61,16 @@ another provider. The Rust developer preview supports Amazon Bedrock, Anthropic,
 OpenAI, and Amazon Bedrock Mantle; use the
 [Rust API reference](../../api/rust/) for its provider details.
 
-:::note[Rust developer preview]
-The Rust examples on this page are compile checked. Linked configuration and tool
-guides cover Python and TypeScript unless they include a Rust tab.
-:::
-
-Strands harness is open source — browse the source on GitHub:
+Strands harness is open source. Browse the source on GitHub:
 
 <Tabs>
   <Tab label="Python">
-    [`harness-py`](https://github.com/strands-agents/harness-sdk/tree/main/harness-py) — the Python package.
+    [`harness-py`](https://github.com/strands-agents/harness-sdk/tree/main/harness-py)
+    is the Python package.
   </Tab>
   <Tab label="TypeScript">
-    [`harness-ts`](https://github.com/strands-agents/harness-sdk/tree/main/harness-ts) — the TypeScript package.
+    [`harness-ts`](https://github.com/strands-agents/harness-sdk/tree/main/harness-ts)
+    is the TypeScript package.
   </Tab>
   <Tab label="Rust">
     [`harness-rs`](https://github.com/strands-agents/harness-sdk/tree/main/harness-rs)
@@ -76,7 +80,7 @@ Strands harness is open source — browse the source on GitHub:
 
 ## Make it yours
 
-Strands harness is a powerful general-purpose harness that you can customize. It is opinionated
+Strands harness is a customizable general-purpose harness. It is opinionated
 in its implementation but not restrictive: every default is overridable, and what you get
 back is a standard Strands `Agent` with no wrapper or hidden abstraction. As your use case
 gets more specific, override the defaults that matter for it and keep the rest.

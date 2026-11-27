@@ -1,11 +1,13 @@
 ---
 title: Compose with the Strands Harness SDK
 description: "Strands harness is a thin composition layer over the Strands Harness SDK. Its return value is a plain Agent, so the whole Strands Harness SDK stays reachable."
+languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-ts/src/agent.ts
   - path: harness-py/src/strands_harness/__init__.py
   - path: harness-ts/src/index.ts
+  - path: harness-rs/strands-harness/src/lib.rs
 sidebar:
   label: "Compose with the Strands Harness SDK"
 ---
@@ -23,21 +25,24 @@ The factory does three things in order: it resolves your options into concrete S
 (a `Model` from a `provider/name` string, a memory manager, intervention handlers), it
 assembles the built-in tools, plugins, subagents, and behaviors, and it constructs a plain
 `Agent` from the result. Nothing wraps that agent afterward. The built-in tools are
-ordinary registered tools, `todos` and `environment` are ordinary plugins, and sessions and
-memory use the Strands Harness SDK's own managers.
+ordinary registered tools, the environment integration is an ordinary plugin, and
+sessions and memory use the Strands Harness SDK's own managers. Python and TypeScript
+keep a deprecated harness `todos` plugin; Rust uses the SDK's `Todos` plugin directly.
 
 ## The return value is a plain Agent
 
-`create_harness()` returns a plain Strands `Agent`, the same class you get from the Strands Harness SDK
-directly. There is no Strands harness type around it. Because you hold a normal `Agent`, the full Strands Harness SDK
-is available and nothing about Strands harness blocks a feature the Strands Harness SDK offers.
+The harness factory returns a plain Strands `Agent`, the same type you get from
+the Strands Harness SDK directly. There is no Strands harness type around it.
+Because you hold a normal `Agent`, the full Strands Harness SDK is available, and
+nothing about Strands harness blocks a feature the Strands Harness SDK offers.
 
 ## Compose Strands Harness SDK features alongside Strands harness's defaults
 
-Any argument the factory does not name is passed straight through to the `Agent`
-constructor, and your explicit value wins over the default it corresponds to. This is the
-seam for Strands Harness SDK-native features. Pass your own `plugins` or `interventions` alongside Strands harness's
-and they compose:
+Python forwards unnamed keyword arguments to the `Agent` constructor. TypeScript extends
+the SDK's agent configuration with the fields the harness owns, while Rust exposes the
+remaining typed `AgentConfig` fields on `HarnessAgentOptions`. In every language, an
+explicit SDK value wins over the harness default it replaces. Pass your own `plugins` or
+`interventions` alongside Strands harness's and they compose:
 
 <Tabs>
   <Tab label="Python">
@@ -68,6 +73,11 @@ and they compose:
     })
     ```
   </Tab>
+  <Tab label="Rust">
+    ```rust
+    --8<-- "user-guide/harness/composing-with-sdk.rs:compose"
+    ```
+  </Tab>
 </Tabs>
 
 ## Modify the agent after construction
@@ -90,6 +100,11 @@ field are yours to adjust:
 
     const agent = await createHarness()
     agent.systemPrompt += '\n\nAlways cite file paths as file:line.'
+    ```
+  </Tab>
+  <Tab label="Rust">
+    ```rust
+    --8<-- "user-guide/harness/composing-with-sdk.rs:modify"
     ```
   </Tab>
 </Tabs>
@@ -124,6 +139,11 @@ prompt:
     import { buildSystemPrompt } from '@strands-agents/harness'
 
     const agent = new Agent({ systemPrompt: buildSystemPrompt('You are a migration assistant.') })
+    ```
+  </Tab>
+  <Tab label="Rust">
+    ```rust
+    --8<-- "user-guide/harness/composing-with-sdk.rs:prompt"
     ```
   </Tab>
 </Tabs>

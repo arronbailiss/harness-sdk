@@ -1,7 +1,14 @@
 ---
 title: Traces
 description: 'Trace agent execution end to end with OpenTelemetry in Strands: capture model interactions, tool calls, token usage, and event loop cycles.'
+languages: [Python, TypeScript, Rust]
 tags: [observability]
+sourceLinks:
+  - path: strands-py/src/strands/telemetry/tracer.py
+  - path: strands-ts/src/telemetry/tracer.ts
+  - path: strands-rs/strands/src/telemetry/mod.rs
+  - path: strands-rs/strands/src/telemetry/config.rs
+  - path: strands-rs/strands/src/telemetry/tracer.rs
 ---
 
 To see exactly what your agent did on a request, trace its execution end to end: every model interaction, retriever call, tool call, and event loop cycle. Strands builds these traces on the OpenTelemetry standard, so they capture the full path of a request through your agent.
@@ -16,11 +23,13 @@ Traces in Strands provide a hierarchical view of your agent's execution, allowin
 4. **Measure performance**: Identify bottlenecks and optimization opportunities
 5. **Debug complex workflows**: Follow the exact path of execution through multiple cycles
 
-Each trace consists of multiple spans that represent different operations in your agent's execution flow:
+Each trace consists of multiple spans that represent different operations in
+your agent's execution flow. The following diagram shows the Python and
+TypeScript attribute shape:
 
 ```
 +-------------------------------------------------------------------------------------+
-| Strands Agent                                                                       |
+| Python and TypeScript: Strands Agent                                                |
 | - gen_ai.system: <system name>                                                      |
 | - gen_ai.agent.name: <agent name>                                                   |
 | - gen_ai.operation.name: <operation>                                                |
@@ -80,6 +89,28 @@ Each trace consists of multiple spans that represent different operations in you
 +-------------------------------------------------------------------------------------+
 ```
 
+Rust exports the same hierarchy with these span names and attributes:
+
+```text
+invoke_agent <name>
+  gen_ai.operation.name = invoke_agent
+  gen_ai.agent.name, gen_ai.agent.id, gen_ai.request.model
+  execute_agent_loop_cycle
+    agent_loop.cycle_id
+    chat
+      gen_ai.operation.name = chat
+      gen_ai.request.model and token-usage attributes
+    execute_tool <tool>
+      gen_ai.operation.name = execute_tool
+      gen_ai.tool.name, gen_ai.tool.call.id, gen_ai.tool.status
+```
+
+Rust does not put `gen_ai.agent.name` on `chat` spans, and it does not put
+`gen_ai.choice.*` fields on loop spans. Prompt, message, and result content is
+recorded as OpenTelemetry events or operation-detail attributes on the
+corresponding agent, model, and tool spans, depending on the selected semantic
+conventions.
+
 ## OpenTelemetry Integration
 
 Strands natively integrates with OpenTelemetry, an industry standard for distributed tracing. This integration provides:
@@ -111,6 +142,16 @@ To enable OTEL exporting, install the OpenTelemetry peer dependencies:
 npm install @opentelemetry/api @opentelemetry/sdk-trace-node @opentelemetry/sdk-trace-base @opentelemetry/resources @opentelemetry/exporter-trace-otlp-http
 ```
 :::
+</Tab>
+<Tab label="Rust">
+
+Enable the `otel` feature, which includes the SDK's OpenTelemetry providers and
+exporters:
+
+```shell
+cargo add strands --features otel
+```
+
 </Tab>
 </Tabs>
 
@@ -194,6 +235,18 @@ response = agent("What can you help me with?")
 --8<-- "user-guide/sdk/observability-evaluation/traces.ts:code_configuration_agent"
 ```
 </Tab>
+<Tab label="Rust">
+
+Create tracer and meter providers, then install the tracer's `tracing` layer:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/traces.rs:code_configuration"
+```
+
+Keep both guards for the lifetime of the program. They flush their providers
+when dropped.
+
+</Tab>
 </Tabs>
 
 ## Trace Structure
@@ -217,7 +270,11 @@ Strands creates a hierarchical trace structure that mirrors the execution of you
 
 ## Captured Attributes
 
-Strands traces include rich attributes that provide context for each operation:
+Strands traces include rich attributes that provide context for each
+operation. The tables below describe the Python and TypeScript exporters. For
+Rust, use the Rust span and attribute summary above; in particular, the Rust
+cycle key is `agent_loop.cycle_id` and the tool status key is
+`gen_ai.tool.status`.
 
 :::note[Cache-token attribute names]
 Strands emits cache-token counts under the OpenTelemetry semantic-convention names
@@ -356,6 +413,15 @@ StrandsTelemetry().setup_console_exporter()
 --8<-- "user-guide/sdk/observability-evaluation/traces.ts:console_exporter"
 ```
 </Tab>
+<Tab label="Rust">
+
+Enable the console exporter while developing:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/traces.rs:console_exporter"
+```
+
+</Tab>
 </Tabs>
 
 
@@ -402,6 +468,15 @@ agent = Agent(
 --8<-- "user-guide/sdk/observability-evaluation/traces.ts:custom_attributes"
 ```
 </Tab>
+<Tab label="Rust">
+
+Pass custom attributes through the agent builder:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/traces.rs:custom_attributes"
+```
+
+</Tab>
 </Tabs>
 
 ### Baggage Propagation
@@ -430,6 +505,15 @@ Pass `baggageAttributes` to the `Agent`:
 
 --8<-- "user-guide/sdk/observability-evaluation/traces.ts:baggage_propagation"
 ```
+</Tab>
+<Tab label="Rust">
+
+Pass baggage values through the agent builder:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/traces.rs:baggage_propagation"
+```
+
 </Tab>
 </Tabs>
 
@@ -460,6 +544,17 @@ Pass `baggageProcessor` to `setupTracer()`:
 ```
 
 Requires `npm install @opentelemetry/baggage-span-processor`. `baggageProcessor` is ignored when you pass your own `provider`.
+</Tab>
+<Tab label="Rust">
+
+Set a `BaggageProcessor` on `TracerConfig` and select the keys to copy:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/traces.rs:baggage_processor"
+```
+
+The processor is ignored when you provide your own tracer provider.
+
 </Tab>
 </Tabs>
 
@@ -492,10 +587,24 @@ with tracer.start_as_current_span("my-custom-operation") as span:
 --8<-- "user-guide/sdk/observability-evaluation/traces.ts:custom_spans"
 ```
 </Tab>
+<Tab label="Rust">
+
+Use the OpenTelemetry types re-exported by `strands` so their versions match
+the SDK:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/traces.rs:custom_spans"
+```
+
+</Tab>
 </Tabs>
 
 :::tip
-<Syntax py="trace.get_tracer()" ts="getTracer()" /> uses the global tracer provider. When you use <Syntax py="StrandsTelemetry()" ts="setupTracer()" /> without a custom provider, it's automatically registered as global, so your custom spans use the same provider as the agent's auto-instrumented spans.
+<Syntax py="trace.get_tracer()" ts="getTracer()" rs="get_tracer()" /> uses the
+global tracer provider. When you use
+<Syntax py="StrandsTelemetry()" ts="setupTracer()" rs="setup_tracer()" />
+without a custom provider, it is registered globally, so custom spans use the
+same provider as the agent's auto-instrumented spans.
 :::
 
 ### Configuring the exporters from source code
@@ -540,6 +649,19 @@ The `telemetry.setupTracer()` function reads OTLP configuration from standard Op
 ```
 
 For more information about the accepted arguments, refer to the [OpenTelemetry JS documentation](https://opentelemetry.io/docs/languages/js/).
+</Tab>
+<Tab label="Rust">
+
+`setup_tracer` reads the standard `OTEL_EXPORTER_OTLP_*` environment variables.
+Choose OTLP, console, or both in `TelemetryExporters`:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/traces.rs:configuring_exporters"
+```
+
+For a custom exporter or endpoint configured entirely in code, build an
+OpenTelemetry `SdkTracerProvider` and pass it in `TracerConfig::provider`.
+
 </Tab>
 </Tabs>
 
@@ -603,6 +725,16 @@ print(response)
 
 --8<-- "user-guide/sdk/observability-evaluation/traces.ts:end_to_end"
 ```
+</Tab>
+<Tab label="Rust">
+
+This example exports spans to both OTLP and the console, records metrics, and
+keeps the guards alive until the agent shuts down:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/traces.rs:end_to_end"
+```
+
 </Tab>
 </Tabs>
 

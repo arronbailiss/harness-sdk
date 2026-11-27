@@ -88,7 +88,7 @@ cargo add tokio --features macros,rt-multi-thread
 ```
 
 ```rust
---8<-- "../../../../strands-rs/strands/examples/docs_overviews.rs:observability_overview"
+--8<-- "user-guide/sdk/observability-evaluation/index.rs:observability_overview"
 ```
 
 The standalone example installs a `tracing` subscriber. If your application
@@ -100,13 +100,6 @@ already owns the subscriber, add the guard's layer to it instead of calling
 
 Swap the console exporter for an OTLP exporter to send the same spans to an
 OpenTelemetry collector, which can forward them to your observability backend.
-
-:::note[Rust guide coverage]
-This overview currently covers Rust tracing. The linked metrics and logging
-guides cover Python and TypeScript unless they show a Rust tab. Use the
-[Rust API reference](../../../api/rust/index.md) for `setup_meter` and the rest
-of the Rust observability API.
-:::
 
 ## Where to go next
 
