@@ -7,14 +7,16 @@ sourceLinks:
   - path: strands-py/src/strands/hooks/registry.py
   - path: strands-ts/src/hooks/events.ts
   - path: strands-ts/src/hooks/registry.ts
+  - path: strands-rs/strands/src/hooks/events.rs
+  - path: strands-rs/strands/src/hooks/registry.rs
+  - path: strands-rs/strands/src/plugins/plugin.rs
 ---
-
 
 To add logging, validation, guardrails, or custom logic at any point in the agent
 loop, use hooks. Hooks ship in the core Strands Agents SDK (`strands-agents` on
-PyPI, `@strands-agents/sdk` on npm): both built-in components and user code
-subscribe to events throughout the agent lifecycle and react to or modify agent
-behavior through strongly-typed event callbacks.
+PyPI, `@strands-agents/sdk` on npm, and `strands` on crates.io). Built-in
+components and user code subscribe to events throughout the agent lifecycle and
+react to or modify agent behavior through strongly typed event callbacks.
 
 ## Overview
 
@@ -35,7 +37,9 @@ You register a hook callback against an event type, and it receives a strongly-t
 
 ### Registering Individual Hook Callbacks
 
-The simplest way to register a hook callback is using the <Syntax py="agent.add_hook()" ts="agent.addHook()" /> method:
+The simplest way to register a hook callback is using the
+<Syntax py="agent.add_hook()" ts="agent.addHook()" rs="agent.add_hook()" />
+method:
 
 <Tabs>
 <Tab label="Python">
@@ -65,6 +69,13 @@ agent.add_hook(typed_callback)  # Event type inferred from type hint
 --8<-- "user-guide/sdk/agents/hooks.ts:individual_callback"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:individual_callback"
+```
+
+</Tab>
 </Tabs>
 
 For multi-agent orchestrators, you can register callbacks for orchestration events:
@@ -88,6 +99,11 @@ orchestrator.hooks.add_callback(BeforeNodeCallEvent, my_callback)
 ```typescript
 --8<-- "user-guide/sdk/agents/hooks.ts:orchestrator_callback"
 ```
+</Tab>
+<Tab label="Rust">
+
+Graph and Swarm orchestration events are not available.
+
 </Tab>
 </Tabs>
 
@@ -122,6 +138,13 @@ agent = Agent(plugins=[LoggingPlugin()])
 ```typescript
 --8<-- "user-guide/sdk/plugins/index.ts:plugin_for_hooks"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:logging_plugin"
+```
+
 </Tab>
 </Tabs>
 
@@ -186,6 +209,16 @@ These are not enforced bounds: any numeric value works. Use values beyond them (
 Within the same order group, Before events preserve registration order and After events reverse it.
 
 </Tab>
+<Tab label="Rust">
+
+Lower `HookOrder` values run first. Within the same order group, before-event
+callbacks preserve registration order and after-event callbacks run in reverse:
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:hook_ordering"
+```
+
+</Tab>
 </Tabs>
 
 ## Advanced Usage
@@ -194,10 +227,33 @@ Within the same order group, Before events preserve registration order and After
 
 Invocation state carries configuration and context data through the agent or orchestrator invocation. Reach for it when a hook needs to:
 
-1. **Access custom objects**: database client objects, connection pools, or other Python objects
+1. **Access custom objects**: database clients, connection pools, or other
+   application objects
 2. **Read request context**: session IDs, user information, settings, or request-specific data
-3. **Share state across a multi-agent run**: access state shared across all agents, see [Shared State Across Multi-Agent Patterns](../multi-agent/multi-agent-patterns.md#shared-state-across-multi-agent-patterns)
+3. **Share state across a run**: access state from the components participating
+   in an invocation
 4. **Pass custom parameters**: any additional data the hook needs
+
+<Tabs>
+<Tab label="Python">
+
+For orchestrated runs, invocation state is shared across agents. See
+[Shared State Across Multi-Agent Patterns](../multi-agent/multi-agent-patterns.md#shared-state-across-multi-agent-patterns).
+
+</Tab>
+<Tab label="TypeScript">
+
+For orchestrated runs, invocation state is shared across agents. See
+[Shared State Across Multi-Agent Patterns](../multi-agent/multi-agent-patterns.md#shared-state-across-multi-agent-patterns).
+
+</Tab>
+<Tab label="Rust">
+
+Invocation state is shared by hooks and tools during one agent invocation.
+Graph and Swarm orchestration are not available.
+
+</Tab>
+</Tabs>
 
 <Tabs>
 <Tab label="Python">
@@ -249,6 +305,15 @@ result = agent(
 --8<-- "user-guide/sdk/agents/hooks.ts:invocation_state_in_hooks"
 ```
 </Tab>
+<Tab label="Rust">
+
+Invocation state stores typed, cloneable values:
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:invocation_state"
+```
+
+</Tab>
 </Tabs>
 
 Multi-agent hook events provide access to:
@@ -265,6 +330,11 @@ Multi-agent hook events provide access to:
 - **orchestrator**: The multi-agent orchestrator instance (for example: Graph/Swarm)
 - **nodeId**: Identifier of the node being executed (for node-level events)
 - **state**: The `MultiAgentState` for the current invocation, including an `app` field for custom consumer state
+</Tab>
+<Tab label="Rust">
+
+Graph, Swarm, and their multi-agent hook events are not available.
+
 </Tab>
 </Tabs>
 
@@ -294,6 +364,13 @@ class ToolInterceptor(HookProvider):
 
 --8<-- "user-guide/sdk/agents/hooks.ts:tool_interception"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:tool_interception"
+```
+
 </Tab>
 </Tabs>
 
@@ -333,10 +410,23 @@ agent("Contact me at user@example.com")
 
 The live event exposes `messages`, but `toJSON()` omits them.
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:invocation_message_modification"
+```
+
+</Tab>
 </Tabs>
 
-Assign a new collection to `event.messages` to replace the input. Assign an empty
-collection to remove the input from the invocation.
+Use
+<Syntax
+  py="event.messages = messages"
+  ts="event.messages = messages"
+  rs="event.set_messages(messages)"
+/>
+to replace the input. Pass an empty collection to remove the input from the
+invocation.
 
 ### Result Modification
 
@@ -364,6 +454,13 @@ class ResultProcessor(HookProvider):
 
 --8<-- "user-guide/sdk/agents/hooks.ts:result_modification"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:result_modification"
+```
+
 </Tab>
 </Tabs>
 
@@ -397,6 +494,11 @@ class ConditionalExecutionHook(HookProvider):
 --8<-- "user-guide/sdk/agents/hooks.ts:conditional_node_execution"
 ```
 </Tab>
+<Tab label="Rust">
+
+Conditional Graph and Swarm node hooks are not available.
+
+</Tab>
 </Tabs>
 
 ## Best Practices
@@ -423,6 +525,13 @@ class RequestLoggingHook(HookProvider):
 ```typescript
 --8<-- "user-guide/sdk/agents/hooks.ts:composability"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:composability"
+```
+
 </Tab>
 </Tabs>
 
@@ -452,6 +561,16 @@ class ResultProcessor(HookProvider):
 
 --8<-- "user-guide/sdk/agents/hooks.ts:logging_modifications"
 ```
+</Tab>
+<Tab label="Rust">
+
+Use the same `AfterToolCallEvent::set_result` pattern and record the change with
+your configured `tracing` subscriber:
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:result_modification"
+```
+
 </Tab>
 </Tabs>
 
@@ -491,6 +610,11 @@ class UniversalMultiAgentHook(HookProvider):
 ```typescript
 --8<-- "user-guide/sdk/agents/hooks.ts:orchestrator_agnostic_design"
 ```
+</Tab>
+<Tab label="Rust">
+
+Graph, Swarm, and their orchestrator hook events are not available.
+
 </Tab>
 </Tabs>
 
@@ -534,6 +658,12 @@ orchestrator = Graph(
 ```typescript
 --8<-- "user-guide/sdk/agents/hooks.ts:layered_hooks"
 ```
+</Tab>
+<Tab label="Rust">
+
+Single-agent hooks are available. Graph, Swarm, and their orchestrator hooks
+are not.
+
 </Tab>
 </Tabs>
 
@@ -584,6 +714,13 @@ class ConstantToolArguments(HookProvider):
 --8<-- "user-guide/sdk/agents/hooks.ts:fixed_tool_arguments_class"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:fixed_tool_arguments"
+```
+
+</Tab>
 </Tabs>
 
 For example, to always force the `calculator` tool to use precision of 1 digit:
@@ -607,6 +744,13 @@ result = agent("What is 2 / 3?")
 ```typescript
 --8<-- "user-guide/sdk/agents/hooks.ts:fixed_tool_arguments_usage"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:fixed_tool_arguments_usage"
+```
+
 </Tab>
 </Tabs>
 
@@ -666,6 +810,13 @@ class LimitToolCounts(HookProvider):
 --8<-- "user-guide/sdk/agents/hooks.ts:limit_tool_counts_class"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:limit_tool_counts"
+```
+
+</Tab>
 </Tabs>
 
 For example, to limit the `sleep` tool to 3 invocations per invocation:
@@ -690,14 +841,24 @@ agent("Sleep once")
 --8<-- "user-guide/sdk/agents/hooks.ts:limit_tool_counts_usage"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:limit_tool_counts_usage"
+```
+
+</Tab>
 </Tabs>
 
 ### Model Call Retry
 
-Useful for implementing custom retry logic for model invocations. The `AfterModelCallEvent.retry` field allows hooks to request retries based on any criteria: exceptions, response validation, content quality checks, or custom logic. This example retries on exceptions with exponential backoff:
+Use model-call hooks for custom retry criteria such as exceptions, response
+validation, or content quality:
 
 <Tabs>
 <Tab label="Python">
+
+This hook waits with exponential backoff before requesting another model call:
 
 ```python
 import asyncio
@@ -736,9 +897,21 @@ class RetryOnServiceUnavailable(HookProvider):
 </Tab>
 <Tab label="TypeScript">
 
+This hook waits with exponential backoff before requesting another model call:
+
 ```typescript
 --8<-- "user-guide/sdk/agents/hooks.ts:model_call_retry_class"
 ```
+</Tab>
+<Tab label="Rust">
+
+This hook requests an immediate retry. Configure the agent's
+`retry_strategies` when the retry should use backoff:
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:model_call_retry"
+```
+
 </Tab>
 </Tabs>
 
@@ -761,6 +934,13 @@ result = agent("What is the capital of France?")
 ```typescript
 --8<-- "user-guide/sdk/agents/hooks.ts:model_call_retry_usage"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:model_call_retry_usage"
+```
+
 </Tab>
 </Tabs>
 
@@ -801,15 +981,30 @@ agent = Agent(
 </Tab>
 <Tab label="TypeScript">
 
-```ts
-// This feature is not yet available in TypeScript SDK
+This hook pattern is not available.
+</Tab>
+<Tab label="Rust">
+
+Access the original error through `AfterToolCallEvent::error()`:
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:exception_handling"
 ```
+
 </Tab>
 </Tabs>
 
 ### Tool Call Retry
 
-Useful for implementing custom retry logic for tool invocations. The `AfterToolCallEvent.retry` field allows hooks to request that a tool be re-executed: for example, to handle transient errors, timeouts, or flaky external services. When `retry` is set to `True`, the tool executor discards the current result and invokes the tool again with the same `tool_use_id`.
+Use tool-call retries to handle transient errors, timeouts, or unreliable
+external services. Request a retry with
+<Syntax
+  py="event.retry = True"
+  ts="event.retry = true"
+  rs="event.set_retry(true)"
+/>.
+The tool executor then discards the current result and invokes the tool again
+with the same `tool_use_id`.
 
 :::note[Streaming behavior]
 When a tool call is retried, intermediate streaming events (`ToolStreamEvent`) from discarded attempts will have already been emitted to callers. Only the final attempt's `ToolResultEvent` is emitted and added to conversation history. Callers consuming streamed events should be prepared to handle events from discarded attempts.
@@ -856,6 +1051,13 @@ class RetryOnToolError(HookProvider):
 --8<-- "user-guide/sdk/agents/hooks.ts:tool_call_retry_class"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:tool_call_retry"
+```
+
+</Tab>
 </Tabs>
 
 For example, to retry failed tool calls once:
@@ -890,11 +1092,20 @@ result = agent("Look up the weather")
 --8<-- "user-guide/sdk/agents/hooks.ts:tool_call_retry_usage"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:tool_call_retry_usage"
+```
+
+</Tab>
 </Tabs>
 
 ### Invocation resume
 
-The `AfterInvocationEvent.resume` property enables a hook to trigger a follow-up agent invocation after the current one completes. When you set `resume` to any valid agent input (a string, content blocks, or messages), the agent automatically re-invokes itself with that input instead of returning to the caller. This starts a full new invocation cycle, including firing `BeforeInvocationEvent`.
+An `AfterInvocationEvent` hook can trigger a follow-up agent invocation after the
+current one completes. The follow-up starts a full new invocation cycle, including
+another `BeforeInvocationEvent`.
 
 This is useful for building autonomous looping patterns where the agent continues processing based on its previous result: for example, re-evaluating after tool execution, injecting additional context, or implementing multi-step workflows within a single call.
 
@@ -902,7 +1113,8 @@ This is useful for building autonomous looping patterns where the agent continue
 The `resume` value accepts any valid `AgentInput`: a string, a list of content blocks, a list of messages, or interrupt responses. When the agent is in an interrupt state, you must provide interrupt responses (not a plain string) to resume correctly.
 :::
 
-The following example checks the agent result and triggers one follow-up invocation to ask the model to summarize its work:
+The following example triggers one follow-up invocation to ask the model to
+summarize its work:
 
 <Tabs>
 <Tab label="Python">
@@ -935,6 +1147,16 @@ result = agent("Look up the weather in Seattle")
 
 --8<-- "user-guide/sdk/agents/hooks.ts:summarize_after_tools"
 ```
+</Tab>
+<Tab label="Rust">
+
+`AfterInvocationEvent` does not carry the final result, so this hook tracks the
+invocation count in its own state:
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:resume_once"
+```
+
 </Tab>
 </Tabs>
 
@@ -971,16 +1193,25 @@ result = agent("Draft a haiku about programming")
 --8<-- "user-guide/sdk/agents/hooks.ts:iterative_refinement"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:iterative_resume"
+```
+
+</Tab>
 </Tabs>
 
 #### Handling interrupts with resume
 
 The `resume` property integrates with the [interrupt](../../tools/index.md) system. When an agent invocation ends because of an interrupt, a hook can automatically handle the interrupt by resuming with interrupt responses. This avoids returning the interrupt to the caller.
 
-When the agent is in an interrupt state, you must resume with a list of `interruptResponse` objects. Passing a plain string raises a `TypeError`.
+When the agent is in an interrupt state, resume with interrupt response objects.
 
 <Tabs>
 <Tab label="Python">
+
+Passing a plain string while an interrupt is active raises `TypeError`.
 
 ```python
 from strands import Agent, tool
@@ -1027,6 +1258,16 @@ result = agent("Send an email to alice@example.com saying hello")
 --8<-- "user-guide/sdk/agents/hooks.ts:auto_approve_interrupts"
 ```
 </Tab>
+<Tab label="Rust">
+
+Observe interrupt IDs through `InterruptEvent`, then supply typed
+`InterruptResponse` values from `AfterInvocationEvent`:
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:resume_interrupts"
+```
+
+</Tab>
 </Tabs>
 
 ## HookProvider Protocol
@@ -1062,12 +1303,25 @@ For most use cases, [Plugins](../plugins/index.md) provide a more convenient way
 </Tab>
 <Tab label="TypeScript">
 
-:::note[TypeScript SDK]
-The TypeScript SDK does not export a `HookProvider` interface. Instead, use the [Plugin](../plugins/index.md) class to bundle multiple hooks together. The `Plugin` class provides `initAgent()` for registering hooks and `getTools()` for providing tools.
-:::
+Use the [Plugin](../plugins/index.md) class to bundle multiple hooks together.
+It provides `initAgent()` for registering hooks and `getTools()` for providing
+tools.
 
 ```typescript
 --8<-- "user-guide/sdk/plugins/index.ts:plugin_for_hooks"
 ```
+</Tab>
+<Tab label="Rust">
+
+Implement `Hook<E>` for reusable hook types, then register each event
+implementation with `add_hook_impl`:
+
+```rust
+--8<-- "user-guide/sdk/agents/hooks.rs:reusable_hook"
+```
+
+Use a [Plugin](../plugins/index.md) when the reusable component also configures
+tools or other agent behavior.
+
 </Tab>
 </Tabs>

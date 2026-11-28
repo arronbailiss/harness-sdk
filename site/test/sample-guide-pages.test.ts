@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { getCollection } from 'astro:content'
+import { JSDOM } from 'jsdom'
 import { parse } from 'node-html-parser'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { DEFAULT_LANGUAGE_LABEL, LANGUAGE_STORAGE_KEY } from '../src/util/language-preference'
@@ -19,6 +20,7 @@ import {
 } from '../src/util/sample-guides'
 
 let guides: SampleGuideEntry[]
+const examplesPageSource = readFileSync(new URL('../src/pages/examples.astro', import.meta.url), 'utf8')
 
 interface GuideFixtureOptions {
   catalogMode?: 'legacy' | 'curated'
@@ -59,11 +61,15 @@ beforeAll(async () => {
   guides = sortSampleGuides(await getCollection('sampleGuides'))
 })
 
-function builtPage(guide?: SampleGuideEntry) {
+function builtPageHtml(guide?: SampleGuideEntry): string {
   const relativePath = guide
     ? path.join('examples', guide.data.slug, 'index.html')
     : path.join('examples', 'index.html')
-  return parse(readFileSync(new URL(`../dist/${relativePath}`, import.meta.url), 'utf8'))
+  return readFileSync(new URL(`../dist/${relativePath}`, import.meta.url), 'utf8')
+}
+
+function builtPage(guide?: SampleGuideEntry) {
+  return parse(builtPageHtml(guide))
 }
 
 function builtMarkdownPage(guide: SampleGuideEntry): string {
@@ -79,6 +85,102 @@ function configuredPathWithBase(value: string): string {
 
 function sampleGuideHref(guide: SampleGuideEntry): string {
   return configuredPathWithBase(sampleGuidePath(guide))
+}
+
+function inlineScript(html: string, marker: string): string {
+  const document = new JSDOM(html).window.document
+  const script =
+    [...document.querySelectorAll<HTMLScriptElement>('script')].find((script) => script.textContent.includes(marker))
+      ?.textContent ?? ''
+  if (!script) throw new Error(`Missing inline script containing ${marker}`)
+  return script
+}
+
+function sourceInlineScript(marker: string): string {
+  const scripts = [...examplesPageSource.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
+  const script = scripts.find((match) => match[1]?.includes(marker))?.[1] ?? ''
+  if (!script) throw new Error(`Missing source inline script containing ${marker}`)
+  return script
+}
+
+function loadCatalogFixture(preference: string): JSDOM['window'] {
+  const dom = new JSDOM(
+    `
+      <language-toggle>
+        <button class="lang-option" data-lang="TypeScript"></button>
+        <button class="lang-option" data-lang="Python"></button>
+        <button class="lang-option" data-lang="Rust" disabled></button>
+      </language-toggle>
+      <p data-sample-catalog-status></p>
+      <starlight-toc>
+        <ul>
+          <li><a href="#sample-category-learn">Learn</a></li>
+          <li><a href="#sample-category-build">Build</a></li>
+        </ul>
+      </starlight-toc>
+      <section data-sample-category="learn">
+        <h2 id="sample-category-learn">Learn</h2>
+        <article data-sample-language="typescript"></article>
+      </section>
+      <section data-sample-category="build">
+        <h2 id="sample-category-build">Build</h2>
+        <article data-sample-language="python"></article>
+      </section>
+    `,
+    {
+      runScripts: 'outside-only',
+      url: 'https://example.test/examples/',
+    }
+  )
+  dom.window.localStorage.setItem(LANGUAGE_STORAGE_KEY, preference)
+  dom.window.eval(inlineScript(builtPageHtml(), '__strandsLanguageToggleInit'))
+  dom.window.eval(
+    `
+      var STORAGE_KEY = ${JSON.stringify(LANGUAGE_STORAGE_KEY)}
+      var DEFAULT_LANGUAGE = ${JSON.stringify(DEFAULT_LANGUAGE_LABEL)}
+      ${sourceInlineScript('__strandsSampleCatalogInit')}
+    `
+  )
+  dom.window.document.dispatchEvent(new dom.window.Event('DOMContentLoaded'))
+  return dom.window
+}
+
+function loadLegacyRedirectFixture(preference: string): JSDOM['window'] {
+  const dom = new JSDOM(
+    `
+      <div
+        data-sample-guide-redirect
+        data-storage-key="${LANGUAGE_STORAGE_KEY}"
+        data-default-language="${DEFAULT_LANGUAGE_LABEL}"
+        data-default-target="#typescript"
+        data-python-target="#python"
+      >
+        <p data-sample-guide-status>Opening examples for your preferred language.</p>
+        <p data-sample-guide-link>
+          <a href="#typescript">Continue to examples</a>
+        </p>
+      </div>
+    `,
+    {
+      runScripts: 'outside-only',
+      url: 'https://example.test/examples/',
+    }
+  )
+  dom.window.localStorage.setItem(LANGUAGE_STORAGE_KEY, preference)
+  dom.window.eval(sourceInlineScript('data-sample-guide-redirect'))
+  return dom.window
+}
+
+function loadGuideLanguageToggle(guide: SampleGuideEntry, preference: string): JSDOM['window'] {
+  const html = builtPageHtml(guide)
+  const dom = new JSDOM(html, {
+    runScripts: 'outside-only',
+    url: `https://example.test${sampleGuidePath(guide)}`,
+  })
+  dom.window.localStorage.setItem(LANGUAGE_STORAGE_KEY, preference)
+  dom.window.eval(inlineScript(html, '__strandsLanguageToggleInit'))
+  dom.window.document.dispatchEvent(new dom.window.Event('DOMContentLoaded'))
+  return dom.window
 }
 
 function sidebarGuidesForLanguage(
@@ -129,6 +231,10 @@ function expectPersistentSidebar(
     expect(option.getAttribute('data-switch-href')).toBe(
       switchTarget ? configuredPathWithBase(switchTarget) : undefined
     )
+  }
+  for (const option of page.querySelectorAll('language-toggle [data-lang="Rust"]')) {
+    expect(option.hasAttribute('disabled')).toBe(true)
+    expect(option.getAttribute('data-switch-href')).toBeUndefined()
   }
 
   const mobileHrefs = new Set(
@@ -185,7 +291,7 @@ describe('generated sample guide pages', () => {
     expect(page.querySelector('html[data-has-sidebar]')).not.toBeNull()
     expect(page.querySelector('.product-switcher__slug')?.textContent.trim()).toBe('/examples')
     expect(page.querySelector('.sample-catalog__intro')?.textContent.trim()).toBe(
-      'Explore complete examples, organized by what you want to learn or build.'
+      `Showing ${DEFAULT_LANGUAGE_LABEL} examples, organized by what you want to learn or build.`
     )
 
     const landingSidebar = buildSampleGuideSidebar(guides)
@@ -227,24 +333,26 @@ describe('generated sample guide pages', () => {
         renderedSection
           ?.querySelectorAll('.sl-link-card[data-sample-family]')
           .map((card) => card.getAttribute('data-sample-family'))
-      ).toEqual(section.families.map((family) => family.key))
+      ).toEqual(section.families.flatMap((family) => family.guides.map(() => family.key)))
 
       for (const family of section.families) {
-        const card = renderedSection?.querySelector(`.sl-link-card[data-sample-family="${family.key}"]`)
-        const primary =
-          family.guides.find((guide) => guide.data.language === DEFAULT_LANGUAGE_LABEL.toLowerCase()) ?? family.primary
-        expect(card?.querySelector('.sample-link-card__title')?.getAttribute('href'), family.key).toBe(
-          sampleGuideHref(primary)
-        )
-        expect(card?.querySelector('.sample-link-card__title')?.textContent.trim(), family.key).toBe(primary.data.title)
-        expect(card?.querySelector('.sample-link-card__description')?.textContent.trim(), family.key).toBe(
-          primary.data.description
-        )
         for (const guide of family.guides) {
-          expect(
-            card?.querySelector(`.sample-link-card__languages a[href="${sampleGuideHref(guide)}"]`)?.textContent.trim(),
-            guide.id
-          ).toBe(languageLabel(guide.data.language))
+          const card = renderedSection?.querySelector(
+            `.sl-link-card[data-sample-family="${family.key}"][data-sample-language="${guide.data.language}"]`
+          )
+          expect(card?.querySelector('.sample-link-card__title')?.getAttribute('href'), guide.id).toBe(
+            sampleGuideHref(guide)
+          )
+          expect(card?.querySelector('.sample-link-card__title')?.textContent.trim(), guide.id).toBe(guide.data.title)
+          expect(card?.querySelector('.sample-link-card__description')?.textContent.trim(), guide.id).toBe(
+            guide.data.description
+          )
+          expect(card?.querySelector('.sample-link-card__language')?.textContent.trim(), guide.id).toBe(
+            languageLabel(guide.data.language)
+          )
+          expect(card?.hasAttribute('hidden'), guide.id).toBe(
+            guide.data.language !== DEFAULT_LANGUAGE_LABEL.toLowerCase()
+          )
         }
       }
     }
@@ -319,6 +427,76 @@ describe('generated sample guide pages', () => {
     }
 
     expect(builtPage(guide).querySelector('.expressive-code')).not.toBeNull()
+  })
+})
+
+describe('sample catalog language interactions', () => {
+  it('keeps an unavailable stored language selected and explains the empty state', () => {
+    const window = loadCatalogFixture('Rust')
+    const cards = [...window.document.querySelectorAll<HTMLElement>('[data-sample-language]')]
+    const sections = [...window.document.querySelectorAll<HTMLElement>('[data-sample-category]')]
+
+    expect(window.document.documentElement.dataset.sdkLanguage).toBe('rust')
+    expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe('Rust')
+    expect(cards.find((card) => card.dataset.sampleLanguage === 'typescript')?.hidden).toBe(true)
+    expect(cards.find((card) => card.dataset.sampleLanguage === 'python')?.hidden).toBe(true)
+    expect(sections.find((section) => section.dataset.sampleCategory === 'learn')?.hidden).toBe(true)
+    expect(sections.find((section) => section.dataset.sampleCategory === 'build')?.hidden).toBe(true)
+    expect(window.document.querySelector('[data-sample-catalog-status]')?.textContent).toBe(
+      'No Rust examples are available yet.'
+    )
+
+    window.document.querySelector<HTMLButtonElement>('[data-lang="Python"]')?.click()
+
+    expect(window.document.documentElement.dataset.sdkLanguage).toBe('python')
+    expect(cards.find((card) => card.dataset.sampleLanguage === 'typescript')?.hidden).toBe(true)
+    expect(cards.find((card) => card.dataset.sampleLanguage === 'python')?.hidden).toBe(false)
+    expect(sections.find((section) => section.dataset.sampleCategory === 'learn')?.hidden).toBe(true)
+    expect(sections.find((section) => section.dataset.sampleCategory === 'build')?.hidden).toBe(false)
+    expect(window.document.querySelector('[data-sample-catalog-status]')?.textContent).toBe(
+      'Showing Python examples, organized by what you want to learn or build.'
+    )
+  })
+
+  it('recovers an unavailable legacy preference when the effective language resolves', () => {
+    const window = loadLegacyRedirectFixture('Rust')
+    const redirect = window.document.querySelector<HTMLElement>('[data-sample-guide-redirect]')
+    const link = redirect?.querySelector<HTMLElement>('[data-sample-guide-link]')
+
+    expect(redirect?.querySelector('[data-sample-guide-status]')?.textContent).toBe(
+      'No Rust examples are available yet.'
+    )
+    expect(link?.hidden).toBe(true)
+    expect(window.location.hash).toBe('')
+
+    window.dispatchEvent(new window.CustomEvent('lang-effective-change', { detail: 'TypeScript' }))
+
+    expect(redirect?.querySelector('[data-sample-guide-status]')?.textContent).toBe(
+      'Opening examples for your preferred language.'
+    )
+    expect(link?.hidden).toBe(false)
+    expect(link?.querySelector('a')?.getAttribute('href')).toBe('#typescript')
+    expect(window.location.hash).toBe('#typescript')
+  })
+})
+
+describe('sample guide language preference', () => {
+  it('preserves the stored language until the selector is used', ({ skip }) => {
+    const guide = guides.find((entry) => entry.data.language === 'typescript')
+    if (!guide) skip('requires a TypeScript sample guide')
+
+    const window = loadGuideLanguageToggle(guide, 'Python')
+    const typeScriptOptions = [
+      ...window.document.querySelectorAll<HTMLButtonElement>('language-toggle [data-lang="TypeScript"]'),
+    ]
+
+    expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe('Python')
+    expect(window.document.documentElement.dataset.sdkLanguage).toBe('python')
+    expect(typeScriptOptions.every((option) => option.getAttribute('aria-checked') === 'false')).toBe(true)
+
+    typeScriptOptions[0]?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
+
+    expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe('TypeScript')
   })
 })
 

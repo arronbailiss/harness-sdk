@@ -19,17 +19,26 @@ Practical reference for writing documentation in this repo. This site uses Astro
     --8<-- "user-guide/concepts/agents/example.ts:basic_agent"
     ```
   </Tab>
+  <Tab label="Rust">
+    ```rust
+    --8<-- "user-guide/concepts/agents/example.rs:basic_agent"
+    ```
+  </Tab>
 </Tabs>
 ```
 
-`<Syntax>` is also globally available. Use it when shared prose needs to reference a language-specific identifier — any method name, parameter, class name, or short expression that differs between Python and TypeScript:
+`<Syntax>` is also globally available. Use it when shared prose needs to reference a language-specific identifier — any method name, parameter, class name, or short expression that differs between SDKs:
 
 ```mdx
-Use <Syntax py=".as_tool()" ts=".asTool()" /> to customize the tool name.
-The <Syntax py="Agent.retry_strategy" ts="Agent.retryStrategy" /> parameter controls retry behavior.
+Use <Syntax py=".as_tool()" ts=".asTool()" rs=".as_tool()" /> to customize the tool name.
+The <Syntax py="retry_strategy" ts="retryStrategy" rs="retry_strategy" /> parameter controls retry behavior.
 ```
 
 Renders as inline `<code>` by default. Pass `plain` for plain text. Reacts live to the global language toggle — no page reload.
+
+Include `py`, `ts`, and `rs` on shared pages. A page with an explicit language
+subset may omit the variants it does not cover. Do not rely on fallback text for
+an SDK-specific identifier.
 
 **When to use `<Syntax>` vs `<Tabs>`:**
 - `<Syntax>`: single identifier or short expression that differs by language, embedded in a prose sentence.
@@ -98,6 +107,26 @@ Only the code between markers is rendered. Paths inside the `--8<--` directive a
 
 **When to skip the imports file:** the page renders no TypeScript snippets, *or* every snippet body genuinely has zero external imports. Otherwise, write the imports file — relying on the imports at the top of the body `.ts` is wrong, since those lines live above the `[start:...]` marker and never appear in rendered docs.
 
+Rust snippets use `.rs` files and the same named-region markers. Keep each
+page-specific snippet beside the page that includes it. The `site/rust-snippets`
+crate discovers and compiles every `.rs` file under `site/src/content/docs/`, so
+do not add documentation-only examples to a published SDK crate or register a
+Cargo example per page. Include the `use` declarations required by the rendered
+block inside its region. A sequence of examples may build on a helper or type
+that the page already showed, but it must not depend on setup that is hidden
+from the reader. Wrappers used only to give a focused fragment an async or
+fallible compilation context may stay outside the region. The Cargo gate
+compiles each complete sibling source file, not every extracted region as a
+standalone crate.
+
+Document every direct crate and optional Cargo feature used by a rendered Rust
+region in that page's Rust tab. Do not rely on the `rust-snippets` crate's
+dependency superset or on an SDK's transitive dependencies: those can make the
+site check pass while copied code fails in a reader's project. Verify a
+standalone example in a scratch crate containing only the dependencies and
+features the page tells readers to add. Every source file must also compile
+through `npm run typecheck:snippets`.
+
 ## Callout Syntax
 
 Starlight-native admonitions. **Use sparingly** — callouts are visually loud and reset the reader's flow. In most cases inline prose is the better choice; reach for a callout only when the information genuinely needs to break frame. Overusing `caution`/`danger` in particular trains readers to ignore them.
@@ -142,7 +171,8 @@ Optional fields (validated by Zod in `site/src/content.config.ts`):
 
 | Field | Type | Purpose |
 |-------|------|---------|
-| `languages` | `string \| string[]` | Feature only available in specific SDK language(s) |
+| `languages` | `string \| string[]` | Explicit subset with documentation on this page |
+| `unsupportedLanguages` | `string \| string[]` | SDKs that do not implement the documented feature |
 | `community` | `boolean` | Marks page as community-contributed |
 | `experimental` | `boolean` | Marks feature as experimental |
 | `externalDocs` | object | Generated provenance and publication status for imported docs; authors must not set it |
@@ -154,7 +184,37 @@ Optional fields (validated by Zod in `site/src/content.config.ts`):
 
 The relevant fields render contextual banners automatically (experimental → external preview → community → languages); community pages suppress the separate language banner. Anything not in this table is silently stripped by Zod at build time, so don't invent fields like `contentType` or `lastReviewed` — add them to the schema first if they'd be useful.
 
-Do not set `languages: [python, typescript]` — listing all supported languages is redundant. Omit the field when a feature is available in all languages.
+Omitting `languages` means the page covers the default Python, TypeScript, and
+Rust SDKs. Do not add a redundant three-language list.
+
+Use a single value or a smaller list when documentation is available only for
+those SDKs.
+
+Use `unsupportedLanguages` only when the feature itself is unavailable in an
+SDK. A language omitted from both fields means the feature may exist, but that
+page has not been documented for the language yet:
+
+```yaml
+languages: [Python, TypeScript]
+```
+
+When the feature is unavailable in an SDK, classify that separately:
+
+```yaml
+unsupportedLanguages: Rust
+```
+
+The site must preserve the reader's global language selection on every page.
+For a language outside `languages`, show that documentation is not available
+yet. For a language in `unsupportedLanguages`, explain that the feature is not
+available. Render either message only when that language is selected. Never
+redirect to another language or tell readers that a page was "verified." While
+the unavailable state is active, hide the page body and table of contents so
+the reader never sees another SDK's examples under their selected language.
+
+Keep the same heading and paragraph structure across language tabs. Put
+language-specific prose, setup, and caveats in the matching `<Tab>` rather than
+adding a language-named section or comparing SDKs in shared prose.
 
 ## TypeScript Snippet Scoping
 
@@ -192,6 +252,9 @@ Link to generated API docs without fragile relative paths:
 [@api/typescript/Agent#constructor](Agent constructor)
 ```
 
+Rust guide pages link public items directly to their docs.rs item URL. Do not
+omit an API link merely because the Rust reference is not embedded in the site.
+
 ## Line Length
 
 90 characters maximum for files under `site/src/content/docs/`. Template literal contents in snippet files must also stay under 90 characters. Prettier does not enforce this automatically.
@@ -200,7 +263,7 @@ Link to generated API docs without fragile relative paths:
 
 Run from `site/`:
 
-- `npm run typecheck:snippets` type-checks snippet files under `src/content/docs/`
+- `npm run typecheck:snippets` type-checks TypeScript and Rust snippet files under `src/content/docs/`
 - `npm run typecheck` type-checks other TypeScript
 - `npm run format` applies Prettier formatting to doc snippet files
 - `npm test` runs the site's unit tests
@@ -210,7 +273,7 @@ Run from `site/`:
 
 - **Snippet dedent**: Leading whitespace is automatically stripped from included snippets. If the snippet reference in markdown is indented, content indents to that level.
 - **Tab indentation**: Content inside `<Tab>` must not have leading blank lines or it may not render correctly.
-- **API docs are symlinked**: `site/src/content/docs/api/python/_generated` and `typescript/_generated` are symlinks to `site/.build/api-docs/`. Never edit these directly — they are auto-generated.
+- **API docs differ by language**: `site/src/content/docs/api/python/_generated` and `typescript/_generated` are symlinks to `site/.build/api-docs/`. Never edit these directly — they are auto-generated. Rust uses a static `api/rust/index.mdx` landing page and direct docs.rs item links. Embedding rustdoc is a separate site-design decision.
 - **No `TabItem`**: The auto-imported component is `Tab`, not `TabItem` (even though Starlight's native component is called TabItem).
 - **Code theme**: Uses GitHub Light/Dark themes. Follows Starlight's `[data-theme]` attribute.
 - **Formatting**: No semicolons, single quotes, 2-space indent, trailing commas ES5 style (enforced by Prettier).

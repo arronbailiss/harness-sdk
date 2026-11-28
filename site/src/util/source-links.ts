@@ -12,6 +12,7 @@ import type { SourceLink } from '../content.config'
  */
 const EXTENSION_TO_LANGUAGE: Record<string, string> = {
   py: 'python',
+  rs: 'rust',
   ts: 'typescript',
   tsx: 'typescript',
 }
@@ -19,6 +20,7 @@ const EXTENSION_TO_LANGUAGE: Record<string, string> = {
 /** Display labels for known SDK language codes. */
 const LANGUAGE_LABELS: Record<string, string> = {
   python: 'Python',
+  rust: 'Rust',
   typescript: 'TypeScript',
 }
 

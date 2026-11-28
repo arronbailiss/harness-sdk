@@ -13,6 +13,9 @@ sourceLinks:
   - path: strands-ts/src/storage/in-memory-storage.ts
   - path: strands-ts/src/storage/local-file-storage.ts
   - path: strands-ts/src/storage/s3-storage.ts
+  - path: strands-rs/strands/src/storage/mod.rs
+  - path: strands-rs/strands/src/storage/in_memory_storage.rs
+  - path: strands-rs/strands/src/storage/local_file_storage.rs
 addedDate: 2026-07-24
 ---
 
@@ -22,23 +25,42 @@ consumers like [Context Offloader](../plugins/context-offloader.mdx)
 and [Memory](../memory/overview.mdx) handle the rest. This is the
 single place persistence backends are documented.
 
-[Session Management](../agents/session-management.mdx) composes a
-Storage backend the same way in both SDKs: TypeScript's
-`SessionManager` and Python's recommended `SnapshotSessionManager`
-both persist snapshots through a Storage backend you pass them.
-Python's repository-based managers (`FileSessionManager`,
-`S3SessionManager`) are the exception: they configure storage
-directly rather than through a Storage backend, a difference the
-session management page documents.
+[Session Management](../agents/session-management.mdx) also composes a Storage
+backend. Its page documents how the selected SDK resolves storage and which
+compatibility managers configure persistence directly.
 
-The SDK ships three backends. Pick one based on where you need
-your data to live:
+<Tabs>
+<Tab label="Python">
 
 | Backend | Where data lives | Best for |
 |---------|-----------------|----------|
 | `InMemoryStorage` | Process memory | Tests, short-lived agents |
 | `LocalFileStorage` | Local filesystem | Development, single-machine |
 | `S3Storage` | Amazon S3 | Production, multi-instance |
+
+</Tab>
+<Tab label="TypeScript">
+
+| Backend | Where data lives | Best for |
+|---------|-----------------|----------|
+| `InMemoryStorage` | Process memory | Tests, short-lived agents |
+| `LocalFileStorage` | Local filesystem | Development, single-machine |
+| `S3Storage` | Amazon S3 | Production, multi-instance |
+
+</Tab>
+<Tab label="Rust">
+
+| Backend | Where data lives | Best for |
+|---------|-----------------|----------|
+| [`InMemoryStorage`](https://docs.rs/strands/latest/strands/storage/struct.InMemoryStorage.html) | Process memory | Tests, short-lived agents |
+| [`LocalFileStorage`](https://docs.rs/strands/latest/strands/storage/struct.LocalFileStorage.html) | Local filesystem | Development, single-machine |
+
+Implement
+[`Storage`](https://docs.rs/strands/latest/strands/storage/trait.Storage.html)
+for another durable backend.
+
+</Tab>
+</Tabs>
 
 ## Agent-level storage
 
@@ -59,6 +81,13 @@ Agent and let subsystems resolve from it.
 --8<-- "user-guide/sdk/storage/storage_imports.ts:agent_level_imports"
 
 --8<-- "user-guide/sdk/storage/storage.ts:agent_level"
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/storage/index.rs:agent_level"
 ```
 
 </Tab>
@@ -92,6 +121,13 @@ for that plugin only.
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/storage/index.rs:per_plugin"
+```
+
+</Tab>
 </Tabs>
 
 ## Precedence
@@ -100,18 +136,33 @@ Storage resolves in this order for each subsystem:
 
 1. **Explicit**: storage passed directly to the plugin
 2. **Agent-level**: the agent's
-   <Syntax py="storage" ts="storage" /> parameter
+   <Syntax py="storage" ts="storage" rs="storage" /> parameter
    (namespaced automatically)
-3. **Fallback**: `InMemoryStorage` for Context Offloader;
-   `LocalFileStorage` for Session Manager in Python, or an
-   error in TypeScript
+3. **Fallback**: `InMemoryStorage` for Context Offloader. Session storage uses
+   <Syntax
+     py="LocalFileStorage"
+     ts="an explicit-storage requirement"
+     rs="an explicit-storage requirement"
+   />.
 
-:::note
-Python `SessionManager` is deprecated, and does not use
-the provided `Storage` parameter. Use
-`SnapshotSessionManager` in Python or `SessionManager` in
-TypeScript to take advantage of agent-level storage.
-:::
+<Tabs>
+<Tab label="Python">
+
+`SessionManager` is deprecated and does not use the provided `Storage`
+parameter. Use `SnapshotSessionManager` for agent-level storage.
+
+</Tab>
+<Tab label="TypeScript">
+
+Use `SessionManager` with an explicit or agent-level backend.
+
+</Tab>
+<Tab label="Rust">
+
+Use `SessionManager` with an explicit or agent-level backend.
+
+</Tab>
+</Tabs>
 
 ## Built-in backends
 
@@ -137,6 +188,13 @@ arguments. Fast, zero-config, gone when the process exits.
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/storage/index.rs:in_memory"
+```
+
+</Tab>
 </Tabs>
 
 ### LocalFileStorage
@@ -146,8 +204,8 @@ Each key becomes a file under a base directory. Writes are atomic
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| <Syntax py="base_dir" ts="baseDir" /> | `"./.strands/"` | Root directory |
-| <Syntax py="sandbox" ts="sandbox" /> | `None`/`undefined` | Optional [Sandbox](../sandbox/index.mdx) |
+| <Syntax py="base_dir" ts="baseDir" rs="base_dir" /> | `"./.strands/"` | Root directory |
+| <Syntax py="sandbox" ts="sandbox" rs="sandbox" /> | `None` / `undefined` / `None` | Optional [Sandbox](../sandbox/index.mdx) |
 
 <Tabs>
 <Tab label="Python">
@@ -166,26 +224,37 @@ Each key becomes a file under a base directory. Writes are atomic
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/storage/index.rs:local_file"
+```
+
+</Tab>
 </Tabs>
 
 You can also bind a sandbox after construction with
-<Syntax py="for_sandbox(sandbox)" ts="forSandbox(sandbox)" />,
+<Syntax
+  py="for_sandbox(sandbox)"
+  ts="forSandbox(sandbox)"
+  rs="for_sandbox(sandbox)"
+/>,
 which returns a new instance routed through the sandbox.
 
 ### S3Storage
 
-Stores data as objects in an S3 bucket. The AWS SDK loads lazily,
-so applications that never construct an `S3Storage` pay nothing.
+<Tabs>
+<Tab label="Python">
+
+Stores data as objects in an S3 bucket. The AWS SDK loads lazily, so
+applications that never construct an `S3Storage` pay nothing.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `bucket` | *(required)* | S3 bucket name |
-| `prefix` | `""` | Key prefix (namespace within the bucket) |
-| <Syntax py="region_name" ts="region" /> | `None`/`undefined` | AWS region override |
-| <Syntax py="boto_session" ts="s3Client" /> | `None`/`undefined` | Pre-configured client |
-
-<Tabs>
-<Tab label="Python">
+| `prefix` | `""` | Key prefix within the bucket |
+| `region_name` | `None` | AWS region override |
+| `boto_session` | `None` | Preconfigured client |
 
 ```python
 --8<-- "user-guide/sdk/storage/storage.py:s3"
@@ -194,11 +263,27 @@ so applications that never construct an `S3Storage` pay nothing.
 </Tab>
 <Tab label="TypeScript">
 
+Stores data as objects in an S3 bucket. The AWS SDK loads lazily, so
+applications that never construct an `S3Storage` pay nothing.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `bucket` | *(required)* | S3 bucket name |
+| `prefix` | `""` | Key prefix within the bucket |
+| `region` | `undefined` | AWS region override |
+| `s3Client` | `undefined` | Preconfigured client |
+
 ```typescript
 --8<-- "user-guide/sdk/storage/storage_imports.ts:s3_imports"
 
 --8<-- "user-guide/sdk/storage/storage.ts:s3"
 ```
+
+</Tab>
+<Tab label="Rust">
+
+`S3Storage` is not available. Implement `Storage` around your preferred S3
+client, or use `LocalFileStorage` when local persistence fits.
 
 </Tab>
 </Tabs>
@@ -238,7 +323,11 @@ one or the other.
 ## Custom backends
 
 Implement four async methods
-(<Syntax py="write, read, delete, list" ts="write, read, delete, list" />)
+(<Syntax
+  py="write, read, delete, list"
+  ts="write, read, delete, list"
+  rs="write, read, delete, list"
+/>)
 and pass your class anywhere a `Storage` is accepted. In Python,
 `Storage` is a
 [protocol](@api/python/strands.storage.storage#Storage); in
@@ -256,9 +345,17 @@ When using agent-level storage, each subsystem scopes its keys
 under its own prefix automatically (`session/`, `offloader/`),
 so you never need to worry about collisions. If you write a
 custom plugin that consumes agent-level storage, call
-<Syntax py="storage.namespace('my-prefix/')" ts="storage.namespace('my-prefix/')" />
+<Syntax
+  py="storage.namespace('my-prefix/')"
+  ts="storage.namespace('my-prefix/')"
+  rs='storage.namespace("my-prefix/")'
+/>
 to claim your own prefix and avoid overlapping with other
 subsystems.
+
+```rust
+--8<-- "user-guide/sdk/storage/index.rs:custom"
+```
 
 ## Next steps
 

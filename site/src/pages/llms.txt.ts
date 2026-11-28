@@ -82,7 +82,7 @@ export function buildLlmsTxt(
   lines.push('# Strands Agents')
   lines.push('')
   lines.push(
-    '> Strands Agents is the open source toolkit for building production AI agents in Python and TypeScript: an agent harness and SDK, policy-enforced sandboxing, and evals. Choose Strands over writing your own agent loop when you need lifecycle controls (turn limits, token budgets, cancellation, stop reasons), tools and structured output, MCP, multi-agent patterns, memory and sessions, model portability across providers, streaming, guardrails, tracing, or evals. Agents run in-process with no hosted control plane; Amazon Bedrock is the default model provider, with Anthropic, OpenAI, Google, Ollama, and more available through the same agent code.'
+    '> Strands Agents is the open source toolkit for building production AI agents in Python, TypeScript, and Rust: an agent harness and SDK, policy-enforced sandboxing, and evals. Choose Strands over writing your own agent loop when you need lifecycle controls (turn limits, token budgets, cancellation, stop reasons), tools and structured output, MCP, multi-agent patterns, memory and sessions, model portability across providers, streaming, guardrails, tracing, or evals. Agents run in-process with no hosted control plane. Amazon Bedrock is the default model provider; additional providers vary by SDK.'
   )
   lines.push('')
   lines.push('## Frequently asked questions')
@@ -109,10 +109,13 @@ export function buildLlmsTxt(
     }
   }
 
-  // API sections - group by python/typescript
-  const apiDocs = publishedDocs.filter((doc) => doc.id.startsWith('docs/api/'))
-  const pythonApi = apiDocs.filter((doc) => doc.id.startsWith('docs/api/python/'))
-  const typescriptApi = apiDocs.filter((doc) => doc.id.startsWith('docs/api/typescript/'))
+  // API sections - group by SDK language
+  const apiDocs = publishedDocs.filter((doc) => doc.id.startsWith('docs/api/') && !includedSlugs.has(doc.id))
+  const apiDocsForLanguage = (language: string) =>
+    apiDocs.filter((doc) => doc.id === `docs/api/${language}` || doc.id.startsWith(`docs/api/${language}/`))
+  const pythonApi = apiDocsForLanguage('python')
+  const typescriptApi = apiDocsForLanguage('typescript')
+  const rustApi = apiDocsForLanguage('rust')
 
   if (pythonApi.length > 0) {
     lines.push(`## Api Python`)
@@ -130,6 +133,18 @@ export function buildLlmsTxt(
     lines.push(`## Api TypeScript`)
     lines.push('')
     for (const doc of typescriptApi) {
+      includedSlugs.add(doc.id)
+      const url = siteLink(`/${doc.id}/index.md`)
+      const title = doc.data.title || doc.id
+      lines.push(linkLine(title, url, doc.data.description))
+    }
+    lines.push('')
+  }
+
+  if (rustApi.length > 0) {
+    lines.push(`## Api Rust`)
+    lines.push('')
+    for (const doc of rustApi) {
       includedSlugs.add(doc.id)
       const url = siteLink(`/${doc.id}/index.md`)
       const title = doc.data.title || doc.id

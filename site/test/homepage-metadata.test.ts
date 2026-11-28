@@ -231,12 +231,14 @@ describe('homepage machine-readable metadata', () => {
       buildCard?.querySelectorAll('[data-install]').map((install) => ({
         python: install.querySelector('[data-install-variant="Python"]')?.text.trim(),
         typescript: install.querySelector('[data-install-variant="TypeScript"]')?.text.trim(),
+        rust: install.querySelector('[data-install-variant="Rust"]')?.text.trim(),
         copyLabel: install.querySelector('[data-install-copy]')?.getAttribute('aria-label'),
       }))
     ).toEqual([
       {
         python: 'pip install strands-harness',
         typescript: 'npm install @strands-agents/harness',
+        rust: 'cargo add strands-harness strands && cargo add tokio --features macros,rt-multi-thread',
         copyLabel: 'Copy Strands harness install command',
       },
     ])

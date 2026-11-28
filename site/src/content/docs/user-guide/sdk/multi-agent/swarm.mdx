@@ -2,7 +2,8 @@
 title: Swarm Multi-Agent Pattern
 description: 'Build self-organizing agent teams with the Strands Swarm pattern. Agents collaborate through autonomous handoffs, shared context, and working memory.'
 sidebar:
-  label: "Swarm"
+  label: 'Swarm'
+unsupportedLanguages: Rust
 tags: [multi-agent]
 sourceLinks:
   - path: strands-py/src/strands/multiagent/base.py
@@ -80,6 +81,7 @@ result = swarm("Design and implement a simple REST API for a todo app")
 print(f"Status: {result.status}")
 print(f"Node history: {[node.node_id for node in result.node_history]}")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -88,6 +90,7 @@ To create a Swarm, define a collection of agents with different specializations.
 ```typescript
 --8<-- "user-guide/sdk/multi-agent/swarm.ts:swarm_team"
 ```
+
 </Tab>
 </Tabs>
 
@@ -107,29 +110,29 @@ The following initialization parameters control swarm behavior and safety limits
 <Tabs>
 <Tab label="Python">
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `entry_point` | The agent instance to start with | None (uses first agent) |
-| `max_handoffs` | Maximum number of agent handoffs allowed | 20 |
-| `max_iterations` | Maximum total iterations across all agents | 20 |
-| `execution_timeout` | Total execution timeout in seconds | 900.0 (15 min) |
-| `node_timeout` | Individual agent timeout in seconds | 300.0 (5 min) |
-| `repetitive_handoff_detection_window` | Number of recent nodes to check for ping-pong behavior | 0 (disabled) |
-| `repetitive_handoff_min_unique_agents` | Minimum unique nodes required in recent sequence | 0 (disabled) |
+| Parameter                              | Description                                            | Default                 |
+| -------------------------------------- | ------------------------------------------------------ | ----------------------- |
+| `entry_point`                          | The agent instance to start with                       | None (uses first agent) |
+| `max_handoffs`                         | Maximum number of agent handoffs allowed               | 20                      |
+| `max_iterations`                       | Maximum total iterations across all agents             | 20                      |
+| `execution_timeout`                    | Total execution timeout in seconds                     | 900.0 (15 min)          |
+| `node_timeout`                         | Individual agent timeout in seconds                    | 300.0 (5 min)           |
+| `repetitive_handoff_detection_window`  | Number of recent nodes to check for ping-pong behavior | 0 (disabled)            |
+| `repetitive_handoff_min_unique_agents` | Minimum unique nodes required in recent sequence       | 0 (disabled)            |
 
 </Tab>
 <Tab label="TypeScript">
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `start` | Agent ID that receives the initial input | First agent in `nodes` |
-| `nodes` | Array of agents (or `AgentNodeOptions`) | (required) |
-| `maxSteps` | Maximum total agent executions (including start) | Infinity |
-| `repetitiveHandoffDetectionWindow` | Number of recent completed nodes to check for ping-pong behavior | 0 (disabled) |
-| `repetitiveHandoffMinUniqueAgents` | Minimum unique nodes required in that window | 0 (disabled) |
-| `timeout` | Wall-clock ceiling for the entire swarm invocation, in milliseconds | Infinity |
-| `nodeTimeout` | Fallback per-node wall-clock ceiling in milliseconds. Applied to any node without its own `timeout` | Infinity |
-| `plugins` | Plugins for event-driven extensibility | None |
+| Parameter                          | Description                                                                                         | Default                |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------- |
+| `start`                            | Agent ID that receives the initial input                                                            | First agent in `nodes` |
+| `nodes`                            | Array of agents (or `AgentNodeOptions`)                                                             | (required)             |
+| `maxSteps`                         | Maximum total agent executions (including start)                                                    | Infinity               |
+| `repetitiveHandoffDetectionWindow` | Number of recent completed nodes to check for ping-pong behavior                                    | 0 (disabled)           |
+| `repetitiveHandoffMinUniqueAgents` | Minimum unique nodes required in that window                                                        | 0 (disabled)           |
+| `timeout`                          | Wall-clock ceiling for the entire swarm invocation, in milliseconds                                 | Infinity               |
+| `nodeTimeout`                      | Fallback per-node wall-clock ceiling in milliseconds. Applied to any node without its own `timeout` | Infinity               |
+| `plugins`                          | Plugins for event-driven extensibility                                                              | None                   |
 
 To bound an individual node, pass `timeout` on its `AgentNodeOptions` entry. Per-node `timeout` overrides the orchestrator's `nodeTimeout` and must be at least 1 ms.
 
@@ -181,12 +184,14 @@ content_blocks = [
 # Execute the swarm with multi-modal input
 result = swarm(content_blocks)
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
 ```typescript
 --8<-- "user-guide/sdk/multi-agent/swarm.ts:multimodal"
 ```
+
 </Tab>
 </Tabs>
 
@@ -197,7 +202,8 @@ result = swarm(content_blocks)
 
 **Handoff Tool**
 
-When you create a Swarm in Python, each agent is automatically equipped with special tools for coordination. Agents can transfer control to another agent when they need specialized help:
+When you create a Swarm, each agent receives tools for coordination. Agents can
+transfer control when they need specialized help:
 
 ```python
 # Handoff Tool Description: Transfer control to another agent in the swarm for specialized help.
@@ -237,6 +243,7 @@ Agent name: security_specialist. Agent description: Focuses on secure coding pra
 
 You have access to swarm coordination tools if you need help from other agents.
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -249,6 +256,7 @@ Agents use structured output to decide the next step. Each agent's response incl
 - `context`: optional structured data to pass along with the handoff
 
 Agent descriptions are used to help agents make informed routing decisions.
+
 </Tab>
 </Tabs>
 
@@ -299,12 +307,14 @@ async for event in swarm.stream_async("Design and implement a REST API"):
         result = event["result"]
         print(f"\nSwarm completed: {result.status}")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
 ```typescript
 --8<-- "user-guide/sdk/multi-agent/swarm.ts:streaming"
 ```
+
 </Tab>
 </Tabs>
 
@@ -336,15 +346,16 @@ print(f"Total iterations: {result.execution_count}")
 print(f"Execution time: {result.execution_time}ms")
 print(f"Token usage: {result.accumulated_usage}")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
 ```typescript
 --8<-- "user-guide/sdk/multi-agent/swarm.ts:results"
 ```
+
 </Tab>
 </Tabs>
-
 
 ## Safety Mechanisms
 

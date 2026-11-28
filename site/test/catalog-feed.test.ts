@@ -63,10 +63,14 @@ describe('buildCatalogFeed', () => {
     expect(feedEntries(data)).toEqual([{ ...expectedEntry, docsUrl: 'https://example.com/docs' }])
   })
 
-  it('keeps guide-only languages and resolves PyPI extras and scoped npm packages', () => {
+  it('keeps guide-only languages and resolves PyPI, npm, and crates.io packages', () => {
     const data = entry({
       sdk: 'evals',
-      languages: { python: { package: 'temporalio[strands-agents]' }, typescript: { package: '@example/strands' } },
+      languages: {
+        python: { package: 'temporalio[strands-agents]' },
+        typescript: { package: '@example/strands' },
+        rust: { package: 'strands-example' },
+      },
     })
 
     expect(feedEntries(data)).toEqual([
@@ -76,6 +80,7 @@ describe('buildCatalogFeed', () => {
         languages: {
           python: { package: 'temporalio[strands-agents]', registryUrl: 'https://pypi.org/project/temporalio/' },
           typescript: { package: '@example/strands', registryUrl: 'https://www.npmjs.com/package/@example/strands' },
+          rust: { package: 'strands-example', registryUrl: 'https://crates.io/crates/strands-example' },
         },
       },
     ])

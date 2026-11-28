@@ -11,54 +11,62 @@
  *   <TabItem label="yarn">yarn add</TabItem>
  * </AutoSyncTabs>
  *
- * Special case: language tabs.
- * When the labels are exactly the language pair {"Python", "TypeScript"},
- * the wrapper is marked with `data-language-tabs` so the inline tablist
+ * Special case: SDK language tabs.
+ * When every label is a known SDK language, the wrapper is marked with
+ * `data-language-tabs` so the inline tablist
  * can be visually hidden via global CSS. The site's header LanguageToggle
  * remains the single language selector. Tab logic, syncing, and switching
- * are unchanged — only the inline UI is hidden.
+ * are unchanged; only the inline UI is hidden.
  */
-import { Tabs } from '@astrojs/starlight/components';
+import { Tabs } from '@astrojs/starlight/components'
+import { SDK_LANGUAGE_LABEL_LIST } from '../config/languages'
+import { LANGUAGE_SYNC_KEY } from '../util/language-preference'
 
 interface Props {
   /** Optional explicit syncKey. If provided, auto-generation is skipped. */
-  syncKey?: string;
+  syncKey?: string
 }
 
-const { syncKey: explicitSyncKey } = Astro.props;
+const { syncKey: explicitSyncKey } = Astro.props
 
 // Render the slot to get the HTML content
-const slotContent = await Astro.slots.render('default');
+const slotContent = await Astro.slots.render('default')
 
 // Extract labels from starlight-tab-item elements
-const labelMatches = slotContent.matchAll(/data-label="([^"]+)"/g);
-const labels = [...labelMatches].map(match => match[1]);
+const labelMatches = slotContent.matchAll(/data-label="([^"]+)"/g)
+const labels = [...labelMatches].map((match) => match[1])
 
 /**
  * Generate a simple hash from a string.
  * Used to create consistent sync keys from tab labels.
  */
 function hashString(str: string): string {
-  let hash = 0;
+  let hash = 0
   for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
+    const char = str.charCodeAt(i)
+    hash = (hash << 5) - hash + char
+    hash = hash & hash // Convert to 32-bit integer
   }
-  return Math.abs(hash).toString(36);
+  return Math.abs(hash).toString(36)
 }
 
-// Generate syncKey from labels if not explicitly provided
-const syncKey = explicitSyncKey ?? (labels.length > 0 ? hashString(labels.join('|')) : undefined);
-
-// Detect language tabs (Python + TypeScript pair, in any order).
-// Only this exact pair is treated as a "language tab" — other tab groups
+// Any two or more known SDK languages form a language tab group. Other groups
 // (npm/yarn, OS variants, IDE choice, etc.) keep their normal tablist UI.
-const labelSet = new Set(labels);
+const labelSet = new Set(labels)
 const isLanguageTabs =
-  labels.length === 2 &&
-  labelSet.has('Python') &&
-  labelSet.has('TypeScript');
+  labels.length >= 2 &&
+  labels.length === labelSet.size &&
+  labels.every((label) => (SDK_LANGUAGE_LABEL_LIST as readonly string[]).includes(label))
+
+// Keep one stable key for every SDK language group so adding Rust does not
+// reset the reader's existing Python/TypeScript preference.
+const syncKey =
+  explicitSyncKey ??
+  (isLanguageTabs
+    ? LANGUAGE_SYNC_KEY
+    : labels.length > 0
+      ? hashString(labels.join('|'))
+      : undefined)
 ---
 
 {isLanguageTabs ? (
@@ -85,7 +93,7 @@ const isLanguageTabs =
    * We keep the inline tablist for non-language tabs (e.g. macOS/Windows,
    * npm/yarn) — those still need an inline selector.
    */
-  [data-language-tabs] starlight-tabs > .tablist-wrapper {
+  [data-language-tabs] > starlight-tabs > .tablist-wrapper {
     display: none;
   }
 </style>

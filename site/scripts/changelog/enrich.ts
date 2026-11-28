@@ -13,8 +13,10 @@ import type { PrData, Enrichment } from './types'
 const STREAM_DIRS = new Map([
   ['strands-py', streamKey('sdk', 'python')],
   ['strands-ts', streamKey('sdk', 'typescript')],
+  ['strands-rs', streamKey('sdk', 'rust')],
   ['harness-py', streamKey('harness', 'python')],
   ['harness-ts', streamKey('harness', 'typescript')],
+  ['harness-rs', streamKey('harness', 'rust')],
   ['strands-cli', streamKey('cli')],
   ['strands-mcp', 'mcp'],
 ])
@@ -25,7 +27,10 @@ const STREAM_DIRS = new Map([
 // so a GitHub-controlled path cannot reach Object.prototype. Lockfiles only:
 // the sibling manifests (package.json, pyproject.toml) also carry repo-wide
 // tooling, which belongs to neither SDK.
-const ROOT_LOCKFILES = new Map([['package-lock.json', streamKey('sdk', 'typescript')]])
+const ROOT_LOCKFILES = new Map<string, string[]>([
+  ['package-lock.json', [streamKey('sdk', 'typescript')]],
+  ['Cargo.lock', [streamKey('sdk', 'rust'), streamKey('harness', 'rust')]],
+])
 
 // Top-level dirs holding docs/blog/website content rather than SDK code.
 // `site/` is the monorepo home for all docs+blog+website; `docs/` is the
@@ -89,9 +94,9 @@ function streamsFromFiles(files: unknown): string[] | null {
 function rootLockfileStreams(files: unknown[]): string[] | null {
   const streams = new Set<string>()
   for (const f of files) {
-    const stream = ROOT_LOCKFILES.get(String(f))
-    if (!stream) return null
-    streams.add(stream)
+    const fileStreams = ROOT_LOCKFILES.get(String(f))
+    if (!fileStreams) return null
+    for (const stream of fileStreams) streams.add(stream)
   }
   return streams.size > 0 ? [...streams] : null
 }

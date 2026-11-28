@@ -1,18 +1,30 @@
 ---
 title: Context Injector
-description: "Fold real-time text into the model input before each call with the ContextInjector plugin: a clock, environment facts, or a lookup, not stored in history."
+description: >-
+  Fold real-time text into the latest user message before a model call with
+  ContextInjector: a clock, environment facts, or a lookup.
 tags: [token-management]
 sourceLinks:
   - path: strands-py/src/strands/vended_plugins/context_injector/plugin.py
   - path: strands-ts/src/vended-plugins/context-injector/plugin.ts
+  - path: strands-rs/strands/src/vended_plugins/context_injector/mod.rs
 addedDate: 2026-06-17
 ---
 
-The `ContextInjector` plugin folds real-time text into the model input before each call. The text is added to that single call's input only: it is never written to the conversation history, so it is not persisted or replayed on later turns. Use it for context the agent should always have but that does not belong in the stored history: the current time, a sandbox descriptor, environment facts, or a retrieval lookup.
+The `ContextInjector` plugin folds real-time text into the latest user message
+before a model call. It stores the text as an injected block in the
+conversation, while model adapters limit how that block is replayed. Use it for
+the current time, a sandbox descriptor, environment facts, or a retrieval
+lookup.
 
 ## How It Works
 
-A `ContextInjector` has two parts. The callback function decides **what** text to fold into the next model call's input. The trigger decides **when** the callback is called. The injected text is **ephemeral by design**: it augments the model input for that one call and never persists into the durable conversation or session.
+A `ContextInjector` has two parts. The callback function decides **what** text
+to fold into the next model call's input. The trigger decides **when** the
+callback is called. The injected block stays attached to the user message.
+Models with temporary-message support receive it as a system message scoped
+until the next user message. Other models receive injected blocks from only the
+latest user message as text.
 
 This is the same injection mechanism that powers [memory context injection](../memory/managing-memory#context-injection). `ContextInjector` is the generic surface for any consumer.
 
@@ -44,14 +56,25 @@ agent = Agent(
 --8<-- "user-guide/sdk/plugins/context-injector.ts:getting_started"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/plugins/context-injector.rs:getting_started"
+```
+
+</Tab>
 </Tabs>
 
 ## When to Inject
 
 The trigger controls when the callback runs:
 
-- `'userTurn'` (the default) injects only when the latest message is a fresh user ask, a user message carrying no tool result. This is the common case for chat agents.
-- `'everyTurn'` injects before every model call, including mid-task tool-result turns. Use it for autonomous agents that should consult the injected context at each step.
+- <Syntax py="'userTurn'" ts="'userTurn'" rs="InjectionTrigger::UserTurn" />
+  (the default) injects only when the latest message is a fresh user ask, a user
+  message carrying no tool result. This is the common case for chat agents.
+- <Syntax py="'everyTurn'" ts="'everyTurn'" rs="InjectionTrigger::EveryTurn" />
+  injects before every model call, including mid-task tool-result turns. Use it
+  for autonomous agents that should consult the injected context at each step.
 
 <Tabs>
 <Tab label="Python">
@@ -76,9 +99,20 @@ clock = ContextInjector(
 --8<-- "user-guide/sdk/plugins/context-injector.ts:every_turn"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/plugins/context-injector.rs:every_turn"
+```
+
+</Tab>
 </Tabs>
 
-For finer control, pass a predicate: a function that receives the injection context and returns whether to inject this call. The context carries the current messages, durable state shared across calls via <Syntax py="context.state" ts="context.appState" />, and the agent. A predicate that throws fails open, so the model call still proceeds:
+For finer control, pass a predicate: a function that receives the injection
+context and returns whether to inject this call. The context carries the current
+messages, durable state shared across calls via
+<Syntax py="context.state" ts="context.appState" rs="context.app_state" />,
+and the agent. A predicate that fails is ignored, so the model call proceeds:
 
 <Tabs>
 <Tab label="Python">
@@ -101,18 +135,33 @@ injector = ContextInjector(
 --8<-- "user-guide/sdk/plugins/context-injector.ts:predicate"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/plugins/context-injector.rs:predicate"
+```
+
+</Tab>
 </Tabs>
 
 ## Configuration
 
-| Field | Purpose |
-|-------|---------|
-| <Syntax py="render_content" ts="renderContent" /> | Returns the text to inject for this call, or <Syntax py="None / empty string" ts="undefined / empty string" /> to skip. Required, and the only positional argument. |
-| `trigger` | `'userTurn'` (default), `'everyTurn'`, or a predicate over the injection context. |
-| `name` | Plugin name for logging and duplicate detection. Defaults to `'strands:context-injector'`. Set a distinct name when registering more than one. |
+- <Syntax py="render_content" ts="renderContent" rs="render_content" />:
+  required callback. Return
+  <Syntax
+    py="None or an empty string"
+    ts="undefined or an empty string"
+    rs="None or a blank string"
+  /> to skip.
+- `trigger`: user turn (default), every turn, or a predicate over the injection
+  context.
+- `name`: plugin name for logging and duplicate detection. It defaults to
+  `'strands:context-injector'`. Use a distinct name for each injector.
 
 :::caution[Injected text reaches the model verbatim]
-The rendered text is a prompt-injection surface. If it interpolates attacker-influenced data (tool output, user-derived state), escape it yourself before returning. A callback that throws fails open: injection is skipped and the model call proceeds.
+The rendered text is a prompt-injection surface. If it interpolates
+attacker-influenced data, escape it before returning. If the callback fails,
+injection is skipped and the model call proceeds.
 :::
 
 ## Related

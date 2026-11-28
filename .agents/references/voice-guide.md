@@ -23,7 +23,7 @@ When writing or reviewing any developer-facing content, walk through the five la
     - [Documenting non-deterministic behavior](#documenting-non-deterministic-behavior)
 - [Layer 5: Authenticity](#layer-5-authenticity)
 - [Agent SDK-Specific Guidance](#agent-sdk-specific-guidance)
-  - [Multi-language documentation](#multi-language-documentation-python--typescript)
+  - [Multi-language documentation](#multi-language-documentation-python--typescript--rust)
   - [Multi-agent patterns](#multi-agent-patterns)
   - [Streaming and async](#streaming-and-async)
   - [Version sensitivity](#version-sensitivity)
@@ -212,6 +212,11 @@ See `terminology.md` in this directory for the canonical term for each concept. 
 
 Keep snippets focused on one concept per block. Use real tool names and realistic values from the actual SDK.
 
+For Rust, list every direct crate and optional Cargo feature the rendered
+example uses in the selected Rust tab. A site-owned aggregate crate may compile
+with dependencies the reader does not have, so it does not replace explicit
+prerequisites.
+
 For code verification procedures, see `code-verification.md` in this directory.
 
 #### Documenting non-deterministic behavior
@@ -306,29 +311,58 @@ Replace "you could use X or Y" with "use X. Y works too, but X handles [common c
 
 ## Agent SDK-Specific Guidance
 
-### Multi-language documentation (Python + TypeScript)
+### Multi-language documentation (Python + TypeScript + Rust)
 
-Strands ships both a Python and TypeScript SDK. Most doc pages show code in both languages via tabs. This creates specific challenges.
+Strands ships Python, TypeScript, and Rust SDKs. Treat all three as the default
+for documentation work. A change to a shared SDK concept should cover all three
+unless the source proves that the feature is unavailable or the page explicitly
+records a documentation gap.
 
-**When to show both languages:** Concept pages (tutorials, how-to, explanation) should show both languages in tabs when the feature exists in both SDKs. Reference pages are per-language (the Python API reference is separate from the TypeScript API reference).
+**When to show multiple languages:** Concept pages (tutorials, how-to,
+explanation) should show each implementation in synchronized tabs. Reference
+pages are per-language. Python and TypeScript references are generated in the
+site; Rust guide pages link public symbols directly to docs.rs until an embedded
+Rust reference is designed separately.
 
-**When to show one language:** If a feature only exists in one SDK, document it in that language only and note availability: "Available in the Python SDK. TypeScript support is tracked in [issue link]." Don't show empty tabs or placeholder code.
+**When to show fewer languages:** If a feature exists in only a subset of SDKs,
+use `unsupportedLanguages` for the unavailable SDKs. Use an explicit
+`languages` subset only when the feature may exist but that page has not been
+documented for every SDK. Omitted `languages` means Python, TypeScript, and Rust.
 
-**API parity is a goal, not a guarantee.** The two SDKs may have different parameter names, different import paths, or different API surfaces for the same concept. Never assume that Python code translates directly to TypeScript. Verify each language independently against its own SDK source.
+Keep the reader's selected language stable. Opening a page must never silently
+switch the global language. When the selected SDK does not implement a feature
+or the page is not documented for it yet, show a concise explanation for that
+selected SDK. That unavailable state replaces the page body: never leave
+another SDK's examples, setup, or table of contents visible beneath it. Do not
+display internal verification status to readers.
+
+**API parity is a goal, not a guarantee.** The SDKs may have different parameter names, import paths, feature flags, or API surfaces for the same concept. Never translate an example mechanically. Verify each language independently against its own SDK source and compile every Rust example with the documented Cargo features.
 
 **Language-specific patterns:**
-- Python uses `@tool` decorator, TypeScript uses `tool()` function or `ZodTool` class
-- Python uses snake_case (`retry_strategy`), TypeScript uses camelCase (`retryStrategy`)
-- Python has `from strands import Agent`, TypeScript has `import { Agent } from '@strands-agents/sdk'` (verify current package name)
-- Error handling differs: Python raises exceptions, TypeScript may use different patterns
+- Python uses the `@tool` decorator, TypeScript uses the `tool()` function or `ZodTool` class, and Rust uses the `#[tool]` attribute macro
+- Python and Rust use snake_case (`retry_strategy`); TypeScript uses camelCase (`retryStrategy`)
+- Python imports `Agent` with `from strands import Agent`, TypeScript uses `import { Agent } from '@strands-agents/sdk'`, and Rust uses `use strands::Agent`
+- Error handling differs: Python raises exceptions, TypeScript uses JavaScript error patterns, and Rust examples normally return `strands::Result`
 
 **Prose between tabs should be language-neutral — or use `<Syntax>`.** When shared prose needs to reference a language-specific identifier, use the `<Syntax>` component rather than spelling out both variants manually. This adapts to the reader's language selection and keeps prose clean. For introductory sentences before tabs, you can also write language-neutral prose ("Configure a retry strategy:") and let the code speak for itself.
 
 **Never name the language inside its own tab.** The reader selected the tab; they know which language they're reading. State facts directly without prefixing the language name. The tab itself provides that context.
 
+**Never explain one SDK through another SDK's differences.** A reader on Rust
+does not need a comparison with Python or TypeScript. Put language-specific
+requirements, defaults, caveats, and setup inside the corresponding tab, using
+the same conceptual heading and paragraph position in every tab.
+
+**Preserve correct existing content.** Adding or updating one language is
+additive work, not permission to shorten, restyle, or delete accurate content
+for another language. Keep descriptions, API links, defaults, tables, and
+explanations unchanged unless the task requires a correction. Preserve
+model-visible prompts, tool descriptions, and names across SDKs when they
+describe the same example.
+
 #### Where divergence content lives in the page structure
 
-The page's heading structure should read the same in both languages. A reader on either tab should see the same table of contents. Divergence is content, not structure — keep it **inside the existing `<Tab>`**: same heading on both sides, with per-tab prose and code carrying the difference.
+The page's heading structure should read the same in every supported language. A reader on any tab should see the same table of contents. Divergence is content, not structure — keep it **inside the existing `<Tab>`**: same heading across tabs, with per-tab prose and code carrying the difference.
 
 Avoid:
 - **A heading that exists in only one language.** It produces an empty stub in the other language's table of contents and breaks the page's symmetry. Demote it under a shared parent or fold it into the tab.

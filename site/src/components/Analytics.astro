@@ -111,7 +111,7 @@
         return
       }
 
-      // Language toggle (Python / TypeScript) - language-toggle > button.lang-option[data-lang]
+      // SDK language toggle - language-toggle > button.lang-option[data-lang]
       var langControl = e.target.closest('.language-toggle .lang-option')
       if (langControl) {
         var lang = (langControl.getAttribute('data-lang') || '').trim()
@@ -139,7 +139,7 @@
         return
       }
 
-      // Tab clicks (npm/yarn, OS, etc.). AutoSyncTabs hides the Python/TypeScript language
+      // Tab clicks (npm/yarn, OS, etc.). AutoSyncTabs hides the SDK language
       // tablists (display:none) and routes language switching through the header toggle, so a
       // real click only lands on a visible tablist - which excludes those redundant language tabs.
       var tab = e.target.closest('[role="tab"]')

@@ -5,6 +5,7 @@ sourceLinks:
   - path: harness-py/src/strands_harness/tools/file_tools.py
   - path: harness-ts/src/tools/file-tools.ts
   - path: harness-py/src/strands_harness/agent.py
+  - path: harness-rs/strands-harness/src/tools/file_tools.rs
 sidebar:
   label: "Shell and file tools"
 ---
@@ -50,9 +51,22 @@ working directory, and files the agent sees describe where it actually runs. To 
 what the agent can touch, run it under a [sandbox](../../../sdk/sandbox/)
 rather than trying to restrict the tools themselves.
 
+<Tabs>
+  <Tab label="Python">
+    The SDK ships Docker and SSH sandbox implementations.
+  </Tab>
+  <Tab label="TypeScript">
+    The SDK ships Docker and SSH sandbox implementations.
+  </Tab>
+  <Tab label="Rust">
+    The SDK exposes `Sandbox` and `PosixShellSandbox` for custom backends. Docker and
+    SSH implementations are not included.
+  </Tab>
+</Tabs>
+
 ## Select or disable them
 
-These tools are selected by name through `builtin_tools`, alongside the other built-ins.
-To run without a shell, or with only `read`, narrow the list; see
+Select these tools by name through the built-in-tools option. To run without a shell,
+or with only `read`, narrow the list; see
 [add tools and instructions](../../configure/tools-and-instructions/) for
 how selection works.

@@ -1,15 +1,67 @@
 ---
-import { Aside } from '@astrojs/starlight/components';
+import { Aside } from '@astrojs/starlight/components'
+import {
+  DEFAULT_DOC_LANGUAGES,
+  SDK_LANGUAGES,
+  SDK_LANGUAGE_LABELS,
+  normalizeSdkLanguages,
+} from '../config/languages'
 
 interface Props {
-  languages: string | string[];
+  languages?: string | string[]
+  unsupportedLanguages?: string | string[]
 }
 
-const { languages } = Astro.props;
+const { languages, unsupportedLanguages } = Astro.props
+const unsupported = normalizeSdkLanguages(unsupportedLanguages ?? [])
+const documented = normalizeSdkLanguages(
+  languages ?? DEFAULT_DOC_LANGUAGES.filter((language) => !unsupported.includes(language))
+)
 
-const languageText = Array.isArray(languages) ? languages.join(' and ') : languages;
+const formatLanguageList = (labels: string[]) => {
+  if (labels.length < 2) return labels[0] ?? ''
+  if (labels.length === 2) return labels.join(' or ')
+  return `${labels.slice(0, -1).join(', ')}, or ${labels.at(-1)}`
+}
+
+const alternatives = formatLanguageList(documented.map((language) => SDK_LANGUAGE_LABELS[language]))
+const availability = SDK_LANGUAGES.flatMap((language) => {
+  if (documented.includes(language)) return []
+
+  const label = SDK_LANGUAGE_LABELS[language]
+  const unsupportedFeature = unsupported.includes(language)
+  const message = unsupportedFeature
+    ? `The ${label} SDK does not implement this feature.`
+    : `This page does not have ${label} documentation yet.`
+  const nextStep = alternatives
+    ? ` Choose ${alternatives} in the language selector to view the available documentation.`
+    : ''
+
+  return [{ language, label, message: `${message}${nextStep}` }]
+})
 ---
 
-<Aside type="note" title="Language Support">
-  This feature is only supported in {languageText}.
-</Aside>
+{
+  availability.map(({ language, label, message }) => (
+    <div class="language-support" data-language-support-for={language}>
+      <Aside type="note" title={`${label} availability`}>
+        {message}
+      </Aside>
+    </div>
+  ))
+}
+
+<style>
+  .language-support {
+    display: none;
+  }
+
+  :global(html[data-sdk-language='python'])
+    .language-support[data-language-support-for='python'],
+  :global(html[data-sdk-language='typescript'])
+    .language-support[data-language-support-for='typescript'],
+  :global(html[data-sdk-language='rust'])
+    .language-support[data-language-support-for='rust'] {
+    display: block;
+  }
+</style>

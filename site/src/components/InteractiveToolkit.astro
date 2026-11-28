@@ -27,6 +27,7 @@ interface ToolkitCard {
   install?: {
     pip: string;
     npm: string;
+    cargo: string;
   };
   expanded: {
     viewMoreHref: string;
@@ -35,6 +36,7 @@ interface ToolkitCard {
       rows: CodeRow[];
     };
     codePy?: CodeRow[];
+    codeRs?: CodeRow[];
     codeTs?: CodeRow[];
   };
 }
@@ -52,6 +54,7 @@ const cards: ToolkitCard[] = [
     install: {
       pip: 'pip install strands-harness',
       npm: 'npm install @strands-agents/harness',
+      cargo: 'cargo add strands-harness strands && cargo add tokio --features macros,rt-multi-thread',
     },
     expanded: {
       viewMoreHref: pathWithBase('/docs/user-guide/harness/quickstart/'),
@@ -66,6 +69,19 @@ const cards: ToolkitCard[] = [
         { lineNo: 2, tokens: [t('')] },
         { lineNo: 3, tokens: [kw('const'), t(' agent = '), kw('await'), t(' createHarness()')] },
         { lineNo: 4, tokens: [kw('await'), t(' agent.invoke('), str('"Summarize what this repository does"'), t(')')] },
+      ],
+      codeRs: [
+        { lineNo: 1, tokens: [kw('use'), t(' strands_harness::{HarnessAgentOptions, create_harness};')] },
+        { lineNo: 2, tokens: [t('')] },
+        { lineNo: 3, tokens: [t('#[tokio::main]')] },
+        { lineNo: 4, tokens: [kw('async fn'), t(' main() -> strands::Result<()> {')] },
+        { lineNo: 5, tokens: [t('    '), kw('let'), t(' mut agent = create_harness(')] },
+        { lineNo: 6, tokens: [t('        HarnessAgentOptions::default(),')] },
+        { lineNo: 7, tokens: [t('    )')] },
+        { lineNo: 8, tokens: [t('    .await?;')] },
+        { lineNo: 9, tokens: [t('    agent.invoke('), str('"Summarize what this repository does"'), t(').await?;')] },
+        { lineNo: 10, tokens: [t('    agent.shutdown().await')] },
+        { lineNo: 11, tokens: [t('}')] },
       ],
     },
   },
@@ -196,6 +212,7 @@ const supportingCards = [cardFor('/box'), cardFor('/evals'), cardFor('/decider')
                     <InstallCommand
                       pip={harnessCard.install.pip}
                       npm={harnessCard.install.npm}
+                      cargo={harnessCard.install.cargo}
                       compact
                       copyAriaLabel="Copy Strands harness install command"
                     />
@@ -206,6 +223,7 @@ const supportingCards = [cardFor('/box'), cardFor('/evals'), cardFor('/decider')
                 <div class="toolkit__build-terminal">
                   <ToolkitTerminal
                     codePy={harnessCard.expanded.codePy}
+                    codeRs={harnessCard.expanded.codeRs}
                     codeTs={harnessCard.expanded.codeTs}
                     copyAriaLabel="Copy Strands harness example"
                   />
@@ -289,10 +307,11 @@ const supportingCards = [cardFor('/box'), cardFor('/evals'), cardFor('/decider')
                     class="toolkit__card-expanded"
                     id={`toolkit-card-${card.slug.slice(1)}-details`}
                   >
-                    {(card.expanded.code || card.expanded.codePy || card.expanded.codeTs) && (
+                    {(card.expanded.code || card.expanded.codePy || card.expanded.codeRs || card.expanded.codeTs) && (
                       <ToolkitTerminal
                         code={card.expanded.code}
                         codePy={card.expanded.codePy}
+                        codeRs={card.expanded.codeRs}
                         codeTs={card.expanded.codeTs}
                         copyAriaLabel={`Copy ${card.slug} code`}
                       />

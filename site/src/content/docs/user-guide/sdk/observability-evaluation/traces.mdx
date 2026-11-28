@@ -2,6 +2,12 @@
 title: Traces
 description: 'Trace agent execution end to end with OpenTelemetry in Strands: capture model interactions, tool calls, token usage, and event loop cycles.'
 tags: [observability]
+sourceLinks:
+  - path: strands-py/src/strands/telemetry/tracer.py
+  - path: strands-ts/src/telemetry/tracer.ts
+  - path: strands-rs/strands/src/telemetry/mod.rs
+  - path: strands-rs/strands/src/telemetry/config.rs
+  - path: strands-rs/strands/src/telemetry/tracer.rs
 ---
 
 To see exactly what your agent did on a request, trace its execution end to end: every model interaction, retriever call, tool call, and event loop cycle. Strands builds these traces on the OpenTelemetry standard, so they capture the full path of a request through your agent.
@@ -16,7 +22,9 @@ Traces in Strands provide a hierarchical view of your agent's execution, allowin
 4. **Measure performance**: Identify bottlenecks and optimization opportunities
 5. **Debug complex workflows**: Follow the exact path of execution through multiple cycles
 
-Each trace consists of multiple spans that represent different operations in your agent's execution flow:
+Each trace consists of multiple spans that represent different operations in
+your agent's execution flow. The following diagram shows the common hierarchy
+and attributes:
 
 ```
 +-------------------------------------------------------------------------------------+
@@ -80,6 +88,45 @@ Each trace consists of multiple spans that represent different operations in you
 +-------------------------------------------------------------------------------------+
 ```
 
+<Tabs>
+<Tab label="Python">
+
+The [captured attributes](#captured-attributes) tables list the exact exporter
+fields.
+
+</Tab>
+<Tab label="TypeScript">
+
+The [captured attributes](#captured-attributes) tables list the exact exporter
+fields.
+
+</Tab>
+<Tab label="Rust">
+
+The exporter uses these span names and attributes:
+
+```text
+invoke_agent <name>
+  gen_ai.operation.name = invoke_agent
+  gen_ai.agent.name, gen_ai.agent.id, gen_ai.request.model
+  execute_agent_loop_cycle
+    agent_loop.cycle_id
+    chat
+      gen_ai.operation.name = chat
+      gen_ai.request.model and token-usage attributes
+    execute_tool <tool>
+      gen_ai.operation.name = execute_tool
+      gen_ai.tool.name, gen_ai.tool.call.id, gen_ai.tool.status
+```
+
+`chat` spans do not include `gen_ai.agent.name`, and loop spans do not include
+`gen_ai.choice.*` fields. Prompt, message, and result content is recorded as
+OpenTelemetry events or operation-detail attributes on the corresponding agent,
+model, and tool spans, depending on the selected semantic conventions.
+
+</Tab>
+</Tabs>
+
 ## OpenTelemetry Integration
 
 Strands natively integrates with OpenTelemetry, an industry standard for distributed tracing. This integration provides:
@@ -100,20 +147,33 @@ To enable OTEL exporting, install Strands Agents with `otel` optional dependency
 ```shell
 pip install 'strands-agents[otel]'
 ```
+
 :::
+
 </Tab>
 <Tab label="TypeScript">
 
 :::note[Install OpenTelemetry Dependencies]
-To enable OTEL exporting, install the OpenTelemetry peer dependencies: 
+To enable OTEL exporting, install the OpenTelemetry peer dependencies:
 
 ```shell
 npm install @opentelemetry/api @opentelemetry/sdk-trace-node @opentelemetry/sdk-trace-base @opentelemetry/resources @opentelemetry/exporter-trace-otlp-http
 ```
+
 :::
+
+</Tab>
+<Tab label="Rust">
+
+Enable the `otel` feature, which includes the SDK's OpenTelemetry providers and
+exporters:
+
+```shell
+cargo add strands --features otel
+```
+
 </Tab>
 </Tabs>
-
 
 ### Environment Variables
 
@@ -175,6 +235,7 @@ agent = Agent(
 # Use agent normally
 response = agent("What can you help me with?")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -193,31 +254,64 @@ response = agent("What can you help me with?")
 
 --8<-- "user-guide/sdk/observability-evaluation/traces.ts:code_configuration_agent"
 ```
+
+</Tab>
+<Tab label="Rust">
+
+Create tracer and meter providers, then install the tracer's `tracing` layer:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/traces.rs:code_configuration"
+```
+
+Keep both guards for the lifetime of the program. They flush their providers
+when dropped.
+
 </Tab>
 </Tabs>
 
 ## Trace Structure
 
 Strands creates a hierarchical trace structure that mirrors the execution of your agent:
+
 - **Agent Span**: The top-level span representing the entire agent invocation
-      - Contains overall metrics like total token usage and cycle count
-      - Captures the user prompt and final response
+  - Contains overall metrics like total token usage and cycle count
+  - Captures the user prompt and final response
 
 - **Cycle Spans**: Child spans for each event loop cycle
-      - Tracks the progression of thought and reasoning
-      - Shows the transformation from prompt to response
+  - Tracks the progression of thought and reasoning
+  - Shows the transformation from prompt to response
 
 - **LLM Spans**: Model invocation spans
-      - Contains prompt, completion, and token usage
-      - Includes model-specific parameters
+  - Contains prompt, completion, and token usage
+  - Includes model-specific parameters
 
 - **Tool Spans**: Tool execution spans
-      - Captures tool name, parameters, and results
-      - Measures tool execution time
+  - Captures tool name, parameters, and results
+  - Measures tool execution time
 
 ## Captured Attributes
 
-Strands traces include rich attributes that provide context for each operation:
+Strands traces include rich attributes that provide context for each operation.
+
+<Tabs>
+<Tab label="Python">
+
+The tables below list the exported attributes.
+
+</Tab>
+<Tab label="TypeScript">
+
+The tables below list the exported attributes.
+
+</Tab>
+<Tab label="Rust">
+
+Use the span and attribute summary above. In particular, the cycle key is
+`agent_loop.cycle_id` and the tool status key is `gen_ai.tool.status`.
+
+</Tab>
+</Tabs>
 
 :::note[Cache-token attribute names]
 Strands emits cache-token counts under the OpenTelemetry semantic-convention names
@@ -231,71 +325,71 @@ emits only the semantic-convention names.
 
 ### Agent-Level Attributes
 
-| Attribute | Description |
-|-----------|-------------|
-| `gen_ai.system` | The agent system identifier ("strands-agents") |
-| `gen_ai.agent.name` | Name of the agent |
-| `gen_ai.user.message` | The user's initial prompt |
-| `gen_ai.choice` | The agent's final response |
-| `system_prompt` | System instructions for the agent |
-| `gen_ai.request.model` | Model ID used by the agent |
-| `gen_ai.event.start_time` | When agent processing began |
-| `gen_ai.event.end_time` | When agent processing completed |
-| `gen_ai.usage.prompt_tokens` | Total prompt tokens the model processed. For providers that report cache tokens separately (such as Amazon Bedrock and Anthropic), this count includes the cached tokens |
-| `gen_ai.usage.input_tokens` | Same value as `gen_ai.usage.prompt_tokens`, under the semantic-convention name |
-| `gen_ai.usage.completion_tokens` | Total tokens used for completions |
-| `gen_ai.usage.output_tokens` | Same value as `gen_ai.usage.completion_tokens`, under the semantic-convention name |
-| `gen_ai.usage.total_tokens` | Total token usage |
-| `gen_ai.usage.cache_read.input_tokens` | Number of input tokens read from cache (Note: Not all model providers support cache tokens. This defaults to 0 in that case) |
-| `gen_ai.usage.cache_creation.input_tokens` | Number of input tokens written to cache (Note: Not all model providers support cache tokens. This defaults to 0 in that case) |
-| `gen_ai.usage.cache_read_input_tokens` | Deprecated alias for `gen_ai.usage.cache_read.input_tokens`, omitted when `gen_ai_latest_experimental` is set |
-| `gen_ai.usage.cache_write_input_tokens` | Deprecated alias for `gen_ai.usage.cache_creation.input_tokens`, omitted when `gen_ai_latest_experimental` is set |
+| Attribute                                  | Description                                                                                                                                                              |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `gen_ai.system`                            | The agent system identifier ("strands-agents")                                                                                                                           |
+| `gen_ai.agent.name`                        | Name of the agent                                                                                                                                                        |
+| `gen_ai.user.message`                      | The user's initial prompt                                                                                                                                                |
+| `gen_ai.choice`                            | The agent's final response                                                                                                                                               |
+| `system_prompt`                            | System instructions for the agent                                                                                                                                        |
+| `gen_ai.request.model`                     | Model ID used by the agent                                                                                                                                               |
+| `gen_ai.event.start_time`                  | When agent processing began                                                                                                                                              |
+| `gen_ai.event.end_time`                    | When agent processing completed                                                                                                                                          |
+| `gen_ai.usage.prompt_tokens`               | Total prompt tokens the model processed. For providers that report cache tokens separately (such as Amazon Bedrock and Anthropic), this count includes the cached tokens |
+| `gen_ai.usage.input_tokens`                | Same value as `gen_ai.usage.prompt_tokens`, under the semantic-convention name                                                                                           |
+| `gen_ai.usage.completion_tokens`           | Total tokens used for completions                                                                                                                                        |
+| `gen_ai.usage.output_tokens`               | Same value as `gen_ai.usage.completion_tokens`, under the semantic-convention name                                                                                       |
+| `gen_ai.usage.total_tokens`                | Total token usage                                                                                                                                                        |
+| `gen_ai.usage.cache_read.input_tokens`     | Number of input tokens read from cache (Note: Not all model providers support cache tokens. This defaults to 0 in that case)                                             |
+| `gen_ai.usage.cache_creation.input_tokens` | Number of input tokens written to cache (Note: Not all model providers support cache tokens. This defaults to 0 in that case)                                            |
+| `gen_ai.usage.cache_read_input_tokens`     | Deprecated alias for `gen_ai.usage.cache_read.input_tokens`, omitted when `gen_ai_latest_experimental` is set                                                            |
+| `gen_ai.usage.cache_write_input_tokens`    | Deprecated alias for `gen_ai.usage.cache_creation.input_tokens`, omitted when `gen_ai_latest_experimental` is set                                                        |
 
 ### Cycle-Level Attributes
 
-| Attribute | Description |
-|-----------|-------------|
-| `event_loop.cycle_id` | Unique identifier for the event loop cycle |
-| `gen_ai.user.message` | The user's initial prompt |
-| `gen_ai.assistant.message` | Formatted prompt for this event loop cycle |
-| `gen_ai.event.end_time` | When the cycle completed |
-| `gen_ai.choice.message` | Model's response for this cycle |
-| `gen_ai.choice.tool.result` | Results from tool calls (if any) |
+| Attribute                   | Description                                |
+| --------------------------- | ------------------------------------------ |
+| `event_loop.cycle_id`       | Unique identifier for the event loop cycle |
+| `gen_ai.user.message`       | The user's initial prompt                  |
+| `gen_ai.assistant.message`  | Formatted prompt for this event loop cycle |
+| `gen_ai.event.end_time`     | When the cycle completed                   |
+| `gen_ai.choice.message`     | Model's response for this cycle            |
+| `gen_ai.choice.tool.result` | Results from tool calls (if any)           |
 
 ### Model Invoke Attributes
 
-| Attribute | Description |
-|-----------|-------------|
-| `gen_ai.system` | The agent system identifier |
-| `gen_ai.operation.name` | Gen-AI operation name |
-| `gen_ai.agent.name` | Name of the agent |
-| `gen_ai.user.message` | Formatted prompt sent to the model |
-| `gen_ai.assistant.message` | Formatted assistant prompt sent to the model |
-| `gen_ai.request.model` | Model ID (e.g., "global.anthropic.claude-sonnet-5") |
-| `gen_ai.event.start_time` | When model invocation began |
-| `gen_ai.event.end_time` | When model invocation completed |
-| `gen_ai.choice` | Response from the model (may include tool calls) |
-| `gen_ai.usage.prompt_tokens` | Total prompt tokens the model processed. For providers that report cache tokens separately (such as Amazon Bedrock and Anthropic), this count includes the cached tokens |
-| `gen_ai.usage.input_tokens` | Same value as `gen_ai.usage.prompt_tokens`, under the semantic-convention name |
-| `gen_ai.usage.completion_tokens` | Total tokens used for completions |
-| `gen_ai.usage.output_tokens` | Same value as `gen_ai.usage.completion_tokens`, under the semantic-convention name |
-| `gen_ai.usage.total_tokens` | Total token usage |
-| `gen_ai.usage.cache_read.input_tokens` | Number of input tokens read from cache (Note: Not all model providers support cache tokens. This defaults to 0 in that case) |
-| `gen_ai.usage.cache_creation.input_tokens` | Number of input tokens written to cache (Note: Not all model providers support cache tokens. This defaults to 0 in that case) |
-| `gen_ai.usage.cache_read_input_tokens` | Deprecated alias for `gen_ai.usage.cache_read.input_tokens`, omitted when `gen_ai_latest_experimental` is set |
-| `gen_ai.usage.cache_write_input_tokens` | Deprecated alias for `gen_ai.usage.cache_creation.input_tokens`, omitted when `gen_ai_latest_experimental` is set |
+| Attribute                                  | Description                                                                                                                                                              |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `gen_ai.system`                            | The agent system identifier                                                                                                                                              |
+| `gen_ai.operation.name`                    | Gen-AI operation name                                                                                                                                                    |
+| `gen_ai.agent.name`                        | Name of the agent                                                                                                                                                        |
+| `gen_ai.user.message`                      | Formatted prompt sent to the model                                                                                                                                       |
+| `gen_ai.assistant.message`                 | Formatted assistant prompt sent to the model                                                                                                                             |
+| `gen_ai.request.model`                     | Model ID (e.g., "global.anthropic.claude-sonnet-5")                                                                                                                      |
+| `gen_ai.event.start_time`                  | When model invocation began                                                                                                                                              |
+| `gen_ai.event.end_time`                    | When model invocation completed                                                                                                                                          |
+| `gen_ai.choice`                            | Response from the model (may include tool calls)                                                                                                                         |
+| `gen_ai.usage.prompt_tokens`               | Total prompt tokens the model processed. For providers that report cache tokens separately (such as Amazon Bedrock and Anthropic), this count includes the cached tokens |
+| `gen_ai.usage.input_tokens`                | Same value as `gen_ai.usage.prompt_tokens`, under the semantic-convention name                                                                                           |
+| `gen_ai.usage.completion_tokens`           | Total tokens used for completions                                                                                                                                        |
+| `gen_ai.usage.output_tokens`               | Same value as `gen_ai.usage.completion_tokens`, under the semantic-convention name                                                                                       |
+| `gen_ai.usage.total_tokens`                | Total token usage                                                                                                                                                        |
+| `gen_ai.usage.cache_read.input_tokens`     | Number of input tokens read from cache (Note: Not all model providers support cache tokens. This defaults to 0 in that case)                                             |
+| `gen_ai.usage.cache_creation.input_tokens` | Number of input tokens written to cache (Note: Not all model providers support cache tokens. This defaults to 0 in that case)                                            |
+| `gen_ai.usage.cache_read_input_tokens`     | Deprecated alias for `gen_ai.usage.cache_read.input_tokens`, omitted when `gen_ai_latest_experimental` is set                                                            |
+| `gen_ai.usage.cache_write_input_tokens`    | Deprecated alias for `gen_ai.usage.cache_creation.input_tokens`, omitted when `gen_ai_latest_experimental` is set                                                        |
 
 ### Tool-Level Attributes
 
-| Attribute | Description |
-|-----------|-------------|
-| `tool.status` | Execution status (success/error) |
-| `gen_ai.tool.name` | Name of the tool called |
-| `gen_ai.tool.call.id` | Unique identifier for the tool call |
-| `gen_ai.operation.name` | Gen-AI operation name |
-| `gen_ai.event.start_time` | When tool execution began |
-| `gen_ai.event.end_time` | When tool execution completed |
-| `gen_ai.choice` | Formatted tool result |
+| Attribute                 | Description                         |
+| ------------------------- | ----------------------------------- |
+| `tool.status`             | Execution status (success/error)    |
+| `gen_ai.tool.name`        | Name of the tool called             |
+| `gen_ai.tool.call.id`     | Unique identifier for the tool call |
+| `gen_ai.operation.name`   | Gen-AI operation name               |
+| `gen_ai.event.start_time` | When tool execution began           |
+| `gen_ai.event.end_time`   | When tool execution completed       |
+| `gen_ai.choice`           | Formatted tool result               |
 
 ## Visualization and Analysis
 
@@ -347,6 +441,7 @@ from strands.telemetry import StrandsTelemetry
 
 StrandsTelemetry().setup_console_exporter()
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -355,9 +450,18 @@ StrandsTelemetry().setup_console_exporter()
 
 --8<-- "user-guide/sdk/observability-evaluation/traces.ts:console_exporter"
 ```
+
+</Tab>
+<Tab label="Rust">
+
+Enable the console exporter while developing:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/traces.rs:console_exporter"
+```
+
 </Tab>
 </Tabs>
-
 
 ## Advanced Configuration
 
@@ -393,6 +497,7 @@ agent = Agent(
     },
 )
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -401,6 +506,16 @@ agent = Agent(
 
 --8<-- "user-guide/sdk/observability-evaluation/traces.ts:custom_attributes"
 ```
+
+</Tab>
+<Tab label="Rust">
+
+Pass custom attributes through the agent builder:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/traces.rs:custom_attributes"
+```
+
 </Tab>
 </Tabs>
 
@@ -421,6 +536,7 @@ agent = Agent(
     },
 )
 ```
+
 </Tab>
 <Tab label="TypeScript">
 Pass `baggageAttributes` to the `Agent`:
@@ -430,6 +546,16 @@ Pass `baggageAttributes` to the `Agent`:
 
 --8<-- "user-guide/sdk/observability-evaluation/traces.ts:baggage_propagation"
 ```
+
+</Tab>
+<Tab label="Rust">
+
+Pass baggage values through the agent builder:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/traces.rs:baggage_propagation"
+```
+
 </Tab>
 </Tabs>
 
@@ -448,6 +574,7 @@ strands_telemetry.setup_baggage_processor(lambda key: key in {"tenant.id", "env"
 ```
 
 Requires the `strands-agents[otel]` extra.
+
 </Tab>
 
 <Tab label="TypeScript">
@@ -460,11 +587,23 @@ Pass `baggageProcessor` to `setupTracer()`:
 ```
 
 Requires `npm install @opentelemetry/baggage-span-processor`. `baggageProcessor` is ignored when you pass your own `provider`.
+
+</Tab>
+<Tab label="Rust">
+
+Set a `BaggageProcessor` on `TracerConfig` and select the keys to copy:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/traces.rs:baggage_processor"
+```
+
+The processor is ignored when you provide your own tracer provider.
+
 </Tab>
 </Tabs>
 
 :::caution
-Without a predicate, *every* baggage entry is stamped onto every span, including values extracted from inbound `baggage` request headers.
+Without a predicate, _every_ baggage entry is stamped onto every span, including values extracted from inbound `baggage` request headers.
 :::
 
 ### Custom Spans
@@ -483,6 +622,7 @@ with tracer.start_as_current_span("my-custom-operation") as span:
     span.set_attribute("custom.key", "value")
     # ... do work ...
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -491,11 +631,26 @@ with tracer.start_as_current_span("my-custom-operation") as span:
 
 --8<-- "user-guide/sdk/observability-evaluation/traces.ts:custom_spans"
 ```
+
+</Tab>
+<Tab label="Rust">
+
+Use the OpenTelemetry types re-exported by `strands` so their versions match
+the SDK:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/traces.rs:custom_spans"
+```
+
 </Tab>
 </Tabs>
 
 :::tip
-<Syntax py="trace.get_tracer()" ts="getTracer()" /> uses the global tracer provider. When you use <Syntax py="StrandsTelemetry()" ts="setupTracer()" /> without a custom provider, it's automatically registered as global, so your custom spans use the same provider as the agent's auto-instrumented spans.
+
+<Syntax py="trace.get_tracer()" ts="getTracer()" rs="get_tracer()" /> uses the global tracer provider. When you use
+<Syntax py="StrandsTelemetry()" ts="setupTracer()" rs="setup_tracer()" />
+without a custom provider, it is registered globally, so custom spans use the same provider as the agent's
+auto-instrumented spans.
 :::
 
 ### Configuring the exporters from source code
@@ -503,7 +658,12 @@ with tracer.start_as_current_span("my-custom-operation") as span:
 <Tabs>
 <Tab label="Python">
 
-The `StrandsTelemetry().setup_console_exporter()` and `StrandsTelemetry().setup_otlp_exporter()` methods accept keyword arguments that are passed to OpenTelemetry's [`ConsoleSpanExporter`](https://opentelemetry-python.readthedocs.io/en/latest/sdk/trace.export.html#opentelemetry.sdk.trace.export.ConsoleSpanExporter) and [`OTLPSpanExporter`](https://opentelemetry-python.readthedocs.io/en/latest/exporter/otlp/otlp.html#opentelemetry.exporter.otlp.proto.http.trace_exporter.OTLPSpanExporter) initializers, respectively. This allows you to save the log lines to a file or set up the OTLP endpoints from Python code:
+The `StrandsTelemetry().setup_console_exporter()` and
+`StrandsTelemetry().setup_otlp_exporter()` methods pass keyword arguments to
+OpenTelemetry's [`ConsoleSpanExporter`](https://opentelemetry-python.readthedocs.io/en/latest/sdk/trace.export.html#opentelemetry.sdk.trace.export.ConsoleSpanExporter)
+and
+[`OTLPSpanExporter`](https://opentelemetry-python.readthedocs.io/en/latest/exporter/otlp/otlp.html#opentelemetry.exporter.otlp.proto.http.trace_exporter.OTLPSpanExporter)
+initializers. Use them to save log lines to a file or configure OTLP endpoints:
 
 ```python
 from os import linesep
@@ -528,6 +688,7 @@ strands_telemetry.setup_otlp_exporter(
 ```
 
 For more information about the accepted arguments, refer to `ConsoleSpanExporter` and `OTLPSpanExporter` in the [OpenTelemetry API documentation](https://opentelemetry-python.readthedocs.io).
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -540,6 +701,20 @@ The `telemetry.setupTracer()` function reads OTLP configuration from standard Op
 ```
 
 For more information about the accepted arguments, refer to the [OpenTelemetry JS documentation](https://opentelemetry.io/docs/languages/js/).
+
+</Tab>
+<Tab label="Rust">
+
+`setup_tracer` reads the standard `OTEL_EXPORTER_OTLP_*` environment variables.
+Choose OTLP, console, or both in `TelemetryExporters`:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/traces.rs:configuring_exporters"
+```
+
+For a custom exporter or endpoint configured entirely in code, build an
+OpenTelemetry `SdkTracerProvider` and pass it in `TracerConfig::provider`.
+
 </Tab>
 </Tabs>
 
@@ -554,13 +729,13 @@ For more information about the accepted arguments, refer to the [OpenTelemetry J
 
 ## Common Issues and Solutions
 
-| Issue | Solution |
-|-------|----------|
-| Missing traces | Check that your collector endpoint is correct and accessible |
-| Excessive data volume | Implement sampling or filter specific span types |
-| Incomplete traces | Ensure all services in your workflow are properly instrumented |
-| High latency | Consider using batching and asynchronous export |
-| Missing context | Use context propagation to maintain trace context across services |
+| Issue                 | Solution                                                          |
+| --------------------- | ----------------------------------------------------------------- |
+| Missing traces        | Check that your collector endpoint is correct and accessible      |
+| Excessive data volume | Implement sampling or filter specific span types                  |
+| Incomplete traces     | Ensure all services in your workflow are properly instrumented    |
+| High latency          | Consider using batching and asynchronous export                   |
+| Missing context       | Use context propagation to maintain trace context across services |
 
 ## Example: End-to-End Tracing
 
@@ -595,6 +770,7 @@ print(response)
 
 # Each interaction creates a complete trace that can be visualized in your tracing tool
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -603,14 +779,28 @@ print(response)
 
 --8<-- "user-guide/sdk/observability-evaluation/traces.ts:end_to_end"
 ```
+
+</Tab>
+<Tab label="Rust">
+
+This example exports spans to both OTLP and the console, records metrics, and
+keeps the guards alive until the agent shuts down:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/traces.rs:end_to_end"
+```
+
 </Tab>
 </Tabs>
 
 ## Sending traces to CloudWatch X-ray
+
 There are several ways to send traces, metrics, and logs to CloudWatch. Please visit the following pages for more details and configurations:
+
 1. [AWS Distro for OpenTelemetry Collector](https://aws-otel.github.io/docs/getting-started/x-ray#configuring-the-aws-x-ray-exporter)
 2. [AWS CloudWatch OpenTelemetry User Guide](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-OpenTelemetry-Sections.html)
-  - Please ensure Transaction Search is enabled in CloudWatch.
+
+- Please ensure Transaction Search is enabled in CloudWatch.
 
 ## Third-party observability backends
 

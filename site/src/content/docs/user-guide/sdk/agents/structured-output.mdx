@@ -7,6 +7,8 @@ tags: [structured-output]
 sourceLinks:
   - path: strands-py/src/strands/agent/agent.py
   - path: strands-ts/src/agent/agent.ts
+  - path: strands-rs/strands/src/agent/agent.rs
+  - path: strands-rs/strands/src/tools/structured_output_tool.rs
 ---
 
 An agent answers in text, which works when a person reads it. When your code needs to
@@ -14,10 +16,37 @@ act on the answer, text is hard to parse. Structured output returns an object in
 You describe the fields you need in a schema, and the agent returns an object with
 those fields, validated against the schema.
 
-A schema lists each field's name, type, and description. In Python, write it as a
-[Pydantic model](https://docs.pydantic.dev/latest/concepts/models/), which installs with
-`strands-agents`. In TypeScript, write it as a [Zod schema](https://zod.dev/) and
-install Zod with `npm install zod`.
+A schema lists each field's name, type, and description:
+
+<Tabs>
+<Tab label="Python">
+
+Write the schema as a
+[Pydantic model](https://docs.pydantic.dev/latest/concepts/models/). Pydantic
+installs with `strands-agents`.
+
+</Tab>
+<Tab label="TypeScript">
+
+Write the schema with [Zod](https://zod.dev/) and install it:
+
+```bash
+npm install zod
+```
+
+</Tab>
+<Tab label="Rust">
+
+Derive `JsonSchema` and `Deserialize`:
+
+```bash
+cargo add schemars
+cargo add serde --features derive
+cargo add tokio --features macros,rt-multi-thread
+```
+
+</Tab>
+</Tabs>
 
 ## Request structured output
 
@@ -74,6 +103,13 @@ print(f"{ticket.priority} | {ticket.category} | {ticket.summary}")
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/structured-output.rs:triage"
+```
+
+</Tab>
 </Tabs>
 
 Typical output:
@@ -87,14 +123,34 @@ accept only fixed values, so the agent can only pick a team and a priority you'v
 defined. The model reads each field description, so describe what a field means, not
 only its type.
 
-Pass the schema as <Syntax py="structured_output_model" ts="structuredOutputSchema" />
+Pass the schema as
+
+<Syntax py="structured_output_model" ts="structuredOutputSchema" rs="InvokeOptions::structured_output_schema" />
 and read the object from
-<Syntax py="result.structured_output" ts="result.structuredOutput" />. In Python, the
-object is an instance of your model. In TypeScript, cast it to the `z.infer` type.
+<Syntax py="result.structured_output" ts="result.structuredOutput" rs="result.structured_output()" />.
+
+<Tabs>
+<Tab label="Python">
+
+The result is an instance of the Pydantic model.
+
+</Tab>
+<Tab label="TypeScript">
+
+Cast the result to the schema's `z.infer` type.
+
+</Tab>
+<Tab label="Rust">
+
+The method deserializes the result into your target type.
+
+</Tab>
+</Tabs>
 
 If the agent doesn't return an object, the call raises
-<Syntax py="StructuredOutputException" ts="StructuredOutputError" />. `triage` catches it
-and returns a ticket in the `other` category for a person to review.
+
+<Syntax py="StructuredOutputException" ts="StructuredOutputError" rs="StructuredOutputError" />. Handle it where your
+application can route the request to a fallback.
 
 Invalid field values don't raise. Strands sends the validation errors back to the
 agent, and the agent corrects them.
@@ -157,6 +213,19 @@ Typical output:
 ```
 
 </Tab>
+<Tab label="Rust">
+
+This tool returns JSON, so add `serde_json`:
+
+```bash
+cargo add serde_json
+```
+
+```rust
+--8<-- "user-guide/sdk/agents/structured-output.rs:with_tools"
+```
+
+</Tab>
 </Tabs>
 
 ## Extract from a conversation
@@ -201,6 +270,13 @@ for step in escalation.steps_tried:
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/structured-output.rs:from_history"
+```
+
+</Tab>
 </Tabs>
 
 Typical output:
@@ -213,11 +289,14 @@ The user is unable to log in and is not receiving password reset emails.
 
 ## Stream the response
 
-Pass the schema to a stream the same way. Text arrives in chunks as the model writes
-it, and the object arrives once, on the final result:
+Pass the schema to a stream the same way. The object arrives once, on the final
+result:
 
 <Tabs>
 <Tab label="Python">
+
+This example prints text chunks as they arrive, then reads the object from the
+final result:
 
 ```python
 import asyncio
@@ -247,8 +326,18 @@ async def main():
 asyncio.run(main())
 ```
 
+Typical output:
+
+```text
+I'd be happy to help draft a reply apologizing for a delayed refund!
+Subject: Apology for Your Delayed Refund
+```
+
 </Tab>
 <Tab label="TypeScript">
+
+This example prints text chunks as they arrive, then reads the object from the
+final result:
 
 ```typescript
 --8<-- "user-guide/sdk/agents/structured-output_imports.ts:streaming_imports"
@@ -256,15 +345,36 @@ asyncio.run(main())
 --8<-- "user-guide/sdk/agents/structured-output.ts:streaming"
 ```
 
-</Tab>
-</Tabs>
-
 Typical output:
 
-```
+```text
 I'd be happy to help draft a reply apologizing for a delayed refund!
 Subject: Apology for Your Delayed Refund
 ```
+
+</Tab>
+<Tab label="Rust">
+
+This example reads the completed object from the final `AgentResult` event. The
+stream extension trait comes from `futures`:
+
+```bash
+cargo add futures
+```
+
+```rust
+--8<-- "user-guide/sdk/agents/structured-output.rs:streaming"
+```
+
+Typical output:
+
+```text
+Subject: Apology for Your Delayed Refund
+We're sorry your refund was delayed and appreciate your patience.
+```
+
+</Tab>
+</Tabs>
 
 ## Next steps
 

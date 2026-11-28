@@ -2,11 +2,12 @@
 title: Dogwood Authorization
 description: "Gate agent tool calls with Dogwood policies: Cedar-style access control plus temporal rules that decide based on what the agent already did this session."
 tags: [safety, interventions, tool-execution]
-languages: TypeScript
+unsupportedLanguages: Python
 experimental: true
 integrationType: intervention
 sourceLinks:
   - path: strands-ts/src/vended-interventions/dogwood/dogwood.ts
+  - path: strands-rs/strands/src/vended_interventions/dogwood/mod.rs
 addedDate: 2026-11-16
 ---
 
@@ -18,7 +19,7 @@ read.
 
 For access control that depends only on the current call, use
 [Cedar Authorization](./cedar-authorization.mdx) instead. It has no wasm peer dependency
-and both SDKs support it.
+and every SDK supports it.
 
 ## How it works
 
@@ -36,42 +37,60 @@ event if the tool threw, which is what later temporal rules match against.
 
 A generated schema declares its actions and entities at the top level, so policies name
 `Action::"search"` and the default principal is `User::"anonymous"`. Pass
-`namespace: 'Acme'` to declare them under your own domain instead, which every rule then
-qualifies as `Acme::Action::"search"`. A hand-written `actionSchema` declares its own
-namespace, so the option is only valid with `tools`.
+<Syntax ts="namespace: 'Acme'" rs='namespace: Some("Acme".into())' />
+to declare them under your own domain instead, which every rule then qualifies
+as `Acme::Action::"search"`. A hand-written
+<Syntax ts="actionSchema" rs="action_schema" />
+declares its own namespace, so the option is only valid with `tools`.
 
 Policies are default deny: a tool with no matching `permit` is blocked, and the agent
 receives the denial reason as feedback.
 
 ## Basic usage
 
+<Tabs>
+<Tab label="TypeScript">
+
 ```typescript
 --8<-- "user-guide/sdk/agents/interventions/dogwood-authorization_imports.ts:basic_imports"
 
 --8<-- "user-guide/sdk/agents/interventions/dogwood-authorization.ts:basic"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/interventions/dogwood-authorization.rs:basic"
+```
+
+</Tab>
+</Tabs>
 
 Passing `tools` generates the Cedar action schema from your tool specs, and the
-constructor type-checks the policy set against it. A misspelled tool name, in a `permit`
-or inside a temporal predicate, throws immediately rather than leaving the rule silently
-unenforced. Pass `actionSchema` instead when you maintain the schema yourself.
+constructor type-checks the policy set against it. A misspelled tool name, in a
+`permit` or inside a temporal predicate, throws immediately rather than leaving
+the rule silently unenforced. Pass
+<Syntax ts="actionSchema" rs="action_schema" />
+instead when you maintain the schema yourself.
 
 Generated action ids are the tool names verbatim, so every tool name must be a legal Cedar
 identifier. A name containing `-`, `.`, or a space fails schema generation and throws.
 
-A hand-written `actionSchema` must declare the entity types the handler actually sends:
+A hand-written <Syntax ts="actionSchema" rs="action_schema" /> must declare the
+entity types the handler actually sends:
 `Resource` for the resource, which is always `Resource::"agent"` under whatever namespace
 the schema declares, and `User` for the default principal. A policy that names an entity
 type the schema does not declare fails validation in the constructor.
 
 A condition compares the tool arguments as the model emitted them, and a generated schema
-is typed to match: write `context.input.method == "DELETE"` for a `z.enum()` parameter and
-`context.input.retries > 3` for a `z.number()` one. A misspelled value is just another
-string, so it fails to match rather than failing to compile.
+is typed to match: write `context.input.method == "DELETE"` for an enum-constrained string
+and `context.input.retries > 3` for a numeric parameter. A misspelled enum value is just
+another string, so it fails to match rather than failing to compile.
 
 Reading a parameter the tool does not mark required needs a `has` guard,
 `context has input.retries && context.input.retries == 3`, or the constructor throws. A
-`z.number()` parameter is declared as a whole number, so comparing a fractional argument
+JSON Schema `number` parameter is declared as a whole number, so comparing a fractional
+argument
 with `<`, `>`, `<=`, or `>=` is an evaluation error and denies the call. Equality is
 unaffected: `== 3` simply does not match `3.5`. See the
 [Dogwood language reference](https://github.com/dogwood-policy/dogwood) for the full type
@@ -81,11 +100,23 @@ rules.
 
 `when temporal` conditions match against the event history the handler accumulates:
 
+<Tabs>
+<Tab label="TypeScript">
+
 ```typescript
 --8<-- "user-guide/sdk/agents/interventions/dogwood-authorization_imports.ts:temporal_imports"
 
 --8<-- "user-guide/sdk/agents/interventions/dogwood-authorization.ts:temporal"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/interventions/dogwood-authorization.rs:temporal"
+```
+
+</Tab>
+</Tabs>
 
 Match on `response` events for rules that mean "this already happened and finished", and
 on `error` events for "this failed". Dogwood records an event into history before deciding
@@ -95,8 +126,12 @@ satisfies itself on the first call.
 A rule that unlocks one tool with another's `response` needs the calls ordered. The
 default concurrent tool executor decides every call in a turn before recording any
 result, so the rule above does not fire when the model emits both calls at once. Set
-`toolExecutor: 'sequential'` on the agent, as the example does, and each call is decided
-after the previous one has been recorded.
+<Syntax
+  ts="toolExecutor: 'sequential'"
+  rs=".tool_executor(SequentialToolExecutor::new())"
+/>
+on the agent, as the example does, and each call is decided after the previous
+one has been recorded.
 
 Each recorded event carries the action, the principal, and the tool's arguments, so a
 temporal predicate can key on an argument, as in `response{ input.query: "audit" }`. It
@@ -120,23 +155,37 @@ result, including an MCP tool returning `isError: true`, leaves no event in the 
 Multi-tenant agents resolve the principal per request, and policies often need fields the
 tool arguments do not carry:
 
+<Tabs>
+<Tab label="TypeScript">
+
 ```typescript
 --8<-- "user-guide/sdk/agents/interventions/dogwood-authorization_imports.ts:identity_imports"
 
 --8<-- "user-guide/sdk/agents/interventions/dogwood-authorization.ts:identity"
 ```
+</Tab>
+<Tab label="Rust">
 
-`contextEnricher` adds fields to the `session` group of the request context, which a
-policy reads as `context.session.<field>`. Those fields reach the `when { … }` condition
-only, because the event schema declares a tool's arguments and nothing else, so a
-temporal predicate cannot reference an enriched field.
+```rust
+--8<-- "user-guide/sdk/agents/interventions/dogwood-authorization.rs:identity"
+```
+
+</Tab>
+</Tabs>
+
+<Syntax ts="contextEnricher" rs="context_enricher" />
+adds fields to the `session` group of the request context, which a policy reads
+as `context.session.<field>`. Those fields reach the `when { … }` condition
+only, because the event schema declares a tool's arguments and nothing else, so
+a temporal predicate cannot reference an enriched field.
 
 Correlating history by principal needs no enricher. Every temporal predicate is pinned to
 the principal being decided, so one handler instance serves many users without their
 histories mixing: a search alice ran never unlocks a delete for bob.
 
-When `principalResolver` returns `undefined`, the handler denies the call. No identity, no
-access.
+When
+<Syntax ts="principalResolver returns undefined" rs="principal_resolver returns None" />,
+the handler denies the call. No identity, no access.
 
 A generated schema declares `User` as its only principal type, qualified by `namespace`,
 so a resolver returning any other type denies the call and a static `principal` of another
@@ -145,14 +194,27 @@ scopes the principal simply never matches, so a `forbid` would silently not appl
 
 ## Policies in files
 
-`policies` and `actionSchema` each take either source text or a path. A value ending in
-`.dw` or `.cedarschema` is read from disk:
+`policies` and <Syntax ts="actionSchema" rs="action_schema" /> each take either
+source text or a path. A value ending in `.dw` or `.cedarschema` is read from
+disk:
+
+<Tabs>
+<Tab label="TypeScript">
 
 ```typescript
 --8<-- "user-guide/sdk/agents/interventions/dogwood-authorization_imports.ts:file_policy_imports"
 
 --8<-- "user-guide/sdk/agents/interventions/dogwood-authorization.ts:file_policy"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/interventions/dogwood-authorization.rs:file_policy"
+```
+
+</Tab>
+</Tabs>
 
 The extension is what selects file over text, so a path with any other suffix is read as
 source and fails to parse rather than reporting a missing file.
@@ -162,14 +224,26 @@ so an edited policy file takes effect the next time the handler is constructed.
 
 ## History and memory
 
-History is never pruned, at roughly 1.7 KB per event in wasm. `reset()` drops it and
-keeps the handler deciding:
+History is never pruned. The TypeScript wasm engine uses roughly 1.7 KB per
+event. `reset()` drops the history and keeps the handler deciding:
+
+<Tabs>
+<Tab label="TypeScript">
 
 ```typescript
 --8<-- "user-guide/sdk/agents/interventions/dogwood-authorization_imports.ts:session_scope_imports"
 
 --8<-- "user-guide/sdk/agents/interventions/dogwood-authorization.ts:session_scope"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/interventions/dogwood-authorization.rs:session_scope"
+```
+
+</Tab>
+</Tabs>
 
 Calling `reset()` means holding the handler in a variable, as the example does, rather
 than constructing it inline in the `interventions` array: an agent exposes no way to
@@ -191,11 +265,13 @@ error means something went wrong rather than the policy saying no. The handler r
 two cases with different denial reasons.
 
 Tool arguments come from the model, so a request event can be malformed by a prompt. A
-decision that throws is treated as no decision and denies. A wasm trap denies that call
-and every call after it, since a trapped module cannot be trusted to decide anything.
+decision that throws is treated as no decision and denies. If the Dogwood engine traps
+or panics, the handler denies that call and every call after it because the engine can no
+longer be trusted to decide.
 
-`onError` controls what happens when the handler itself throws, for example when
-`principalResolver` raises:
+<Syntax ts="onError" rs="on_error" />
+controls what happens when the handler itself throws, for example when
+<Syntax ts="principalResolver" rs="principal_resolver" /> raises:
 
 - `'throw'` (default): rethrows to the caller
 - `'deny'`: treats the failure as a denial
@@ -209,6 +285,9 @@ Dogwood decision denies regardless of this setting.
 
 ## Installation
 
+<Tabs>
+<Tab label="TypeScript">
+
 Dogwood evaluation runs in wasm through an optional peer dependency:
 
 ```bash
@@ -217,10 +296,22 @@ npm install @strands-agents/sdk @aws/dogwood-wasm
 
 The handler imports `@aws/dogwood-wasm` at module load, so the import throws when the
 package is missing. The module is about 9.4 MB on disk (2.9 MB gzipped).
+</Tab>
+<Tab label="Rust">
 
-[Dogwood](https://github.com/dogwood-policy/dogwood)'s authors describe the
-implementation as a reference interpreter rather than a production one, and the wasm
-bindings inherit that, so treat this handler as experimental.
+Enable the native Dogwood engine:
+
+```bash
+cargo add strands --features dogwood
+```
+
+</Tab>
+</Tabs>
+
+[Dogwood](https://github.com/dogwood-policy/dogwood)'s authors describe its
+implementation as a reference interpreter rather than a production one. Both the
+TypeScript wasm binding and the Rust native engine use that implementation, so treat
+this handler as experimental.
 
 ## Dogwood policy syntax
 

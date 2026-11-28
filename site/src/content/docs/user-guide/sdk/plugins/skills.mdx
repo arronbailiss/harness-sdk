@@ -7,6 +7,8 @@ sourceLinks:
   - path: strands-py/src/strands/vended_plugins/skills/skill.py
   - path: strands-ts/src/vended-plugins/skills/agent-skills.ts
   - path: strands-ts/src/vended-plugins/skills/skill.ts
+  - path: strands-rs/strands/src/vended_plugins/skills/agent_skills.rs
+  - path: strands-rs/strands/src/vended_plugins/skills/skill.rs
 addedDate: 2026-03-11
 ---
 
@@ -53,7 +55,14 @@ The injected system prompt metadata looks like this:
 </available_skills>
 ```
 
-This XML block is refreshed before each invocation, so changes to available skills (through <Syntax py="set_available_skills" ts="setAvailableSkills" />) take effect immediately. Activated skills are tracked in [agent state](../agents/state.mdx) for session persistence.
+This XML block is refreshed before each invocation, so changes through
+<Syntax
+  py="set_available_skills"
+  ts="setAvailableSkills"
+  rs="set_available_skills"
+/> take effect immediately. Activated skills are tracked in
+<Syntax py="agent.state" ts="agent.appState" rs="agent.app_state()" /> for
+session persistence.
 
 ## Usage
 
@@ -93,6 +102,16 @@ agent = Agent(plugins=[plugin])
 --8<-- "user-guide/sdk/plugins/skills.ts:usage"
 ```
 </Tab>
+<Tab label="Rust">
+
+Configure skill sources with
+[`AgentSkills`](https://docs.rs/strands/latest/strands/vended_plugins/skills/struct.AgentSkills.html).
+
+```rust
+--8<-- "user-guide/sdk/plugins/skills.rs:usage"
+```
+
+</Tab>
 </Tabs>
 
 ### Providing tools for resource access
@@ -128,6 +147,16 @@ For filesystem-based skills, the vended `bash` and `fileEditor` tools are the ea
 
 --8<-- "user-guide/sdk/plugins/skills.ts:tools"
 ```
+</Tab>
+<Tab label="Rust">
+
+For filesystem skills, use the focused `read`, `write`, and `edit` tools with
+the vended `shell` tool:
+
+```rust
+--8<-- "user-guide/sdk/plugins/skills.rs:tools"
+```
+
 </Tab>
 </Tabs>
 
@@ -172,6 +201,13 @@ skills = Skill.from_directory("./skills/")
 
 --8<-- "user-guide/sdk/plugins/skills.ts:programmatic"
 ```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/plugins/skills.rs:programmatic"
+```
+
 </Tab>
 </Tabs>
 
@@ -218,6 +254,13 @@ print(f"Activated skills: {activated}")
 --8<-- "user-guide/sdk/plugins/skills.ts:runtime"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/plugins/skills.rs:runtime"
+```
+
+</Tab>
 </Tabs>
 
 ## SKILL.md format
@@ -255,7 +298,10 @@ The `allowed-tools` field is currently informational. When a skill is activated,
 :::
 
 :::note[Name validation]
-Skill names must match the parent directory name. By default, validation issues produce warnings rather than errors. Pass <Syntax py="strict=True" ts="strict: true" /> to raise exceptions instead.
+Skill names must match the parent directory name. By default, validation issues
+produce warnings rather than errors. Pass
+<Syntax py="strict=True" ts="strict: true" rs=".strict(true)" /> to return
+validation errors instead.
 :::
 
 ### Resource directories
@@ -298,6 +344,16 @@ The `AgentSkills` constructor accepts the following parameters.
 | `stateKey` | `string` | `'agent_skills'` | Key for storing plugin state in `agent.appState`. |
 | `maxResourceFiles` | `number` | `20` | Maximum number of resource files listed in skill activation responses. |
 | `strict` | `boolean` | `false` | If `true`, throw on validation issues instead of logging warnings. |
+
+</Tab>
+<Tab label="Rust">
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `skills` | `Vec<SkillSource>` | `[]` | Skill instances, paths, or HTTPS URLs. |
+| `state_key` | `String` | `"agent_skills"` | App-state key for plugin state. |
+| `max_resource_files` | `usize` | `20` | Maximum listed resource files. |
+| `strict` | `bool` | `false` | Return errors for validation issues. |
 
 </Tab>
 </Tabs>

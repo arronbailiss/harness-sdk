@@ -81,6 +81,30 @@ describe('llms.txt builder', () => {
     expect(content).not.toContain('## Additional documentation')
   })
 
+  it('groups an SDK API landing page with its language', () => {
+    const rustApi = doc('docs/api/rust', 'Rust API')
+    const content = buildLlmsTxt([rustApi], [], [], [], [])
+
+    expect(content).toContain('## Api Rust')
+    expect(occurrences(content, `/${rustApi.id}/index.md`)).toBe(1)
+    expect(content).not.toContain('## Additional documentation')
+  })
+
+  it('does not duplicate an API landing page already included in the sidebar', () => {
+    const rustApi = doc('docs/api/rust', 'Rust API')
+    const sidebar: StarlightSidebarItem[] = [
+      {
+        label: 'SDK',
+        items: [{ label: 'Rust API', slug: rustApi.id }],
+      },
+    ]
+    const content = buildLlmsTxt([rustApi], sidebar, [], [], [])
+
+    expect(occurrences(content, `/${rustApi.id}/index.md`)).toBe(1)
+    expect(content).not.toContain('## Api Rust')
+    expect(content).not.toContain('## Additional documentation')
+  })
+
   it('links the standalone Box landing page', () => {
     const content = buildLlmsTxt([], [], [], [], [])
 

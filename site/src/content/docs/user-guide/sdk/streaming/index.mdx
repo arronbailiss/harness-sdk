@@ -4,11 +4,17 @@ description: "Stream AI agent responses in real time. Handle partial results, to
 sidebar:
   label: "Overview"
 tags: [streaming]
+sourceLinks:
+  - path: strands-py/src/strands/event_loop/streaming.py
+  - path: strands-ts/src/models/streaming.ts
+  - path: strands-rs/strands/src/agent/stream.rs
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components'
 
-Stream an agent's output as it happens instead of waiting for the final response: text tokens, tool calls, and lifecycle events, as they occur. This is what drives responsive user interfaces and real-time monitoring.
+Stream an agent's output as it happens instead of waiting for the final response:
+text deltas, tool calls, and lifecycle events, as they occur. This is what drives
+responsive user interfaces and real-time observability.
 
 Strands emits the same set of events regardless of how you consume them; you choose the consumption model that fits your application. Async iterators suit asynchronous server frameworks, and callback handlers suit synchronous Python.
 
@@ -18,7 +24,7 @@ Strands emits the same set of events regardless of how you consume them; you cho
   <LinkCard
     title="Async Iterators"
     href="async-iterators/"
-    description="Consume the event stream with async iterators, for async server frameworks like FastAPI and Express."
+    description="Consume the event stream with async iterators in async applications."
   />
   <LinkCard
     title="Callback Handlers"
@@ -39,7 +45,8 @@ Strands emits the same set of events regardless of how you consume them; you cho
 
 ## A running stream
 
-The smallest real thing streaming does is print an agent's answer token by token as the model produces it. Iterate over the stream and forward the text chunks:
+The smallest real thing streaming does is print an agent's answer chunk by chunk
+as the model produces it. Iterate over the stream and forward each text delta:
 
 <Tabs>
 <Tab label="Python">
@@ -66,9 +73,26 @@ asyncio.run(main())
 --8<-- "user-guide/sdk/streaming/overview.ts:quick_example_async_iterator"
 ```
 </Tab>
+<Tab label="Rust">
+
+This example uses the default Amazon Bedrock model. Complete the
+[Rust quickstart](../quickstart/rust/) first, or configure another model.
+
+```bash
+cargo add strands futures
+cargo add tokio --features macros,rt-multi-thread
+```
+
+```rust
+--8<-- "user-guide/sdk/streaming/index.rs:streaming_overview"
+```
+
+</Tab>
 </Tabs>
 
-Each `data` chunk is one piece of the model's output. The [event reference](./events.md) lists everything else the stream carries: tool calls, lifecycle signals, and multi-agent coordination.
+Each emitted text delta is one piece of the model's output. The
+[event reference](./events.md) lists everything else the stream carries: tool
+calls, lifecycle signals, and multi-agent events.
 
 ## Where to go next
 

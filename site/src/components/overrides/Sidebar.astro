@@ -11,6 +11,7 @@ import SidebarPersister from '@astrojs/starlight/components/SidebarPersister.ast
 import SidebarSublist from './SidebarSublist.astro'
 import { currentProduct } from '../../util/current-product'
 import { isSampleGuidePath, sampleGuideLanguageFromPath } from '../../util/sample-guides'
+import { SDK_LANGUAGE_LABELS } from '../../config/languages'
 
 const { sidebar } = Astro.locals.starlightRoute
 const product = currentProduct(Astro.url.pathname)
@@ -26,6 +27,9 @@ const isIntegrations =
 const isLabs = !product && Astro.url.pathname.includes('/docs/labs')
 const isContribute = !product && Astro.url.pathname.includes('/docs/contribute')
 const sampleGuideLanguage = isExamples ? sampleGuideLanguageFromPath(Astro.url.pathname) : undefined
+const languageSlugs = Object.fromEntries(
+  Object.entries(SDK_LANGUAGE_LABELS).map(([slug, label]) => [label, slug])
+)
 const staticSlug = isLearning
   ? '/learn'
   : isExamples
@@ -39,7 +43,7 @@ const staticSlug = isLearning
           : null
 ---
 
-<script is:inline define:vars={{ SAMPLE_GUIDE_LANGUAGE: sampleGuideLanguage }}>
+<script is:inline define:vars={{ SAMPLE_GUIDE_LANGUAGE: sampleGuideLanguage, LANGUAGE_SLUGS: languageSlugs }}>
   // Language-scoped sidebar entries (sample guides, Quickstart, API reference)
   // follow the header language toggle. Mirror the stored language onto
   // <html data-lang-pref> so CSS can hide the other language's row before the
@@ -52,7 +56,7 @@ const staticSlug = isLearning
     function set(label) {
       if (SAMPLE_GUIDE_LANGUAGE === 'python') label = 'Python'
       if (SAMPLE_GUIDE_LANGUAGE === 'typescript') label = 'TypeScript'
-      document.documentElement.dataset.langPref = label === 'Python' ? 'python' : 'typescript'
+      document.documentElement.dataset.langPref = LANGUAGE_SLUGS[label] || 'typescript'
     }
     try {
       set(localStorage.getItem(KEY) || 'TypeScript')
@@ -177,17 +181,22 @@ const staticSlug = isLearning
 
 <style is:global>
   /* Language-scoped sidebar rows (Quickstart / API reference) follow the header
-     language toggle via <html data-lang-pref>. Default (attr unset) = TypeScript.
-     One row of each pair is always shown; the other is collapsed. */
+     language toggle via <html data-lang-pref>. Default (attr unset) = TypeScript. */
   html:not([data-lang-pref='python']) .sidebar-content li:has(> a[href*='/quickstart/python']),
-  html:not([data-lang-pref='python']) .sidebar-content li:has(> a[href*='/api/python']) {
+  html:not([data-lang-pref='python']) .sidebar-content li:has(> a[href*='/api/python']),
+  html:not([data-lang-pref='rust']) .sidebar-content li:has(> a[href*='/quickstart/rust']),
+  html:not([data-lang-pref='rust']) .sidebar-content li:has(> a[href*='/api/rust']) {
     display: none;
   }
 
   html:not([data-lang-pref='python']) .sidebar-content li:not(:only-child):has(> [data-sidebar-lang='python']),
+  html:not([data-lang-pref='rust']) .sidebar-content li:not(:only-child):has(> [data-sidebar-lang='rust']),
   html[data-lang-pref='python'] .sidebar-content li:not(:only-child):has(> [data-sidebar-lang='typescript']),
+  html[data-lang-pref='rust'] .sidebar-content li:not(:only-child):has(> [data-sidebar-lang='typescript']),
   html[data-lang-pref='python'] .sidebar-content li:has(> a[href*='/quickstart/typescript']),
-  html[data-lang-pref='python'] .sidebar-content li:has(> a[href*='/api/typescript']) {
+  html[data-lang-pref='python'] .sidebar-content li:has(> a[href*='/api/typescript']),
+  html[data-lang-pref='rust'] .sidebar-content li:has(> a[href*='/quickstart/typescript']),
+  html[data-lang-pref='rust'] .sidebar-content li:has(> a[href*='/api/typescript']) {
     display: none;
   }
 </style>

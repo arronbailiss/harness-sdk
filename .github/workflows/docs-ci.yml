@@ -60,6 +60,10 @@ jobs:
       - name: Re-link SDK types
         run: npm install
 
+      - name: Install Rust toolchain
+        run: rustup toolchain install
+        working-directory: .
+
       - name: Typecheck snippets
         run: npm run typecheck:snippets
 

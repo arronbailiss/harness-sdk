@@ -10,7 +10,7 @@
     "dev": "astro dev",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "typecheck:snippets": "npm run typecheck --prefix test-snippets",
+    "typecheck:snippets": "npm run typecheck --prefix test-snippets && cargo check --manifest-path rust-snippets/Cargo.toml --locked --all-targets && cargo clippy --manifest-path rust-snippets/Cargo.toml --locked --all-targets -- -D warnings",
     "check": "npm run format:check && npm run build && npm run typecheck && npm test",
     "format": "prettier --write docs scripts src test '*.ts'",
     "format:check": "prettier --check docs scripts src test '*.ts'",

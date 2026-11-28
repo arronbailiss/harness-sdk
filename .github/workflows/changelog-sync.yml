@@ -33,8 +33,10 @@ jobs:
       (github.event_name != 'release' ||
       startsWith(github.event.release.tag_name, 'python/v') ||
       startsWith(github.event.release.tag_name, 'typescript/v') ||
+      startsWith(github.event.release.tag_name, 'rust/v') ||
       startsWith(github.event.release.tag_name, 'harness-python/v') ||
       startsWith(github.event.release.tag_name, 'harness-typescript/v') ||
+      startsWith(github.event.release.tag_name, 'harness-rust/v') ||
       startsWith(github.event.release.tag_name, 'harness-cli/v') ||
       startsWith(github.event.release.tag_name, 'v'))
     runs-on: strands-agents_ubuntu-latest_4-core

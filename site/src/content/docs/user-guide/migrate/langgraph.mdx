@@ -1,6 +1,7 @@
 ---
+languages: [Python, TypeScript]
 title: Migrate from LangGraph
-description: "Move a LangGraph app to Strands Agents: map StateGraph to a Strands graph, swap checkpointers for session managers, and port interrupts, limits, and tracing."
+description: 'Move a LangGraph app to Strands Agents: map StateGraph to a Strands graph, swap checkpointers for session managers, and port interrupts, limits, and tracing.'
 sidebar:
   label: LangGraph
 ---
@@ -61,17 +62,16 @@ Once your graph has a join (a node with more than one incoming edge), the Strand
 
 With those in mind, most other LangGraph concepts have a direct Strands counterpart.
 
-| Concept | LangGraph | Strands |
-| --- | --- | --- |
-| Graph construction | `StateGraph`, <Syntax py="add_node" ts="addNode" />, <Syntax py="add_edge" ts="addEdge" />, <Syntax py="add_conditional_edges" ts="addConditionalEdges" /> | <Syntax py="GraphBuilder" ts="new Graph({ nodes, edges })" /> |
-| Entry point | <Syntax py="set_entry_point" ts="setEntryPoint" />, edge from `START` | <Syntax py="set_entry_point()" ts="sources" /> |
-| Persistence | Checkpointer (`SqliteSaver`, <Syntax py="InMemorySaver" ts="MemorySaver" />) | session manager on the graph |
-| Tools | `@tool`, LangChain <Syntax py="bind_tools" ts="bindTools" />, `ToolNode`, <Syntax py="tools_condition" ts="toolsCondition" /> | <Syntax py="Agent(tools=[...])" ts="new Agent({ tools: [...] })" /> |
-| Interrupts | `interrupt()`, <Syntax py="interrupt_before" ts="interruptBefore" /> | interrupts raised from a hook or a tool |
-| Run limits | <Syntax py="recursion_limit" ts="recursionLimit" /> | invocation limits plus node caps (<Syntax py="set_max_node_executions()" ts="maxSteps" />) |
-| Streaming | `.stream()`, `astream_events` | <Syntax py="stream_async()" ts="stream()" /> |
-| Tracing | LangSmith | OpenTelemetry via <Syntax py="StrandsTelemetry" ts="setupTracer()" /> |
-
+| Concept            | LangGraph                                                                                                                                                  | Strands                                                                                    |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Graph construction | `StateGraph`, <Syntax py="add_node" ts="addNode" />, <Syntax py="add_edge" ts="addEdge" />, <Syntax py="add_conditional_edges" ts="addConditionalEdges" /> | <Syntax py="GraphBuilder" ts="new Graph({ nodes, edges })" />                              |
+| Entry point        | <Syntax py="set_entry_point" ts="setEntryPoint" />, edge from `START`                                                                                      | <Syntax py="set_entry_point()" ts="sources" />                                             |
+| Persistence        | Checkpointer (`SqliteSaver`, <Syntax py="InMemorySaver" ts="MemorySaver" />)                                                                               | session manager on the graph                                                               |
+| Tools              | `@tool`, LangChain <Syntax py="bind_tools" ts="bindTools" />, `ToolNode`, <Syntax py="tools_condition" ts="toolsCondition" />                              | <Syntax py="Agent(tools=[...])" ts="new Agent({ tools: [...] })" />                        |
+| Interrupts         | `interrupt()`, <Syntax py="interrupt_before" ts="interruptBefore" />                                                                                       | interrupts raised from a hook or a tool                                                    |
+| Run limits         | <Syntax py="recursion_limit" ts="recursionLimit" />                                                                                                        | invocation limits plus node caps (<Syntax py="set_max_node_executions()" ts="maxSteps" />) |
+| Streaming          | `.stream()`, `astream_events`                                                                                                                              | <Syntax py="stream_async()" ts="stream()" />                                               |
+| Tracing            | LangSmith                                                                                                                                                  | OpenTelemetry via <Syntax py="StrandsTelemetry" ts="setupTracer()" />                      |
 
 ## Set up the Strands SDK
 
@@ -83,12 +83,14 @@ Before starting the migration, install the SDK:
 ```bash
 pip install strands-agents
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
 ```bash
 npm install @strands-agents/sdk
 ```
+
 </Tab>
 </Tabs>
 
@@ -168,6 +170,7 @@ def run_case(case_id: str, prompt: str):
     config = {"configurable": {"thread_id": case_id}}
     return graph.invoke({"prompt": prompt}, config)
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -176,6 +179,7 @@ def run_case(case_id: str, prompt: str):
 
 --8<-- "user-guide/migrate/langgraph_before.ts:graph_before"
 ```
+
 </Tab>
 </Tabs>
 
@@ -197,6 +201,7 @@ becomes a session manager keyed by the case ID:
 
 --8<-- "user-guide/migrate/langgraph.py:graph_migrated"
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -205,14 +210,16 @@ becomes a session manager keyed by the case ID:
 
 --8<-- "user-guide/migrate/langgraph.ts:graph_migrated"
 ```
+
 </Tab>
 </Tabs>
 
 The result object reports the run status and which nodes ran, through
-<Syntax py="execution_order" ts="results" />, so you can assert the
-pipeline ran end to end. For conditional routing, give an edge a condition
-function, the equivalent of LangGraph's
-<Syntax py="add_conditional_edges" ts="addConditionalEdges" />. For more information, see the [conditional edges documentation](../sdk/multi-agent/graph.md#conditional-edges).
+
+<Syntax py="execution_order" ts="results" />, so you can assert the pipeline ran end to end. For conditional routing,
+give an edge a condition function, the equivalent of LangGraph's
+<Syntax py="add_conditional_edges" ts="addConditionalEdges" />. For more information, see the [conditional edges
+documentation](../sdk/multi-agent/graph.md#conditional-edges).
 
 ## Port your tools
 
@@ -221,31 +228,35 @@ execute them in a `ToolNode`, and route back with a <Syntax py="tools_condition"
 adds a cycle to the graph. A Strands agent runs that loop itself, so the tools
 move onto the agent and both the tool node and its edges disappear.
 
-| Concept | LangGraph | Strands |
-| --- | --- | --- |
-| Define a tool | plain function, or <Syntax py="@tool from langchain_core.tools" ts="tool() from @langchain/core/tools" /> | <Syntax py="@tool" ts="tool()" /> |
-| Attach it | <Syntax py="bind_tools([...])" ts="bindTools([...])" /> | <Syntax py="Agent(tools=[...])" ts="new Agent({ tools: [...] })" /> |
-| Execute the call | `ToolNode` | the agent loop |
-| Route back to the model | <Syntax py="tools_condition" ts="toolsCondition" /> edge | automatic |
+| Concept                 | LangGraph                                                                                                 | Strands                                                             |
+| ----------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Define a tool           | plain function, or <Syntax py="@tool from langchain_core.tools" ts="tool() from @langchain/core/tools" /> | <Syntax py="@tool" ts="tool()" />                                   |
+| Attach it               | <Syntax py="bind_tools([...])" ts="bindTools([...])" />                                                   | <Syntax py="Agent(tools=[...])" ts="new Agent({ tools: [...] })" /> |
+| Execute the call        | `ToolNode`                                                                                                | the agent loop                                                      |
+| Route back to the model | <Syntax py="tools_condition" ts="toolsCondition" /> edge                                                  | automatic                                                           |
 
 Not every node needs tools. The review stage above works from what the earlier
 stages produced, so it has none.
 
 <Tabs>
 <Tab label="Python">
+
 :::caution[Parameter descriptions start reaching the model]
 LangChain parses a docstring's `Args:` section only when you pass
-`parse_docstring=True`, and it defaults to `False`. Strands always parses it, so
-parameter descriptions your LangGraph tool never sent to the model will start
+`parse_docstring=True`, and it defaults to `False`. Strands always parses it,
+so parameter descriptions your LangGraph tool never sent to the model will start
 being sent. That changes the tool schema the model sees.
 :::
+
 </Tab>
 <Tab label="TypeScript">
+
 :::note[Parameter descriptions reach the model the same way]
 Both frameworks take the tool's parameter schema from zod, so a `.describe()` on
 a field reaches the model the same way in each. The schema the model sees does
 not change.
 :::
+
 </Tab>
 </Tabs>
 
@@ -280,6 +291,7 @@ Attach a `FileSessionManager`, `S3SessionManager` or `SnapshotSessionManager`
 (with a `storage` argument) to the graph with `set_session_manager`. An agent
 inside the graph must **not** carry its own session manager; `add_node` raises
 `ValueError` if it does.
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -303,6 +315,7 @@ pre-run state when it completes, so `agent.messages` is unchanged in memory and
 the persisted conversation lives only in the session store. Pass
 `preserveContext: true` on the node to let the agent accumulate state across
 executions instead.
+
 </Tab>
 </Tabs>
 
@@ -311,16 +324,20 @@ case run twice:
 
 <Tabs>
 <Tab label="Python">
+
 ```python
 run_case("case-4127", "Assess the dispute and recommend a decision.")
 run_case("case-4127", "Assess the dispute and recommend a decision.")
 ```
+
 </Tab>
 <Tab label="TypeScript">
+
 ```typescript
 await runCase('case-4127', 'Assess the dispute and recommend a decision.')
 await runCase('case-4127', 'Assess the dispute and recommend a decision.')
 ```
+
 </Tab>
 </Tabs>
 
@@ -447,9 +464,10 @@ builder.set_execution_timeout(300)  # seconds, checked between batches
 builder.set_node_timeout(60)  # seconds, cancels a node that is still running
 ```
 
-Python checks the execution timeout between batches of nodes, so it does not
-stop an agent that is already running. Set a node timeout as well to bound each
-node while it runs.
+The execution timeout is checked between batches of nodes, so it does not stop
+an agent that is already running. Set a node timeout as well to bound each node
+while it runs.
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -460,6 +478,7 @@ const graph = new Graph({
   timeout: 300_000, // milliseconds
 })
 ```
+
 </Tab>
 </Tabs>
 
@@ -504,6 +523,7 @@ elif result.stop_reason == "limit_output_tokens":
 elif result.stop_reason == "limit_total_tokens":
     print("Hit token budget")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -512,6 +532,7 @@ elif result.stop_reason == "limit_total_tokens":
 
 --8<-- "user-guide/migrate/langgraph.ts:limits"
 ```
+
 </Tab>
 </Tabs>
 
@@ -542,6 +563,7 @@ result = agent("Assess the case file", cancel_signal=cancel_signal)
 if result.stop_reason == "cancelled":
     print("Run cancelled: exceeded time budget")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -550,6 +572,7 @@ if result.stop_reason == "cancelled":
 
 --8<-- "user-guide/migrate/langgraph.ts:cancellation"
 ```
+
 </Tab>
 </Tabs>
 
@@ -560,13 +583,13 @@ the same values but the type also admits other strings, so handle an unknown
 value rather than assuming the list is complete.
 
 Beyond the limit and cancellation values above, common reasons include
+
 <Syntax py="end_turn" ts="endTurn" /> (the agent finished) and
-<Syntax py="guardrail_intervened" ts="guardrailIntervened" />. The three limit
-values mean the run used up the turns or tokens you allowed in `limits`. Nothing
-is raised and the run stops at a turn boundary. You can call the agent again with
-larger numbers. A single model response that hits the provider's output cap is
-not reported as a stop reason: it raises <Syntax py="MaxTokensReachedException" ts="MaxTokensError" />.
-See [Stop reasons](../sdk/agents/agent-loop.md#stop-reasons).
+<Syntax py="guardrail_intervened" ts="guardrailIntervened" />. The three limit values mean the run used up the turns or
+tokens you allowed in `limits`. Nothing is raised and the run stops at a turn boundary. You can call the agent again
+with larger numbers. A single model response that hits the provider's output cap is not reported as a stop reason: it
+raises <Syntax py="MaxTokensReachedException" ts="MaxTokensError" />. See [Stop
+reasons](../sdk/agents/agent-loop.md#stop-reasons).
 
 ## Tracing
 
@@ -583,6 +606,7 @@ Install the tracing dependencies:
 ```bash
 pip install 'strands-agents[otel]'
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -593,6 +617,7 @@ npm install @opentelemetry/api @opentelemetry/sdk-trace-node @opentelemetry/sdk-
 Install the SDK before these packages. The SDK declares the versions it
 accepts, and installing them first can resolve to a newer release than the SDK
 allows.
+
 </Tab>
 </Tabs>
 
@@ -625,6 +650,7 @@ agent = Agent(
     trace_attributes={"case.id": "case-4127"},
 )
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -633,6 +659,7 @@ agent = Agent(
 
 --8<-- "user-guide/migrate/langgraph.ts:telemetry"
 ```
+
 </Tab>
 </Tabs>
 

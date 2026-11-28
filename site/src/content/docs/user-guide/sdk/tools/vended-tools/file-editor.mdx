@@ -5,6 +5,7 @@ tags: [tool-authoring]
 sourceLinks:
   - path: strands-ts/src/vended-tools/file-editor/file-editor.ts
   - path: strands-py/src/strands/vended_tools/file_editor/file_editor.py
+  - path: strands-rs/strands/src/vended_tools/file_editor.rs
 ---
 
 :::caution[Deprecated]
@@ -37,6 +38,13 @@ from strands.vended_tools import file_editor
 
 agent = Agent(tools=[file_editor])
 agent("Create a file at /tmp/hello.txt with the contents 'Hello, world!'")
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/file-editor.rs:example"
 ```
 
 </Tab>

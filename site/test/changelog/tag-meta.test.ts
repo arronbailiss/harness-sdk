@@ -18,6 +18,19 @@ describe('tag-meta', () => {
     })
   })
 
+  it('rust SDK and harness tags map to their release streams', () => {
+    expect(tagToMeta('strands-agents/harness-sdk', 'rust/v0.1.0')).toEqual({
+      sdk: 'sdk',
+      language: 'rust',
+      version: '0.1.0',
+    })
+    expect(tagToMeta('strands-agents/harness-sdk', 'harness-rust/v0.1.0')).toEqual({
+      sdk: 'harness',
+      language: 'rust',
+      version: '0.1.0',
+    })
+  })
+
   it('harness bare v tag is pre-monorepo python', () => {
     expect(tagToMeta('strands-agents/harness-sdk', 'v1.9.1')).toEqual({
       sdk: 'sdk',
@@ -110,6 +123,8 @@ describe('tag-meta', () => {
     expect(getPackageUrl('harness', 'typescript', '0.3.0')).toBe(
       'https://www.npmjs.com/package/@strands-agents/harness/v/0.3.0'
     )
+    expect(getPackageUrl('sdk', 'rust', '0.1.0')).toBe('https://crates.io/crates/strands/0.1.0')
+    expect(getPackageUrl('harness', 'rust', '0.1.0')).toBe('https://crates.io/crates/strands-harness/0.1.0')
     expect(getPackageUrl('cli', undefined, '0.2.1')).toBe('https://www.npmjs.com/package/@strands-agents/cli/v/0.2.1')
     expect(getPackageUrl('box', undefined, '0.1.0')).toBe('https://github.com/strands-agents/box/releases/tag/v0.1.0')
     expect(getPackageUrl('shell', undefined, '0.6.0')).toBe(

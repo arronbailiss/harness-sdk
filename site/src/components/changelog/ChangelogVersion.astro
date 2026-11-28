@@ -1,6 +1,7 @@
 ---
 import { render } from 'astro:content'
 import MarkdownIt from 'markdown-it'
+import { packageRegistryLabel } from '../../config/changelog'
 import type { ChangelogRelease } from '../../util/changelog'
 import { groupEntries, formatChangelogDate, releaseSlug } from '../../util/changelog'
 import { pathWithBase } from '../../util/links'
@@ -16,7 +17,7 @@ const { release, detail = false } = Astro.props
 const d = release.data
 const { features, fixes, other } = groupEntries(d.entries)
 const langIcon = d.language ? ICONS[d.language] : undefined
-const isPackagePyPI = d.packageUrl.includes('pypi.org')
+const registryLabel = packageRegistryLabel(d.language, d.packageUrl)
 
 // Readability: on the combined page show the first N entries of a section and
 // tuck the rest behind a native <details> expander so huge releases don't
@@ -111,7 +112,7 @@ const VersionHeading = detail ? 'h1' : 'h2'
               {langIcon.map((p) => <path fill="currentColor" d={p} />)}
             </svg>
           )}
-          {isPackagePyPI ? 'PyPI' : 'npm'} {d.version} <span aria-hidden="true">↗</span>
+          {registryLabel} {d.version} <span aria-hidden="true">↗</span>
         </a>
       )}
     </div>

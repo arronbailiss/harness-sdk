@@ -1,0 +1,42 @@
+[package]
+name = "strands-doc-snippets"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.96"
+publish = false
+build = "build.rs"
+
+[workspace]
+
+[dependencies]
+async-trait = "0.1"
+futures = "0.3"
+rmcp = { version = "3.9", default-features = false, features = [
+  "client",
+  "transport-child-process",
+] }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+strands = { path = "../../strands-rs/strands", default-features = false, features = [
+  "anthropic",
+  "bedrock",
+  "cedar",
+  "dogwood",
+  "mantle",
+  "mcp",
+  "openai",
+  "otel",
+] }
+strands-harness = { path = "../../harness-rs/strands-harness", default-features = false, features = [
+  "anthropic",
+  "bedrock",
+  "cedar",
+  "mantle",
+  "mcp",
+  "monty-pool",
+  "openai",
+  "otel",
+] }
+tokio = { version = "1.50", features = ["macros", "rt-multi-thread"] }
+tracing-subscriber = "0.3"

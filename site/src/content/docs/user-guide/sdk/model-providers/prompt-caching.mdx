@@ -5,6 +5,8 @@ tags: [caching]
 sourceLinks:
   - path: strands-py/src/strands/injection/_message_injection.py
   - path: strands-ts/src/injection/message-injection.ts
+  - path: strands-rs/strands/src/models/model.rs
+  - path: strands-rs/strands/src/models/bedrock/format.rs
 ---
 
 Prompt caching lets a model provider reuse the parts of a request it has already
@@ -46,6 +48,18 @@ agent = Agent(model=model)
 --8<-- "user-guide/sdk/model-providers/prompt-caching_imports.ts:explicit_cache_config_imports"
 
 --8<-- "user-guide/sdk/model-providers/prompt-caching.ts:explicit_cache_config"
+```
+</Tab>
+<Tab label="Rust">
+
+The Rust examples on this page use `serde_json` directly:
+
+```bash
+cargo add serde_json
+```
+
+```rust
+--8<-- "user-guide/sdk/model-providers/prompt-caching.rs:explicit_cache_config"
 ```
 </Tab>
 </Tabs>
@@ -103,13 +117,14 @@ OpenAI models on Converse support only implicit caching, so the injection gap ab
 applies: with a context injector that fires on every model call, every call writes to
 the cache and none reads from it. On GPT-5.6 and later, writes cost 1.25 times the input
 rate. To cache these models, use the Responses API through
-<Syntax py="OpenAIResponsesModel" ts="OpenAIModel" /> with Bedrock Mantle and a cache
-configuration.
+<Syntax py="OpenAIResponsesModel" ts="OpenAIModel" rs="OpenAIModel" /> with
+Bedrock Mantle and a cache configuration.
 
-Converse rejects cache points for these models with an `AccessDeniedException`, so don't
-place them by hand or use the <Syntax py='"anthropic"' ts="'anthropic'" /> strategy. The
-default `auto` strategy places none. To stay on Converse without paying for writes that
-are never read, turn implicit caching off:
+Converse rejects cache points for these models with an `AccessDeniedException`,
+so don't place them by hand or use the
+<Syntax py='"anthropic"' ts="'anthropic'" rs="CacheStrategy::Anthropic" />
+strategy. The default `auto` strategy places none. To stay on Converse without
+paying for writes that are never read, turn implicit caching off:
 
 <Tabs>
 <Tab label="Python">
@@ -133,6 +148,12 @@ agent = Agent(model=model)
 --8<-- "user-guide/sdk/model-providers/prompt-caching_imports.ts:converse_implicit_caching_off_imports"
 
 --8<-- "user-guide/sdk/model-providers/prompt-caching.ts:converse_implicit_caching_off"
+```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/prompt-caching.rs:converse_implicit_caching_off"
 ```
 </Tab>
 </Tabs>

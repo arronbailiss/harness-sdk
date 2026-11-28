@@ -5,11 +5,12 @@ tags: [tool-authoring]
 sourceLinks:
   - path: strands-ts/src/vended-tools/read/read.ts
   - path: strands-py/src/strands/vended_tools/read/read.py
+  - path: strands-rs/strands/src/vended_tools/read.rs
 ---
 
 Reads a file through the agent's sandbox. Text files return `cat -n` style numbered lines so the model can cite `path:line`, with `offset` and `limit` for paging through large files. Images (png/jpg/jpeg/gif/webp) and binary documents (pdf/doc/docx/xls/xlsx) return as media content blocks when the model accepts media; otherwise `make_read(media=False)` / `makeRead({ media: false })` returns a short text placeholder describing the file.
 
-_Supported in: Python, TypeScript (Node.js)._
+_Supported in: Python, Rust, and TypeScript (Node.js)._
 
 :::caution[Security Warning]
 This tool reads files at arbitrary absolute paths with the full permissions of the process. Only use with trusted input and consider running in a [sandboxed environment](../../sandbox/index.mdx) for production.
@@ -35,6 +36,13 @@ agent("Read /etc/hosts and summarize what it maps.")
 --8<-- "user-guide/sdk/tools/vended-tools/read_imports.ts:read_import"
 
 --8<-- "user-guide/sdk/tools/vended-tools/read.ts:read_example"
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/read.rs:example"
 ```
 
 </Tab>

@@ -34,24 +34,23 @@ const areaCounts = getAreaCounts(allEntries)
             ))}
           </ol>
           <p class="cl-empty" data-cl-empty hidden>No releases match the current filters.</p>
-          <div class="cl-novel" data-cl-ts-evals hidden>
+          <div class="cl-novel" data-cl-unsupported-lang hidden>
             <div class="cl-novel-emoji">🛸</div>
-            <h2 class="cl-novel-title">Evals hasn't learned TypeScript… yet.</h2>
+            <h2 class="cl-novel-title">Evals doesn't have <span data-cl-unsupported-label>this language</span> releases yet.</h2>
             <p class="cl-novel-body">
-              Strands Evals is currently Python-only. Our TypeScript support is still
-              somewhere in the backlog, sipping espresso and refusing to compile.
+              Strands Evals is currently Python-only.
             </p>
             <p class="cl-novel-body">
-              Want to nudge it along? Tell us you'd use it — the more
-              <code>+1</code>s, the sooner it ships.
+              Tell us if you want another SDK language so the team can prioritize it.
             </p>
             <div class="cl-novel-actions">
               <a
                 class="cl-novel-btn"
+                data-cl-unsupported-request
                 href="https://github.com/strands-agents/evals/issues/new?title=Feature%20request%3A%20TypeScript%20support%20for%20Strands%20Evals&body=I%27d%20like%20to%20use%20Strands%20Evals%20from%20TypeScript."
                 target="_blank"
                 rel="noopener"
-              >Request TypeScript support <span aria-hidden="true">↗</span></a>
+              >Request support <span aria-hidden="true">↗</span></a>
               <button class="cl-novel-link" type="button" data-cl-switch-python>
                 …or show me the Python releases
               </button>
@@ -67,7 +66,13 @@ const areaCounts = getAreaCounts(allEntries)
   // Client-side faceted filtering. State: SDK (toggle), language (global pref), areas (chips), search.
   // This is a processed (bundled) script, so importing shared config works —
   // no hand-maintained mirror of SDK metadata.
-  import { SDK_META, hasLanguageStreams, type Sdk } from '../../config/changelog'
+  import { SDK_META, hasLanguageStreams, languageForReleaseAnchor, type Sdk } from '../../config/changelog'
+  import {
+    isSdkLanguage,
+    sdkLanguageFromLabel,
+    sdkLanguageLabel,
+    type SdkLanguage,
+  } from '../../config/languages'
   import { LANGUAGE_STORAGE_KEY, DEFAULT_LANGUAGE_LABEL } from '../../util/language-preference'
 
   const LANG_KEY = LANGUAGE_STORAGE_KEY // shared with the global LanguageToggle
@@ -84,7 +89,9 @@ const areaCounts = getAreaCounts(allEntries)
   const areaBtns = Array.from(root.querySelectorAll<HTMLElement>('[data-cl-area]'))
   const searchInput = root.querySelector<HTMLInputElement>('[data-cl-search]')
   const emptyEl = root.querySelector<HTMLElement>('[data-cl-empty]')
-  const tsEvalsEl = root.querySelector<HTMLElement>('[data-cl-ts-evals]')
+  const unsupportedEl = root.querySelector<HTMLElement>('[data-cl-unsupported-lang]')
+  const unsupportedLabelEl = root.querySelector<HTMLElement>('[data-cl-unsupported-label]')
+  const unsupportedRequest = root.querySelector<HTMLAnchorElement>('[data-cl-unsupported-request]')
   const countEl = root.querySelector<HTMLElement>('[data-cl-count]')
   const srStatusEl = root.querySelector<HTMLElement>('[data-cl-sr-status]')
   const activeCountEl = root.querySelector<HTMLElement>('[data-cl-active-count]')
@@ -103,18 +110,19 @@ const areaCounts = getAreaCounts(allEntries)
   function globalLang(): string {
     try { return localStorage.getItem(LANG_KEY) || DEFAULT_LANGUAGE_LABEL } catch { return DEFAULT_LANGUAGE_LABEL }
   }
-  function langSlug(): string { return globalLang() === 'TypeScript' ? 'typescript' : 'python' }
+  function langSlug(): SdkLanguage { return sdkLanguageFromLabel(globalLang()) ?? 'typescript' }
 
   // Set the global language preference (slug form) and notify the whole site,
   // keeping the header LanguageToggle and our local toggle in sync.
   function setLang(slug: string) {
-    const label = slug === 'typescript' ? 'TypeScript' : 'Python'
+    if (!isSdkLanguage(slug)) return
+    const label = sdkLanguageLabel(slug)
     try { localStorage.setItem(LANG_KEY, label) } catch {}
     window.dispatchEvent(new CustomEvent('lang-preference-changed', { detail: { lang: label } }))
   }
 
   // The language the user is asking for (global pref), unconstrained by SDK.
-  function requestedLang(): string { return langSlug() }
+  function requestedLang(): SdkLanguage { return langSlug() }
   // Whether the current SDK actually ships the requested language.
   function sdkHasRequestedLang(): boolean {
     return SDK_LANGS[state.sdk].includes(requestedLang())
@@ -183,9 +191,18 @@ const areaCounts = getAreaCounts(allEntries)
 
   function apply() {
     const lang = effectiveLang()
-    // Special case: user asked for TypeScript but Evals is Python-only.
-    const tsEvals = state.sdk === 'evals' && !sdkHasRequestedLang()
-    if (tsEvalsEl) tsEvalsEl.hidden = !tsEvals
+    // Special case: the requested language is not available for this SDK.
+    const unsupportedLanguage = state.sdk === 'evals' && !sdkHasRequestedLang()
+    const requestedLabel = sdkLanguageLabel(requestedLang())
+    if (unsupportedEl) unsupportedEl.hidden = !unsupportedLanguage
+    if (unsupportedLabelEl) unsupportedLabelEl.textContent = requestedLabel
+    if (unsupportedRequest) {
+      const title = `Feature request: ${requestedLabel} support for Strands Evals`
+      const body = `I'd like to use Strands Evals from ${requestedLabel}.`
+      unsupportedRequest.href =
+        `https://github.com/strands-agents/evals/issues/new?title=${encodeURIComponent(title)}` +
+        `&body=${encodeURIComponent(body)}`
+    }
 
     // Sync the local language toggle: only show languages this SDK ships,
     // and mark the effective one as pressed.
@@ -204,7 +221,7 @@ const areaCounts = getAreaCounts(allEntries)
     let visible = 0
     let latestMarked = false // versions are pre-sorted newest-first per stream
     for (const v of versions) {
-      if (tsEvals) { v.hidden = true; continue }
+      if (unsupportedLanguage) { v.hidden = true; continue }
       const vSdk = v.dataset.sdk
       const vLang = v.dataset.language
       // Version-level gate: product, and (for per-language products) one language at a time.
@@ -267,17 +284,17 @@ const areaCounts = getAreaCounts(allEntries)
       v.hidden = !show
       if (show) visible++
     }
-    // Generic empty state only when not showing the witty TS/Evals panel.
-    if (emptyEl) emptyEl.hidden = tsEvals || visible > 0
-    const countText = tsEvals
+    // Generic empty state only when the unsupported-language panel is hidden.
+    if (emptyEl) emptyEl.hidden = unsupportedLanguage || visible > 0
+    const countText = unsupportedLanguage
       ? 'Python only'
       : `${visible} release${visible === 1 ? '' : 's'}`
     if (countEl) countEl.textContent = countText
     // Announce result changes to assistive tech (always-rendered live region,
     // unlike the count which is hidden on desktop). Skip on first paint.
     if (srStatusEl) {
-      const msg = tsEvals
-        ? 'Evals has no TypeScript releases.'
+      const msg = unsupportedLanguage
+        ? `Evals has no ${requestedLabel} releases.`
         : `${countText} match the current filters.`
       if (srStatusEl.dataset.ready) srStatusEl.textContent = msg
       srStatusEl.dataset.ready = '1'
@@ -334,7 +351,7 @@ const areaCounts = getAreaCounts(allEntries)
   window.addEventListener('lang-preference-changed', () => apply())
   window.addEventListener('storage', (e) => { if (e.key === LANG_KEY) apply() })
 
-  // "…show me the Python releases" escape hatch on the TS/Evals panel:
+  // "…show me the Python releases" escape hatch on the unsupported-language panel:
   // flip the global preference to Python and notify the rest of the site.
   root.querySelector('[data-cl-switch-python]')?.addEventListener('click', () => {
     try { localStorage.setItem(LANG_KEY, 'Python') } catch {}
@@ -414,8 +431,9 @@ const areaCounts = getAreaCounts(allEntries)
       state.sdk = tSdk
       sdkBtns.forEach((b) => b.setAttribute('aria-pressed', b.dataset.clSdkBtn === tSdk ? 'true' : 'false'))
     }
-    if (tSdk === 'sdk' && tLang && tLang !== effectiveLang()) {
-      setLang(tLang)
+    const anchorLanguage = tSdk && isKnownSdk(tSdk) ? languageForReleaseAnchor(tSdk as Sdk, tLang) : undefined
+    if (anchorLanguage && anchorLanguage !== effectiveLang()) {
+      setLang(anchorLanguage)
     }
     return true
   }

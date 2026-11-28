@@ -8,6 +8,8 @@ sourceLinks:
   - path: strands-py/src/strands/tools/loader.py
   - path: strands-ts/src/tools/function-tool.ts
   - path: strands-ts/src/tools/tool-factory.ts
+  - path: strands-rs/strands/src/tools/function_tool.rs
+  - path: strands-rs/strands-macros/src/lib.rs
 ---
 
 Turn a function you write into a tool the agent can call. Strands gives you a few ways to define one.
@@ -15,21 +17,49 @@ Turn a function you write into a tool the agent can call. Strands gives you a fe
 <Tabs>
 <Tab label="Python">
 
-Python supports three approaches to defining tools:
+Choose among three approaches:
 
-* **Python functions with the [`@tool`](@api/python/strands.tools.decorator#tool) decorator**: Turn a regular function into a tool by adding a decorator. The decorator uses the function's docstring and type hints to generate the tool specification.
+* **Functions with the [`@tool`](@api/python/strands.tools.decorator#tool)
+  decorator**: Turn a regular function into a tool by adding a decorator. The
+  decorator uses the function's docstring and type hints to generate the tool
+  specification.
 
 * **Class-based tools with the [`@tool`](@api/python/strands.tools.decorator#tool) decorator**: Create tools within classes to maintain state and use object-oriented patterns.
 
-* **Python modules following a specific format**: Define tools by creating Python modules that contain a tool specification and a matching function. This approach gives you more control over the tool's definition and is useful for dependency-free implementations of tools.
+* **Modules following a specific format**: Define tools in modules that contain
+  a tool specification and a matching function. This approach gives you more
+  control over the tool's definition and is useful for dependency-free
+  implementations.
 </Tab>
 <Tab label="TypeScript">
 
-TypeScript supports two main approaches:
+Choose between two main approaches:
 
 * **tool() function with [Zod](https://zod.dev/) or JSON schemas**: Create tools using the `tool()` function with either Zod schemas for type-safe validated input, or plain JSON Schema objects for schema-only definitions without runtime validation.
 
 * **Class-based tools extending [`FunctionTool`](@api/typescript/FunctionTool)**: Create tools within classes to maintain shared state and resources.
+</Tab>
+<Tab label="Rust">
+
+Choose among three approaches:
+
+- **Functions marked with
+  [`#[tool]`](https://docs.rs/strands/latest/strands/attr.tool.html)**: The macro
+  derives the input schema from parameter types and creates a tool value.
+- **Methods marked with `#[tool]` inside a `#[tools]` implementation**: Group
+  tools that share state.
+- **`FunctionTool` or the
+  [`Tool`](https://docs.rs/strands/latest/strands/tools/trait.Tool.html) trait**:
+  Define runtime schemas and callbacks, or implement the complete tool stream
+  directly. Tool failures use
+  [`ToolError`](https://docs.rs/strands/latest/strands/tools/struct.ToolError.html).
+
+Add the dependencies used by the examples on this page:
+
+```bash
+cargo add strands serde_json futures
+cargo add tokio --features macros,rt-multi-thread
+```
 </Tab>
 </Tabs>
 
@@ -78,6 +108,15 @@ Here's the same tool using a JSON Schema object instead:
 --8<-- "user-guide/sdk/tools/tools.ts:json_schema_tool"
 ```
 </Tab>
+<Tab label="Rust">
+
+Mark an async function with `#[tool]`. The macro derives its schema and creates
+the `WeatherForecast` tool value:
+
+```rust
+--8<-- "user-guide/sdk/tools/custom-tools.rs:basic_tool"
+```
+</Tab>
 </Tabs>
 
 
@@ -110,6 +149,14 @@ The tool name and description are always provided explicitly in the `tool()` con
 
 ```typescript
 --8<-- "user-guide/sdk/tools/tools.ts:tool_override"
+```
+</Tab>
+<Tab label="Rust">
+
+Set the model-facing name and description on the macro:
+
+```rust
+--8<-- "user-guide/sdk/tools/custom-tools.rs:override_tool"
 ```
 </Tab>
 </Tabs>
@@ -157,6 +204,15 @@ def calculate_area(shape: str, radius: float = None, width: float = None, height
 
 `inputSchema` is always provided explicitly in the `tool()` configuration, as either a Zod schema or a JSON Schema object. See the [basic example](#basic-example) above for both approaches.
 </Tab>
+<Tab label="Rust">
+
+`#[tool]` derives its schema from parameter types. Use `FunctionTool` when you
+need to provide JSON Schema directly:
+
+```rust
+--8<-- "user-guide/sdk/tools/custom-tools.rs:custom_schema"
+```
+</Tab>
 </Tabs>
 
 
@@ -182,6 +238,12 @@ agent = Agent(
 const agent = new Agent({
     tools: [weatherTool]
 })
+```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/custom-tools.rs:load_tool"
 ```
 </Tab>
 </Tabs>
@@ -228,6 +290,15 @@ Your tool's return value is automatically converted into a `ToolResultBlock`. Re
 --8<-- "user-guide/sdk/tools/tools.ts:tool_response_success"
 ```
 </Tab>
+<Tab label="Rust">
+
+Return any serializable value for automatic conversion, a
+`Vec<ToolResultContent>` for mixed blocks, or a complete `ToolResultBlock`:
+
+```rust
+--8<-- "user-guide/sdk/tools/custom-tools.rs:custom_return"
+```
+</Tab>
 </Tabs>
 
 For the full structure, see [Tool result format](tool-results.md).
@@ -235,7 +306,8 @@ For the full structure, see [Tool result format](tool-results.md).
 
 ### Async Invocation
 
-Function tools can also be async. Strands invokes all async tools concurrently.
+Function tools can also be async. The default executor runs tool calls from the
+same model turn concurrently.
 
 <Tabs>
 <Tab label="Python">
@@ -275,16 +347,26 @@ asyncio.run(async_example())
 --8<-- "user-guide/sdk/tools/tools.ts:async_generator_callback"
 ```
 </Tab>
+<Tab label="Rust">
+
+`#[tool]` functions are async. Invoke the agent from an async runtime:
+
+```rust
+--8<-- "user-guide/sdk/tools/custom-tools.rs:async_invocation"
+```
+</Tab>
 </Tabs>
 
 ### ToolContext
 
-Tools can interact with their invoking agent, current tool use data, and invocation state through [`ToolContext`](@api/python/strands.types.tools#ToolContext):
+Tools can interact with their invoking agent, current tool use data, and
+invocation state through the SDK's tool context:
 
 <Tabs>
 <Tab label="Python">
 
-Set `context=True` in the decorator and include a `tool_context` parameter:
+Use [`ToolContext`](@api/python/strands.types.tools#ToolContext). Set
+`context=True` in the decorator and include a `tool_context` parameter:
 
 ```python
 from strands import tool, Agent, ToolContext
@@ -310,10 +392,21 @@ agent("What is the invocation state?", invocation_state={"custom_data": "You're 
 </Tab>
 <Tab label="TypeScript">
 
-The context is passed as an optional second parameter to the callback function:
+[`ToolContext`](@api/typescript/ToolContext) is passed as an optional second
+parameter to the callback function:
 
 ```typescript
 --8<-- "user-guide/sdk/tools/tools.ts:tool_context"
+```
+</Tab>
+<Tab label="Rust">
+
+Mark a
+[`ToolContext`](https://docs.rs/strands/latest/strands/tools/struct.ToolContext.html)
+parameter with `#[tool(context)]`:
+
+```rust
+--8<-- "user-guide/sdk/tools/custom-tools.rs:tool_context"
 ```
 </Tab>
 </Tabs>
@@ -342,6 +435,15 @@ agent("What is your name?")
 
 ```ts
 // Renaming the context parameter is not supported
+```
+</Tab>
+<Tab label="Rust">
+
+The macro identifies the context parameter by its annotation, so you can choose
+any parameter name:
+
+```rust
+--8<-- "user-guide/sdk/tools/custom-tools.rs:custom_context_name"
 ```
 </Tab>
 </Tabs>
@@ -424,6 +526,20 @@ For durable state, read it back inside a tool with the typed `appState.get<T>()`
 --8<-- "user-guide/sdk/tools/tools.ts:tool_context_app_state"
 ```
 </Tab>
+<Tab label="Rust">
+
+Use `ToolContext` for request-scoped invocation state and the agent's
+`app_state()` store for values that persist across invocations. This example
+reads a typed application-state value:
+
+```rust
+--8<-- "user-guide/sdk/tools/custom-tools.rs:tool_state"
+```
+
+Keep values the model should choose in tool parameters. Use invocation state
+for request-specific context that should not enter the prompt, and application
+state or a shared tool object for longer-lived configuration.
+</Tab>
 </Tabs>
 
 
@@ -472,6 +588,15 @@ Async tools can yield intermediate results to provide real-time progress updates
 
 ```typescript
 --8<-- "user-guide/sdk/tools/tools.ts:tool_streaming"
+```
+</Tab>
+<Tab label="Rust">
+
+Use a `FunctionTool` stream callback to emit updates followed by one return
+value:
+
+```rust
+--8<-- "user-guide/sdk/tools/custom-tools.rs:tool_streaming"
 ```
 </Tab>
 </Tabs>
@@ -535,6 +660,15 @@ When you use the [`@tool`](@api/python/strands.tools.decorator#tool) decorator o
 
 Create tools within a class and store them as properties. The tools access the class's private state through closures.
 </Tab>
+<Tab label="Rust">
+
+Use `#[tools]` on an implementation block to expose multiple methods from one
+shared object:
+
+```rust
+--8<-- "user-guide/sdk/tools/custom-tools.rs:class_tools"
+```
+</Tab>
 </Tabs>
 
 <Tabs>
@@ -542,9 +676,10 @@ Create tools within a class and store them as properties. The tools access the c
 
 ## Module Based Tools
 
-An alternative approach is to define a tool as a Python module with a specific structure. This enables creating tools that don't depend on the SDK directly.
+An alternative approach is to define a tool as a module with a specific
+structure. This enables creating tools that don't depend on the SDK directly.
 
-A Python module tool requires two key components:
+A module tool requires two key components:
 
 1. A `TOOL_SPEC` variable that defines the tool's name, description, and input schema
 2. A function with the same name as specified in the tool spec that implements the tool's functionality
@@ -651,6 +786,14 @@ async def call_api(tool, **kwargs):
 ```
 </Tab>
 <Tab label="TypeScript">
+
+Import or construct tools as compiled values. Tool source files and module paths
+are not loaded at runtime.
+</Tab>
+<Tab label="Rust">
+
+Construct tools as compiled values. Tool source files and module paths are not
+loaded at runtime.
 </Tab>
 </Tabs>
 
@@ -727,6 +870,15 @@ def search_database(query: str, max_results: int = 10) -> list:
 
 ```typescript
 --8<-- "user-guide/sdk/tools/tools.ts:search_database"
+```
+</Tab>
+<Tab label="Rust">
+
+Give the macro a focused description that explains the action and important
+parameters:
+
+```rust
+--8<-- "user-guide/sdk/tools/custom-tools.rs:effective_description"
 ```
 </Tab>
 </Tabs>

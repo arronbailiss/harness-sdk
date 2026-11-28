@@ -62,15 +62,17 @@ describe('toCardModel', () => {
         languages: {
           python: { package: 'strands-example' },
           typescript: { package: '@example/strands' },
+          rust: { package: 'strands-example' },
         },
       }),
       undefined,
       BUILD_DATE
     )
-    expect(card.languages).toEqual(['python', 'typescript'])
+    expect(card.languages).toEqual(['python', 'typescript', 'rust'])
     expect(card.registryLinks).toEqual([
       { label: 'PyPI', href: 'https://pypi.org/project/strands-example/' },
       { label: 'npm', href: 'https://www.npmjs.com/package/@example/strands' },
+      { label: 'crates.io', href: 'https://crates.io/crates/strands-example' },
     ])
   })
 

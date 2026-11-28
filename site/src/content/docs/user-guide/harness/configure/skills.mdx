@@ -4,6 +4,7 @@ description: "Strands harness loads Agent Skills from a directory automatically:
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-ts/src/agent.ts
+  - path: harness-rs/strands-harness/src/agent.rs
 sidebar:
   label: "Load agent skills"
 ---
@@ -39,6 +40,11 @@ happens until you add skills. Point it somewhere else, or at several directories
         })
         ```
       </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/skills.rs:harness_paths"
+        ```
+      </Tab>
     </Tabs>
   </Tab>
   <Tab label="SDK">
@@ -60,6 +66,11 @@ happens until you add skills. Point it somewhere else, or at several directories
 
         const plugin = new AgentSkills({ skills: ['./team-skills', './project-skills'] })
         const agent = new Agent({ plugins: [plugin] })
+        ```
+      </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/skills.rs:sdk_plugin"
         ```
       </Tab>
     </Tabs>
@@ -86,8 +97,8 @@ full instructions the agent loads when it decides the skill applies.
 
 ## Turn skill loading off
 
-Pass `None`/`null` (or `off` on the CLI) to disable skill loading entirely, even if a
-skills directory is present:
+Disable the skills option to turn off skill loading entirely, even if a skills
+directory is present:
 
 <Tabs>
   <Tab label="Strands harness">
@@ -104,6 +115,11 @@ skills directory is present:
         import { createHarness } from '@strands-agents/harness'
 
         const agent = await createHarness({ skills: null })
+        ```
+      </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/skills.rs:harness_off"
         ```
       </Tab>
     </Tabs>
@@ -127,6 +143,9 @@ skills directory is present:
         // Raw Strands Harness SDK loads no skills unless you add AgentSkills; omit it.
         const agent = new Agent()
         ```
+      </Tab>
+      <Tab label="Rust">
+        The raw SDK loads no skills unless you register `AgentSkills`.
       </Tab>
     </Tabs>
   </Tab>

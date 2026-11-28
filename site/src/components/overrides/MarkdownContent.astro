@@ -8,7 +8,8 @@ import ExternalDocsPreviewAside from '../ExternalDocsPreviewAside.astro';
 import PageTags from '../PageTags.astro';
 
 const { starlightRoute } = Astro.locals;
-const { languages, community, experimental, externalDocs } = starlightRoute.entry.data;
+const { languages, unsupportedLanguages, community, experimental, externalDocs } =
+  starlightRoute.entry.data;
 // Integration doc pages render without the docs sidebar (see route-middleware.ts);
 // the back strip is their route to the /integrations catalog. get-featured is
 // excepted — it renders inside the catalog rail, so the sidebar is its way back.
@@ -16,11 +17,6 @@ const isIntegrationsPage =
   starlightRoute.id !== 'docs/integrations/get-featured' &&
   (starlightRoute.id === 'docs/integrations' || starlightRoute.id.startsWith('docs/integrations/'));
 
-const ALL_SDK_LANGUAGES = ['python', 'typescript']
-const langArray = languages
-  ? (Array.isArray(languages) ? languages : [languages]).map((l: string) => l.toLowerCase())
-  : []
-const coversAllLanguages = ALL_SDK_LANGUAGES.every((l) => langArray.includes(l))
 ---
 
 <div class="sl-markdown-content">
@@ -32,7 +28,24 @@ const coversAllLanguages = ALL_SDK_LANGUAGES.every((l) => langArray.includes(l))
     )
   }
   {community && <CommunityContributionAside />}
-  {languages && !coversAllLanguages && <LanguageSupportAside languages={languages} />}
-  <slot />
-  <PageTags />
+  {
+    (languages || unsupportedLanguages) && (
+      <LanguageSupportAside languages={languages} unsupportedLanguages={unsupportedLanguages} />
+    )
+  }
+  <div data-language-page-content>
+    <slot />
+    <PageTags />
+  </div>
 </div>
+
+<style is:global>
+  html[data-sdk-language-availability='unsupported'] [data-language-page-content],
+  html[data-sdk-language-availability='undocumented'] [data-language-page-content],
+  html[data-sdk-language-availability='unsupported'] starlight-toc,
+  html[data-sdk-language-availability='undocumented'] starlight-toc,
+  html[data-sdk-language-availability='unsupported'] mobile-starlight-toc,
+  html[data-sdk-language-availability='undocumented'] mobile-starlight-toc {
+    display: none;
+  }
+</style>

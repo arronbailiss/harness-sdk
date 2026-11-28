@@ -1,31 +1,32 @@
 ---
 title: Strands harness quickstart
-description: "Get a Strands harness agent running fast: build one in your terminal with the CLI, or install the Python or TypeScript library and write a few lines."
+description: "Get a Strands harness agent running fast: build one in your terminal with the CLI, or install the library and write a few lines."
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-ts/src/agent.ts
+  - path: harness-rs/strands-harness/src/agent.rs
 sidebar:
   label: "Quickstart"
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components'
 
-Strands harness is a state-of-the-art, fully assembled agent harness. You can get started in a few
-different ways:
+Strands harness is a state-of-the-art, fully assembled agent harness. You can get
+started in a few different ways:
 
 - **[Set up with your coding agent](#set-up-with-your-coding-agent)**: paste a prompt into
   Codex, Claude Code, or Kiro and let it guide you through the setup.
 - **[Build an agent with the CLI](#build-an-agent-with-the-cli)**: connect a model provider in
-  the terminal and start chatting, then export to Python or TypeScript when you're ready.
-- **[Use it as a library](#use-it-as-a-library)**: install the Python or TypeScript package
-  and write a few lines yourself.
+  the terminal and start chatting, then export to code when you're ready.
+- **[Use it as a library](#use-it-as-a-library)**: install the package and write a few
+  lines yourself.
 
 Building with another Strands project? Each one has its own starting point.
 
 <CardGrid>
 <LinkCard
   title="Strands Harness SDK quickstart"
-  description="Build an agent harness from the ground up in Python or TypeScript."
+  description="Build an agent harness from the ground up."
   href="../../sdk/quickstart/overview/"
 />
 <LinkCard
@@ -95,16 +96,27 @@ strands --model anthropic/claude-sonnet-5      # use a different model for this 
 
 ### Export it to code
 
-When you're ready to embed the agent in an application, run `/export` in a chat. The
-command writes a Python or TypeScript project with your choices set directly on
-<Syntax py="create_harness(...)" ts="createHarness(...)" />. The project exports a
-ready-to-import `agent`, so the CLI is a fast on-ramp to the library below: build
-interactively, then drop into code.
+When you're ready to embed the agent in an application, run `/export` in a chat.
+
+<Tabs>
+  <Tab label="Python">
+    The command writes a project with your choices passed to `create_harness(...)`.
+    The project exports a ready-to-import `agent`.
+  </Tab>
+  <Tab label="TypeScript">
+    The command writes a project with your choices passed to `createHarness(...)`.
+    The project exports a ready-to-import `agent`.
+  </Tab>
+  <Tab label="Rust">
+    The command does not export this project type yet. Start from the library example
+    below.
+  </Tab>
+</Tabs>
 
 ## Use it as a library
 
-Prefer to write the code yourself? Install the Python or TypeScript package and run your
-first agent in a few lines. The source lives on GitHub:
+Prefer to write the code yourself? Install the package and run your first agent in a
+few lines. The source lives on GitHub:
 
 <Tabs>
   <Tab label="Python">
@@ -112,6 +124,9 @@ first agent in a few lines. The source lives on GitHub:
   </Tab>
   <Tab label="TypeScript">
     [`harness-ts`](https://github.com/strands-agents/harness-sdk/tree/main/harness-ts)
+  </Tab>
+  <Tab label="Rust">
+    [`harness-rs`](https://github.com/strands-agents/harness-sdk/tree/main/harness-rs)
   </Tab>
 </Tabs>
 
@@ -132,14 +147,24 @@ first agent in a few lines. The source lives on GitHub:
     npm install @strands-agents/harness
     ```
   </Tab>
+  <Tab label="Rust">
+    Requires Rust 1.96 or newer.
+
+    ```bash
+    cargo add strands-harness strands
+    cargo add tokio --features macros,rt-multi-thread
+    ```
+  </Tab>
 </Tabs>
 
 ### Run your first agent
 
-Strands harness runs on the model of your choice and supports model providers across Amazon
-Bedrock, Anthropic, OpenAI, and Google, plus Ollama for running locally. Amazon Bedrock is
-the default; pass `model="provider/name"` to pick another. See
-[choose a model](../configure/model/) for the full list.
+Strands harness runs on the model of your choice. Amazon Bedrock is the default; use
+<Syntax
+  py='model="provider/name"'
+  ts="model: 'provider/name'"
+  rs='.model("provider/name")'
+/> to pick another. See [choose a model](../configure/model/) for provider setup.
 
 Even a one-line call has a shell, file tools, and web access working out of the box.
 Strands harness can search the web, compare what it finds, and save the results to a file.
@@ -163,6 +188,11 @@ Strands harness can search the web, compare what it finds, and save the results 
 
         const agent = await createHarness()
         await agent.invoke('Research the three most common strategies for versioning a REST API, compare their tradeoffs, and write a recommendation to api-versioning.md')
+        ```
+      </Tab>
+      <Tab label="Rust">
+        ```rust
+--8<-- "user-guide/harness/quickstart.rs:bedrock"
         ```
       </Tab>
     </Tabs>
@@ -201,6 +231,11 @@ Strands harness can search the web, compare what it finds, and save the results 
         await agent.invoke('Research the three most common strategies for versioning a REST API, compare their tradeoffs, and write a recommendation to api-versioning.md')
         ```
       </Tab>
+      <Tab label="Rust">
+        ```rust
+--8<-- "user-guide/harness/quickstart.rs:anthropic"
+        ```
+      </Tab>
     </Tabs>
   </Tab>
   <Tab label="OpenAI">
@@ -223,6 +258,11 @@ Strands harness can search the web, compare what it finds, and save the results 
 
         const agent = await createHarness({ model: 'openai/gpt-5.4' })
         await agent.invoke('Research the three most common strategies for versioning a REST API, compare their tradeoffs, and write a recommendation to api-versioning.md')
+        ```
+      </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/quickstart.rs:openai"
         ```
       </Tab>
     </Tabs>
@@ -248,6 +288,9 @@ Strands harness can search the web, compare what it finds, and save the results 
         const agent = await createHarness({ model: 'google/gemini-2.5-flash' })
         await agent.invoke('Research the three most common strategies for versioning a REST API, compare their tradeoffs, and write a recommendation to api-versioning.md')
         ```
+      </Tab>
+      <Tab label="Rust">
+        This provider is not available.
       </Tab>
     </Tabs>
   </Tab>
@@ -276,6 +319,9 @@ Strands harness can search the web, compare what it finds, and save the results 
         await agent.invoke('Research the three most common strategies for versioning a REST API, compare their tradeoffs, and write a recommendation to api-versioning.md')
         ```
       </Tab>
+      <Tab label="Rust">
+        This provider is not available.
+      </Tab>
     </Tabs>
   </Tab>
 </Tabs>
@@ -301,6 +347,11 @@ the same conversation:
 
     const agent = await createHarness({ session: { id: 'api-design' } })
     await agent.invoke("Which of those would you pick for an API with external customers, and why?")
+    ```
+  </Tab>
+  <Tab label="Rust">
+    ```rust
+--8<-- "user-guide/harness/quickstart.rs:session"
     ```
   </Tab>
 </Tabs>

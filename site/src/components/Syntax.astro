@@ -1,13 +1,15 @@
 ---
-import { LANGUAGE_STORAGE_KEY } from '../util/language-preference'
+import { SDK_LANGUAGE_LABEL_LIST } from '../config/languages'
+import { DEFAULT_LANGUAGE_LABEL, LANGUAGE_STORAGE_KEY } from '../util/language-preference'
 
 interface Props {
-  py: string;
-  ts: string;
-  plain?: boolean;
+  py: string
+  ts: string
+  rs?: string
+  plain?: boolean
 }
 
-const { py, ts, plain = false } = Astro.props;
+const { py, ts, rs, plain = false } = Astro.props
 ---
 
 <syntax-switch>
@@ -15,38 +17,61 @@ const { py, ts, plain = false } = Astro.props;
     <>
       <span data-lang="Python">{py}</span>
       <span data-lang="TypeScript">{ts}</span>
+      {rs !== undefined && <span data-lang="Rust">{rs}</span>}
     </>
   ) : (
     <>
       <code data-lang="Python">{py}</code>
       <code data-lang="TypeScript">{ts}</code>
+      {rs !== undefined && <code data-lang="Rust">{rs}</code>}
     </>
   )}
 </syntax-switch>
 
 <style>
-  /* Default: show TypeScript, hide Python (matches site-wide default) */
-  syntax-switch [data-lang="Python"] {
+  /* Default: show TypeScript and hide the other variants. */
+  syntax-switch [data-lang='Python'],
+  syntax-switch [data-lang='Rust'] {
     display: none;
   }
 </style>
 
-<script is:inline define:vars={{ STORAGE_KEY: LANGUAGE_STORAGE_KEY }}>
+<script
+  is:inline
+  define:vars={{
+    STORAGE_KEY: LANGUAGE_STORAGE_KEY,
+    DEFAULT_LANG: DEFAULT_LANGUAGE_LABEL,
+    LANGUAGE_LABELS: SDK_LANGUAGE_LABEL_LIST,
+  }}
+>
   (function () {
     if (window.__strandsSyntaxSwitchInit) return;
     window.__strandsSyntaxSwitchInit = true;
 
-    var DEFAULT_LANG = 'TypeScript';
-
     function getLang() {
-      try { return localStorage.getItem(STORAGE_KEY) || DEFAULT_LANG; }
+      var pageLanguage = document.documentElement.dataset.sdkLanguage;
+      if (LANGUAGE_LABELS.indexOf(pageLanguage) !== -1) return pageLanguage;
+      var pageLabel = LANGUAGE_LABELS.find(function (label) {
+        return label.toLowerCase() === pageLanguage;
+      });
+      if (pageLabel) return pageLabel;
+      try {
+        var stored = localStorage.getItem(STORAGE_KEY);
+        return LANGUAGE_LABELS.indexOf(stored) !== -1 ? stored : DEFAULT_LANG;
+      }
       catch (e) { return DEFAULT_LANG; }
     }
 
     function updateAll() {
       var lang = getLang();
-      document.querySelectorAll('syntax-switch [data-lang]').forEach(function (el) {
-        el.style.display = el.getAttribute('data-lang') === lang ? 'inline' : 'none';
+      document.querySelectorAll('syntax-switch').forEach(function (syntaxSwitch) {
+        var variants = Array.prototype.slice.call(syntaxSwitch.querySelectorAll('[data-lang]'));
+        var selected = variants.some(function (variant) {
+          return variant.getAttribute('data-lang') === lang;
+        }) ? lang : DEFAULT_LANG;
+        variants.forEach(function (variant) {
+          variant.style.display = variant.getAttribute('data-lang') === selected ? 'inline' : 'none';
+        });
       });
     }
 
@@ -60,11 +85,9 @@ const { py, ts, plain = false } = Astro.props;
       if (e.key === STORAGE_KEY) updateAll();
     });
 
-    document.addEventListener('click', function (e) {
-      var btn = e.target && e.target.closest && e.target.closest('.lang-option');
-      if (btn) {
-        Promise.resolve().then(updateAll);
-      }
+    window.addEventListener('lang-effective-change', updateAll);
+    window.addEventListener('lang-change', function () {
+      Promise.resolve().then(updateAll);
     });
   })();
 </script>

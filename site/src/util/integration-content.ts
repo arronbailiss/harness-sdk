@@ -6,6 +6,7 @@
  */
 
 import type { CollectionEntry } from 'astro:content'
+import { DEFAULT_DOC_LANGUAGES, normalizeSdkLanguages } from '../config/languages'
 
 /**
  * Integration types that can be used to filter content.
@@ -29,6 +30,7 @@ export type IntegrationType =
 export interface LanguageSupport {
   python: boolean
   typescript: boolean
+  rust: boolean
 }
 
 /**
@@ -47,6 +49,8 @@ export interface IntegrationEntry {
   pythonSupport: boolean
   /** TypeScript support status */
   typescriptSupport: boolean
+  /** Rust support status */
+  rustSupport: boolean
   /** Whether this is a community-contributed integration */
   community: boolean
   /** Optional description for catalog listings */
@@ -54,30 +58,28 @@ export interface IntegrationEntry {
 }
 
 /**
- * Determines language support based on the `languages` frontmatter field.
+ * Determines language support from the docs language metadata.
  *
  * Convention:
- * - No `languages` field = both Python and TypeScript supported
+ * - No `languages` field = all SDK languages except `unsupportedLanguages`
  * - `languages: 'Python'` = Python only
  * - `languages: 'TypeScript'` = TypeScript only
- * - `languages: ['Python', 'TypeScript']` = both supported
+ * - `languages: 'Rust'` = Rust only
+ * - `languages: ['Python', 'TypeScript', 'Rust']` = all three supported
  */
-export function getLanguageSupport(languages: string | string[] | undefined): LanguageSupport {
-  if (!languages) {
-    return { python: true, typescript: true }
-  }
-
-  const langArray = Array.isArray(languages) ? languages : [languages]
-
-  // Empty array means both supported
-  if (langArray.length === 0) {
-    return { python: true, typescript: true }
-  }
-
-  const normalized = langArray.map((l) => l.toLowerCase())
+export function getLanguageSupport(
+  languages: string | string[] | undefined,
+  unsupportedLanguages?: string | string[]
+): LanguageSupport {
+  const unsupported = normalizeSdkLanguages(unsupportedLanguages ?? [])
+  const normalized =
+    !languages || (Array.isArray(languages) && languages.length === 0)
+      ? DEFAULT_DOC_LANGUAGES.filter((language) => !unsupported.includes(language))
+      : normalizeSdkLanguages(languages)
   return {
     python: normalized.includes('python'),
     typescript: normalized.includes('typescript'),
+    rust: normalized.includes('rust'),
   }
 }
 
@@ -101,7 +103,7 @@ export function getIntegrationEntries(
       return true
     })
     .map((doc) => {
-      const { python, typescript } = getLanguageSupport(doc.data.languages)
+      const { python, typescript, rust } = getLanguageSupport(doc.data.languages, doc.data.unsupportedLanguages)
 
       // Get sidebar label if available
       const sidebarLabel = (doc.data.sidebar as { label?: string } | undefined)?.label
@@ -116,6 +118,7 @@ export function getIntegrationEntries(
         href: `/docs/${doc.id.replace(/^docs\//, '')}/`,
         pythonSupport: python,
         typescriptSupport: typescript,
+        rustSupport: rust,
         community: doc.data.community === true,
         description,
       }

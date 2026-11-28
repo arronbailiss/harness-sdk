@@ -4,6 +4,8 @@ description: 'Cache system prompts, tools, and messages with Amazon Bedrock in S
 sourceLinks:
   - path: strands-py/src/strands/models/bedrock.py
   - path: strands-ts/src/models/bedrock.ts
+  - path: strands-rs/strands/src/models/bedrock/format.rs
+  - path: strands-rs/strands/src/models/model.rs
 ---
 
 Cache the static parts of your requests to Amazon Bedrock, such as a fixed system prompt or a set of tool definitions, so the model reuses them across calls instead of reprocessing them each time. This cuts token usage and latency on repeated requests. This page covers caching system prompts, tools, and messages on the [Amazon Bedrock](./amazon-bedrock) provider.
@@ -20,11 +22,22 @@ For OpenAI models on Amazon Bedrock, which don't take cache points through Conve
 
 Cache system prompts that remain static across multiple requests. This is useful when your system prompt contains no variables, timestamps, or dynamic content, exceeds the minimum cacheable token threshold for your model, and you make multiple requests with the same system prompt.
 
-With <Syntax py="cache_config" ts="cacheConfig" /> set to the `auto` (or `anthropic`) strategy, Strands caches the system prompt **by default**: it appends a cache point at the end of the system prompt on every request, so repeated calls with the same static system prefix (including fresh agents that share a system prompt) read it from cache. A system prompt that changes on every request never produces a cache read, so the added cache write is a small extra cost with no offsetting saving; opt out by setting <Syntax py="system_prompt_ttl=False" ts="systemPromptTTL: false" /> when the system prompt is dynamic. This disables only the auto-injected system point, and tool and message caching are unaffected. A cache point you place by hand anywhere in the system prompt is honored as-is, and no second point is added.
+With <Syntax py="cache_config" ts="cacheConfig" rs="cache_config" /> set to the
+`auto` (or `anthropic`) strategy, Strands caches the system prompt by default:
+it appends a cache point at the end of the system prompt on every request.
+Repeated calls with the same static system prefix, including fresh agents that
+share a system prompt, can then read it from cache. Opt out for a dynamic system
+prompt with
+
+<Syntax py="system_prompt_ttl=False" ts="systemPromptTTL: false" rs="system_prompt_ttl(false)" />. This disables only
+the auto-injected system point; tool and message caching are unaffected. A cache point you place by hand anywhere in the
+system prompt is honored as-is, and Strands does not add a second point.
 
 The auto-injected system cache point inherits the TTL you configured, so setting one `ttl` gives every cache point in the request the same duration. Bedrock requires TTLs to be non-increasing across the tool definitions, the system prompt, and the messages, and rejects a request where a longer TTL follows a shorter one.
 
-The example below places the cache point by hand for fine-grained control. With <Syntax py="cache_config" ts="cacheConfig" /> you do not need to: the point is added for you.
+The example below places the cache point by hand for fine-grained control. With
+
+<Syntax py="cache_config" ts="cacheConfig" rs="cache_config" /> you do not need to: the point is added for you.
 
 <Tabs>
 <Tab label="Python">
@@ -53,12 +66,21 @@ response2 = agent("Tell me about JavaScript")
 print(f"Cache write tokens: {response2.metrics.accumulated_usage.get('cacheWriteInputTokens')}")
 print(f"Cache read tokens: {response2.metrics.accumulated_usage.get('cacheReadInputTokens')}")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
 ```typescript
 --8<-- "user-guide/sdk/model-providers/amazon-bedrock-prompt-caching.ts:system_prompt_caching_full"
 ```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/bedrock-prompt-caching.rs:system_prompt_caching"
+```
+
 </Tab>
 </Tabs>
 
@@ -69,7 +91,10 @@ Tool caching allows you to reuse a cached tool definition across multiple reques
 <Tabs>
 <Tab label="Python">
 
-In Python, cache the tool definitions with `CacheConfig(tools_ttl=...)`: pass `True` to cache them with the provider default TTL, or a TTL string such as `"1h"` to set the duration. The model-level `cache_tools` parameter is deprecated in favor of `tools_ttl` and still works for existing configurations.
+Cache the tool definitions with `CacheConfig(tools_ttl=...)`: pass `True` to
+use the provider default TTL, or a string such as `"1h"` to set the duration.
+The model-level `cache_tools` parameter is deprecated in favor of `tools_ttl`
+and still works for existing configurations.
 
 ```python
 from strands import Agent, tool
@@ -97,18 +122,19 @@ response2 = agent('Add two more ideas to the "ideas" notebook.')
 print(f"Cache write tokens: {response2.metrics.accumulated_usage.get('cacheWriteInputTokens')}")
 print(f"Cache read tokens: {response2.metrics.accumulated_usage.get('cacheReadInputTokens')}")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
 Setting `cacheConfig` appends a cache point after the tool definitions in each request. The same `cacheConfig` also caches the system prompt and the conversation, and `toolsTTL`, `systemPromptTTL`, and `messagesTTL` control the three independently:
 
-| Configuration | Caches |
-|---------------|--------|
-| `{}` | tool definitions, system prompt, and conversation |
-| `{ messagesTTL: false }` | tool definitions and system prompt |
-| `{ toolsTTL: false }` | system prompt and conversation |
-| `{ systemPromptTTL: false }` | tool definitions and conversation |
-| `{ ttl: '1h' }` | all three, with a one-hour TTL |
+| Configuration                      | Caches                                                                       |
+| ---------------------------------- | ---------------------------------------------------------------------------- |
+| `{}`                               | tool definitions, system prompt, and conversation                            |
+| `{ messagesTTL: false }`           | tool definitions and system prompt                                           |
+| `{ toolsTTL: false }`              | system prompt and conversation                                               |
+| `{ systemPromptTTL: false }`       | tool definitions and conversation                                            |
+| `{ ttl: '1h' }`                    | all three, with a one-hour TTL                                               |
 | `{ ttl: '1h', messagesTTL: '5m' }` | tool definitions and system prompt at one hour, conversation at five minutes |
 
 Pass a TTL to set that duration, or `false` to turn that part off. A `ttl` on `cacheConfig` applies to all three, and each field overrides it for its own part.
@@ -116,6 +142,17 @@ Pass a TTL to set that duration, or `false` to turn that part off. A `ttl` on `c
 ```typescript
 --8<-- "user-guide/sdk/model-providers/amazon-bedrock-prompt-caching.ts:tool_caching_full"
 ```
+
+</Tab>
+<Tab label="Rust">
+
+`CacheConfig` controls tool, system prompt, and message caching independently.
+Pass `false` to disable a section or a TTL such as `"1h"` to override it.
+
+```rust
+--8<-- "user-guide/sdk/model-providers/bedrock-prompt-caching.rs:tool_caching"
+```
+
 </Tab>
 </Tabs>
 
@@ -125,11 +162,17 @@ Messages caching allows you to reuse cached conversation context across multiple
 
 The two compose. With automatic placement enabled, a cache point you place yourself in the last user message is kept where you put it, and automatic placement is suspended for that message. Cache points you place in earlier messages are removed, so they never accumulate one per turn.
 
-Place your cache point *ahead* of content that changes on every call, such as retrieved context or a timestamp. A cache point after that content puts it inside the cached prefix, so every request writes a new entry and none ever reads one. Bedrock also needs something ahead of the point to cache: a point in the first block of a message is dropped.
+Place your cache point _ahead_ of content that changes on every call, such as retrieved context or a timestamp. A cache point after that content puts it inside the cached prefix, so every request writes a new entry and none ever reads one. Bedrock also needs something ahead of the point to cache: a point in the first block of a message is dropped.
 
 **Option A: Automatic Cache Strategy (Claude and Amazon Nova models)**
 
-Enable automatic cache point management for agent workflows with multi-turn conversations. On Claude, the SDK automatically places a cache point at the end of the last user message to maximize cache hits without requiring manual management (Amazon Nova differs, see below). The same <Syntax py="cache_config" ts="cacheConfig" /> also caches the system prompt by default (see [System Prompt Caching](#system-prompt-caching)), so a multi-turn conversation reuses both the static system prefix and the accumulated conversation context.
+Enable automatic cache point management for agent workflows with multi-turn
+conversations. On Claude, Strands places a cache point at the end of the last
+user message to maximize cache hits without manual management. Amazon Nova uses
+the placement rules below. The same
+
+<Syntax py="cache_config" ts="cacheConfig" rs="cache_config" /> also caches the system prompt by default, so a
+multi-turn conversation reuses both the static system prefix and the accumulated conversation context.
 
 <Tabs>
 <Tab label="Python">
@@ -164,20 +207,36 @@ response2 = agent("Summarize the key differences")
 print(f"Cache write tokens: {response2.metrics.accumulated_usage.get('cacheWriteInputTokens')}")
 print(f"Cache read tokens: {response2.metrics.accumulated_usage.get('cacheReadInputTokens')}")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
 ```typescript
 --8<-- "user-guide/sdk/model-providers/amazon-bedrock-prompt-caching.ts:automatic_cache_strategy"
 ```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/bedrock-prompt-caching.rs:automatic_cache_strategy"
+```
+
 </Tab>
 </Tabs>
 
-<Syntax py="messages_ttl" ts="messagesTTL" /> controls this cache point: set it to `False` (`false`) to turn it off, or to a TTL string such as `"5m"` to set its duration. Left unset, it takes the duration from `ttl`.
+<Syntax py="messages_ttl" ts="messagesTTL" rs="messages_ttl" /> controls this cache point: set it to `False` (`false`)
+to turn it off, or to a TTL string such as `"5m"` to set its duration. Left unset, it takes the duration from `ttl`.
 
 > **Note**: Cache misses occur if you intentionally modify past conversation context (e.g., summarization or editing previous messages).
 
-**Amazon Nova**: Nova takes a cache point only directly after text, takes none on tool definitions, and takes no TTL, so <Syntax py="tools_ttl" ts="toolsTTL" /> has no effect and a TTL duration is ignored. Setting <Syntax py="system_prompt_ttl" ts="systemPromptTTL" /> or <Syntax py="messages_ttl" ts="messagesTTL" /> to `False` (`false`) still turns that part off. It also reads a cache entry only at a position an earlier request marked too. The SDK therefore places Nova's conversation cache points differently:
+**Amazon Nova**: Nova reads a cache entry only at a position that an earlier
+request marked. It also takes a cache point only directly after text, takes none
+on tool definitions, and takes no TTL, so
+
+<Syntax py="tools_ttl" ts="toolsTTL" rs="tools_ttl" /> has no effect and a TTL duration is ignored. Setting
+<Syntax py="system_prompt_ttl" ts="systemPromptTTL" rs="system_prompt_ttl" /> or
+<Syntax py="messages_ttl" ts="messagesTTL" rs="messages_ttl" /> to `False` (`false`) still turns that part off.
 
 - A cache point goes after the last text block of each of the last three user messages that have text, so a new turn repeats the positions the previous turn wrote. During a tool loop the points stay where they are.
 - A cache point you place in the last user message counts as one of the three. Nova takes it only directly after text, so it moves back to the nearest text block ahead of it, or is replaced by automatic placement when no text is ahead of it.
@@ -219,12 +278,21 @@ response2 = agent("What are the implementation recommendations?")
 print(f"Cache write tokens: {response2.metrics.accumulated_usage.get('cacheWriteInputTokens')}")
 print(f"Cache read tokens: {response2.metrics.accumulated_usage.get('cacheReadInputTokens')}")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
 ```typescript
 --8<-- "user-guide/sdk/model-providers/amazon-bedrock-prompt-caching.ts:messages_caching_full"
 ```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/model-providers/bedrock-prompt-caching.rs:messages_caching"
+```
+
 </Tab>
 </Tabs>
 
@@ -257,6 +325,7 @@ print(f"Cache read tokens: {cache_read}")
 ```
 
 Cache metrics are also automatically recorded in OpenTelemetry traces when telemetry is enabled.
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -267,5 +336,15 @@ Cache statistics are included in `modelMetadataEvent.usage` during streaming:
 
 --8<-- "user-guide/sdk/model-providers/amazon-bedrock-prompt-caching.ts:cache_metrics"
 ```
+
+</Tab>
+<Tab label="Rust">
+
+Cache statistics are available on the result's accumulated usage:
+
+```rust
+--8<-- "user-guide/sdk/model-providers/bedrock-prompt-caching.rs:cache_metrics"
+```
+
 </Tab>
 </Tabs>

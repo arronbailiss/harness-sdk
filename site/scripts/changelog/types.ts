@@ -2,7 +2,7 @@
 // shapes the pure modules consumed as JSDoc typedefs in the devtools .cjs source.
 
 export type Sdk = 'sdk' | 'harness' | 'cli' | 'evals' | 'box' | 'shell'
-export type Language = 'python' | 'typescript'
+export type Language = 'python' | 'typescript' | 'rust'
 
 export interface TagMeta {
   sdk: Sdk

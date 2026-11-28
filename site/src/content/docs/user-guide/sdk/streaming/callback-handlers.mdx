@@ -1,14 +1,11 @@
 ---
 title: Callback Handlers
 description: 'Intercept Strands agent events in Python with callback handlers. Monitor streaming text and tool usage in real time or format custom output.'
+unsupportedLanguages: [TypeScript, Rust]
 tags: [streaming]
 sourceLinks:
   - path: strands-py/src/strands/handlers/callback_handler.py
 ---
-
-:::note[Not supported in TypeScript]
-TypeScript does not support callback handlers. For real-time event handling in TypeScript, use the [async iterator pattern](./async-iterators.md) with `agent.stream()` or see [Hooks](../agents/hooks.md) for lifecycle event handling.
-:::
 
 Intercept and process agent events as they happen, synchronously, with a callback function in Python. Callback handlers drive real-time monitoring, custom output formatting, and integration with external systems.
 

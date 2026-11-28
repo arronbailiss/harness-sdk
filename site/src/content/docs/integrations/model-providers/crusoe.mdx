@@ -33,6 +33,13 @@ pip install 'strands-agents[openai]'
 npm install @strands-agents/sdk openai
 ```
 </Tab>
+<Tab label="Rust">
+
+```bash
+cargo add strands --features openai
+cargo add tokio --features macros,rt-multi-thread
+```
+</Tab>
 </Tabs>
 
 ## Usage
@@ -69,6 +76,12 @@ print(response)
 --8<-- "integrations/model-providers/crusoe_imports.ts:usage_imports"
 
 --8<-- "integrations/model-providers/crusoe.ts:usage"
+```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "integrations/model-providers/crusoe.rs:usage"
 ```
 </Tab>
 </Tabs>

@@ -69,7 +69,7 @@
                     "type": "string"
                   },
                   "registryUrl": {
-                    "description": "PyPI or npm page for the package",
+                    "description": "PyPI, npm, or crates.io page for the package",
                     "type": "string",
                     "format": "uri"
                   }
@@ -83,7 +83,21 @@
                     "type": "string"
                   },
                   "registryUrl": {
-                    "description": "PyPI or npm page for the package",
+                    "description": "PyPI, npm, or crates.io page for the package",
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              },
+              "rust": {
+                "type": "object",
+                "properties": {
+                  "package": {
+                    "description": "Package name as published on the registry",
+                    "type": "string"
+                  },
+                  "registryUrl": {
+                    "description": "PyPI, npm, or crates.io page for the package",
                     "type": "string",
                     "format": "uri"
                   }

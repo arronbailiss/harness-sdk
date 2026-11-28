@@ -5,6 +5,7 @@ tags: [memory]
 sourceLinks:
   - path: strands-py/src/strands/vended_memory_stores/test_memory_store/store.py
   - path: strands-ts/src/vended-memory-stores/test-memory-store/store.ts
+  - path: strands-rs/strands/src/vended_memory_stores/test_memory_store/mod.rs
 addedDate: 2026-07-23
 sidebar:
   label: "Test Store"
@@ -37,6 +38,18 @@ agent = Agent(memory_manager=MemoryManager(stores=[store]))
 --8<-- "user-guide/sdk/memory/test-memory-store_imports.ts:basic_imports"
 
 --8<-- "user-guide/sdk/memory/test-memory-store.ts:basic"
+```
+</Tab>
+<Tab label="Rust">
+
+The Rust examples on this page use `serde_json` directly:
+
+```bash
+cargo add serde_json
+```
+
+```rust
+--8<-- "user-guide/sdk/memory/test-memory-store.rs:basic"
 ```
 </Tab>
 </Tabs>
@@ -76,23 +89,32 @@ project = TestMemoryStore(name="notes", path="./notes.json")
 --8<-- "user-guide/sdk/memory/test-memory-store.ts:persistence"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/memory/test-memory-store.rs:persistence"
+```
+</Tab>
 </Tabs>
 
-Reach for <Syntax py="persist=False" ts="persist: false" /> in tests and throwaway runs
-where you want recall and ranking without leaving a file behind. The default (persist to
-disk) is what demonstrates the feature: memory that survives a restart.
+Reach for <Syntax py="persist=False" ts="persist: false"
+rs="persist(false)" /> in tests and throwaway runs where you want recall and
+ranking without leaving a file behind. The default (persist to disk) is what
+demonstrates the feature: memory that survives a restart.
 
 Persistence runs on the SDK's `Storage` interface: <Syntax py="persist=False"
-ts="persist: false" /> uses an in-memory backend, and persisting to disk uses a local-file
-backend. The config above is all you configure; the store selects the backend for you.
+ts="persist: false" rs="persist(false)" /> uses an in-memory backend, and
+persisting to disk uses a local-file backend. The config above is all you
+configure; the store selects the backend for you.
 
-The on-disk format is shared between the Python and TypeScript SDKs. Records use the same
-keys and timestamp shape, so a file written by one SDK reads in the other.
+The on-disk format is shared across the SDKs. Records use the same keys and
+timestamp shape, so a file written by one SDK reads in the others.
 
 ## Configuration
 
 `TestMemoryStore` takes the [shared `MemoryStore` fields](./managing-memory#stores) (`name`,
-`description`, <Syntax py="max_search_results" ts="maxSearchResults" />, `writable`,
+`description`, <Syntax py="max_search_results" ts="maxSearchResults"
+rs="max_search_results" />, `writable`,
 `extraction`) plus two of its own:
 
 | Field | Purpose |
@@ -101,7 +123,8 @@ keys and timestamp shape, so a file written by one SDK reads in the other.
 | `path` | Full path to the backing JSON file. Defaults to `~/.strands/memory/<store-name>.json`. Ignored when persistence is off. |
 
 `writable` is on by default here. Construction rejects an empty `name`, an empty `path`,
-or a <Syntax py="max_search_results" ts="maxSearchResults" /> below `1`.
+or a <Syntax py="max_search_results" ts="maxSearchResults"
+rs="max_search_results" /> below `1`.
 
 ## Recall
 
@@ -149,9 +172,16 @@ for entry in results:
 --8<-- "user-guide/sdk/memory/test-memory-store.ts:search_and_add"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/memory/test-memory-store.rs:search_and_add"
+```
+</Tab>
 </Tabs>
 
-Writing to a store constructed with <Syntax py="writable=False" ts="writable: false" />,
+Writing to a store constructed with <Syntax py="writable=False"
+ts="writable: false" rs="writable(false)" />,
 or adding empty content, raises. When the backing directory is unreachable or not
 writable, the write raises, naming the backing file.
 
@@ -180,12 +210,20 @@ store = TestMemoryStore(
 --8<-- "user-guide/sdk/memory/test-memory-store.ts:extraction"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/memory/test-memory-store.rs:extraction"
+```
+</Tab>
 </Tabs>
 
-The store implements <Syntax py="add" ts="add" /> but not <Syntax py="add_messages"
-ts="addMessages" />, so extraction runs client-side: a `ModelExtractor` distills facts
-from the conversation and writes each through `add`. To change the cadence or swap the
-extractor, see [Automatic Extraction](./managing-memory#automatic-extraction) on the Memory page.
+The store implements <Syntax py="add" ts="add" rs="add" /> but not
+<Syntax py="add_messages" ts="addMessages" rs="add_messages" />, so extraction
+runs client-side: a `ModelExtractor` distills facts from the conversation and
+writes each through `add`. To change the cadence or swap the extractor, see
+[Automatic Extraction](./managing-memory#automatic-extraction) on the Memory
+page.
 
 ## Scale and Limitations
 

@@ -9,9 +9,13 @@ sourceLinks:
   - path: strands-py/src/strands/event_loop/streaming.py
   - path: strands-ts/src/agent/agent.ts
   - path: strands-ts/src/models/streaming.ts
+  - path: strands-rs/strands/src/agent/agent.rs
+  - path: strands-rs/strands/src/hooks/stream_events.rs
 ---
 
-Stream agent events as they happen and handle each one in your own async code. Async iterators are the streaming interface for asynchronous frameworks like FastAPI, aiohttp, and Express, where you control the flow of execution.
+Stream agent events as they happen and handle each one in your own async code.
+Async streams integrate with frameworks such as FastAPI, Express, and Axum,
+where you control the flow of execution.
 
 For every event the stream can emit, including text, tool usage, lifecycle, and reasoning events, see the [stream event types](./events.md#event-types) reference.
 
@@ -20,9 +24,13 @@ For every event the stream can emit, including text, tool usage, lifecycle, and 
 <Tabs>
 <Tab label="Python">
 
-Python uses the [`stream_async`](@api/python/strands.agent.agent#Agent.stream_async), which is a streaming counterpart to the [`invoke_async`](@api/python/strands.agent.agent#Agent.invoke_async) method, for asynchronous streaming. This is ideal for frameworks like FastAPI, aiohttp, or Django Channels.
+Use [`stream_async`](@api/python/strands.agent.agent#Agent.stream_async), the
+streaming counterpart to
+[`invoke_async`](@api/python/strands.agent.agent#Agent.invoke_async). It works
+well with frameworks such as FastAPI, aiohttp, and Django Channels.
 
-> **Note**: Python also supports synchronous event handling via [callback handlers](./callback-handlers.md).
+> **Note**: For synchronous event handling, use
+> [callback handlers](./callback-handlers.md).
 
 ```python
 import asyncio
@@ -49,10 +57,24 @@ asyncio.run(process_streaming_response())
 </Tab>
 <Tab label="TypeScript">
 
-TypeScript uses the [`stream`](@api/typescript/Agent) method for streaming, which is async by default. This is ideal for frameworks like Express.js or NestJS.
+Use the [`stream`](@api/typescript/Agent) method, which is asynchronous by
+default. It works well with frameworks such as Express.js and NestJS.
 
 ```typescript
 --8<-- "user-guide/sdk/streaming/async-iterators.ts:basic_usage"
+```
+</Tab>
+<Tab label="Rust">
+
+`agent.stream()` returns an `AgentStream`. Add `futures` for the `StreamExt`
+methods used to consume it:
+
+```bash
+cargo add futures
+```
+
+```rust
+--8<-- "user-guide/sdk/streaming/async-iterators.rs:basic_usage"
 ```
 </Tab>
 </Tabs>
@@ -62,7 +84,9 @@ TypeScript uses the [`stream`](@api/typescript/Agent) method for streaming, whic
 Here's how to integrate streaming with web frameworks to create a streaming endpoint:
 
 <Tabs>
-<Tab label="Python - FastAPI">
+<Tab label="Python">
+
+With FastAPI:
 
 ```python
 from fastapi import FastAPI, HTTPException
@@ -98,9 +122,9 @@ async def stream_response(request: PromptRequest):
     )
 ```
 </Tab>
-<Tab label="TypeScript - Express.js">
+<Tab label="TypeScript">
 
-> **Note**: This is a conceptual example. Install Express.js with `npm install express @types/express` to use it in your project.
+With Express.js. Install it with `npm install express @types/express`.
 
 ```typescript
 --8<-- "user-guide/sdk/streaming/async-iterators.ts:express_example"
@@ -110,6 +134,19 @@ You can then curl your local server with:
 ```bash
 curl localhost:3000/stream -d '{"prompt": "Hello"}' -H "Content-Type: application/json"
 ```
+</Tab>
+<Tab label="Rust">
+
+Create the agent stream inside the request handler and map text deltas into the
+framework's streaming response body:
+
+```rust
+--8<-- "user-guide/sdk/streaming/async-iterators.rs:server_stream"
+```
+
+Axum and other asynchronous frameworks can adapt this `Stream<Item = String>`
+to their response-body type. Dropping the stream cancels the invocation.
+
 </Tab>
 </Tabs>
 
@@ -179,6 +216,15 @@ The output will show the sequence of events:
 4. Tools may be executed (`beforeToolsEvent`, `afterToolsEvent`)
 5. The model may be called again in subsequent cycles
 6. Finally, the invocation completes (`afterInvocationEvent`)
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/streaming/async-iterators.rs:agentic_loop"
+```
+
+The output follows the typed `AgentStreamEvent` variants: invocation start,
+model calls, optional tool calls, and the final agent result.
 </Tab>
 </Tabs>
 
@@ -265,6 +311,15 @@ orchestrator_callback('Add two more ideas to the "ideas" notebook.')
 
 ```typescript
 --8<-- "user-guide/sdk/streaming/overview.ts:sub_agent_basic"
+```
+</Tab>
+<Tab label="Rust">
+
+An agent wrapped with `as_tool` forwards its events as tool-stream updates from
+the orchestrator:
+
+```rust
+--8<-- "user-guide/sdk/streaming/async-iterators.rs:sub_agent_stream"
 ```
 </Tab>
 </Tabs>

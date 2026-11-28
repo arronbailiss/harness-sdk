@@ -3,11 +3,15 @@ title: Versioning and Support Policy
 description: 'How the Strands Harness SDK versions releases: semantic versioning guarantees, experimental feature policies, and deprecation timelines explained.'
 sidebar:
   label: "Versioning & Support"
+sourceLinks:
+  - path: strands-py/src/strands/__init__.py
+  - path: strands-ts/src/index.ts
+  - path: strands-rs/strands/src/lib.rs
 ---
 
 ## Overview
 
-The Strands Harness SDK is an open-source project that follows semantic versioning to give predictable, stable releases. This page explains the versioning approach, experimental features, and deprecation policies that guide SDK development.
+The Strands Harness SDK is an open-source project that follows semantic versioning. This page explains the versioning approach, experimental features, and deprecation policies that guide SDK development.
 
 ## Semantic Versioning
 
@@ -19,7 +23,14 @@ The SDK adheres to [Semantic Versioning 2.0.0](https://semver.org/) with the fol
 
 ### Stability Guarantee
 
-When upgrading to a new minor or patch version, existing code should continue to work without modification. Breaking changes are reserved for major version releases and are always accompanied by clear migration guides.
+For SDKs at version 1.0 or later, existing code should continue to work without
+modification after a minor or patch upgrade. Breaking changes are reserved for
+major releases and are accompanied by migration guidance.
+
+The Rust SDK is a developer preview. Before 1.0, breaking changes land in a
+`0.MINOR.0` release. A `0.x.PATCH` release remains backward compatible within
+its minor line. Pin the minor version you have tested until the crate reaches
+1.0.
 
 ## Exceptions to Strict Versioning
 
@@ -52,7 +63,7 @@ See also: [Raymond Chen on "pay for play" in API design](https://devblogs.micros
 
 ### What Are Experimental Features?
 
-Experimental features are new capabilities released in the `strands.experimental` module (Python) or under experimental namespaces (TypeScript). These features enable:
+Experimental features are new capabilities released in the `strands.experimental` module (Python) or under experimental namespaces (TypeScript). The Rust SDK's entire public API remains in developer preview while its version is below 1.0. These features enable:
 
 * Testing innovative ideas with real-world feedback
 * Rapid iteration based on community input
@@ -93,7 +104,9 @@ Features are deprecated responsibly to provide adequate time for migration to ne
 
 1. **Introduce Alternative**: A new, improved way to accomplish the same goal is released
 2. **Deprecate Old Way**: The old feature emits deprecation warnings with clear migration guidance
-3. **Remove in Major Version**: The deprecated feature is removed in the next major version
+3. **Remove in Major Version**: In stable SDKs, the deprecated feature is
+   removed in the next major version. Before Rust reaches 1.0, a removal lands
+   in a `0.MINOR.0` release, not a patch.
 
 ### Timeline Example
 
@@ -129,6 +142,13 @@ def deprecated_function():
 export const deprecated_function = () => {}
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/versioning-and-support.rs:deprecation_warning"
+```
+
+</Tab>
 </Tabs>
 
 ## Guiding Principles
@@ -136,7 +156,7 @@ export const deprecated_function = () => {}
 ### Predictability
 
 * Clear version transitions between deprecation and removal
-* Features are never removed in minor or patch versions
+* Stable features are never removed in minor or patch versions after the SDK reaches 1.0
 * Migration tools and clear error messages when feasible
 
 ### Transparency
@@ -147,7 +167,7 @@ export const deprecated_function = () => {}
 
 ### Stability
 
-* Backward compatibility within major versions
+* Backward compatibility within major versions for stable SDK releases
 * Advance notice for breaking changes
 * Multiple minor versions between deprecation and removal
 

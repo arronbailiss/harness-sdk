@@ -11,6 +11,10 @@ describe('resolveLanguage', () => {
     expect(resolveLanguage({ path: 'strands-ts/src/component.tsx', repo: 'harness-sdk' })).toBe('typescript')
   })
 
+  it('infers rust from a .rs extension', () => {
+    expect(resolveLanguage({ path: 'strands-rs/strands/src/agent.rs', repo: 'harness-sdk' })).toBe('rust')
+  })
+
   it('prefers an explicit language over the inferred extension', () => {
     expect(resolveLanguage({ path: 'configs/agent.toml', language: 'python', repo: 'harness-sdk' })).toBe('python')
     // Even when the extension is known, the override wins.
@@ -31,22 +35,24 @@ describe('resolveLanguage', () => {
 describe('languageLabel', () => {
   it('maps known codes to their display label', () => {
     expect(languageLabel('python')).toBe('Python')
+    expect(languageLabel('rust')).toBe('Rust')
     expect(languageLabel('typescript')).toBe('TypeScript')
   })
 
   it('capitalizes unknown codes as a fallback', () => {
-    expect(languageLabel('rust')).toBe('Rust')
+    expect(languageLabel('java')).toBe('Java')
   })
 })
 
 describe('languageCodeForLabel', () => {
   it('maps known display labels back to their canonical code', () => {
     expect(languageCodeForLabel('Python')).toBe('python')
+    expect(languageCodeForLabel('Rust')).toBe('rust')
     expect(languageCodeForLabel('TypeScript')).toBe('typescript')
   })
 
   it('returns undefined for unknown labels', () => {
-    expect(languageCodeForLabel('Rust')).toBeUndefined()
+    expect(languageCodeForLabel('Java')).toBeUndefined()
   })
 })
 

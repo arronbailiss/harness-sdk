@@ -23,30 +23,39 @@ With no target, ask. Never default to the whole site.
 |------|--------|----------------|
 | Python SDK (`strands-agents`) | `strands-py/src/strands/` | `__all__` of the imported module |
 | TypeScript SDK (`@strands-agents/sdk`) | `strands-ts/src/` | `strands-ts/src/index.ts` (`@internal` is not public) |
+| Rust SDK (`strands`) | `strands-rs/strands/src/` | public items re-exported by `strands-rs/strands/src/lib.rs` |
 | Python harness (`strands-harness`) | `harness-py/src/strands_harness/` | `harness-py/src/strands_harness/__init__.py` |
 | TypeScript harness (`@strands-agents/harness`) | `harness-ts/src/` | `harness-ts/src/index.ts` (`./internal` is not public) |
+| Rust harness (`strands-harness`) | `harness-rs/strands-harness/src/` | public items re-exported by `harness-rs/strands-harness/src/lib.rs` |
 | CLI (`@strands-agents/cli`) | `strands-cli/src/` | `strands-cli/src/cli/`; in-chat slash commands in `strands-cli/src/tui/chat/commands.ts` |
 | MCP server (`strands-agents-mcp-server`) | `strands-mcp/src/strands_mcp_server/` | its registered MCP tools |
 
 **Not in this repo:** `user-guide/evals-sdk/`, `user-guide/box/`, and `user-guide/shell/` document `strands-agents/evals`, `strands-agents/box`, and `strands-agents/shell`. Shallow-clone the repo into `.context/src/<repo>` or read it with `gh api repos/strands-agents/<repo>/contents/<path>`, and cite `<repo>/<path>:line`. A package name alone never makes a claim `correct`.
 
-For orientation, see the **Key Python modules** and **Key TypeScript modules** lists in `../../references/code-verification.md`. Tests and examples support a behavior claim but never replace reading the implementation.
+For orientation, see the SDK module lists in
+`../../references/code-verification.md`. Tests and examples support a behavior
+claim but never replace reading the implementation.
 
 ## Process
 
 ### Step 1: Resolve the page
 
 1. Record `git rev-parse --short HEAD` and the branch.
-2. Read the page and its frontmatter (`languages`, `experimental`, `sourceLinks`). No `languages` field means the page covers both SDKs.
-3. Resolve every `--8<-- "path:region"` include (paths relative to `site/src/content/docs/`), including its `_imports` sibling, and confirm each region has a matching `[start:]` / `[end:]` pair.
+2. Read the page and its frontmatter (`languages`, `unsupportedLanguages`,
+   `experimental`, `sourceLinks`). No `languages` field means the page covers
+   Python, TypeScript, and Rust.
+3. For each unavailable language, confirm the rendered state hides the page
+   body and table of contents instead of exposing another SDK's examples.
+4. Resolve every `--8<-- "path:region"` include (paths relative to `site/src/content/docs/`), including its `_imports` sibling, and confirm each region has a matching `[start:]` / `[end:]` pair.
 
 ### Step 2: Build the claim inventory
 
 Before verifying anything, list every checkable claim, numbered, with its line (`fm` for frontmatter). Inventory a repeated claim once and list all its lines.
 
 - **Code blocks**, per language tab: imports, calls, argument names and values, attributes read, shown output, install commands and install comments (a `# pip install …` comment claims it installs everything the block needs), and comments that assert something.
-- **Prose, tables, callouts:** names, signatures, defaults, numbers, behavior and ordering, error types, which language or provider supports what (both values of every `<Syntax py="…" ts="…" />`), env vars, flags, and links.
-- **Frontmatter:** each `sourceLinks` path, `languages`, `experimental`.
+- **Prose, tables, callouts:** names, signatures, defaults, numbers, behavior and ordering, error types, which language or provider supports what (all values of every `<Syntax py="…" ts="…" rs="…" />`), env vars, flags, and links.
+- **Frontmatter:** each `sourceLinks` path, `languages`,
+  `unsupportedLanguages`, `experimental`.
 
 List motivation and opinion sentences as "not claims" so the inventory is visibly complete.
 
@@ -58,8 +67,11 @@ Find the code that decides each claim and record `file:line`.
 - **Check each language separately.** Shared prose must hold in every SDK the page covers.
 - **Check it's public** (see the table). An unexported symbol gets the `internal` tag even if the example works.
 - **Check lifecycle:** compare deprecation markers and experimental namespaces with the page's frontmatter and wording.
-- **Check it's released.** Find the commit that added the export (`git log -S '<symbol>' --oneline -- <index.ts or __init__.py>`), then the first release with it: `git tag --contains <commit> | grep -E '^<prefix>/v[0-9]' | sort -V | head -1`, where `<prefix>` is `python`, `typescript`, `harness-python`, `harness-typescript`, `harness-cli`, or `mcp`. Harnesses depend on the published SDK (ranges in `harness-py/pyproject.toml` and `harness-ts/package.json`), so SDK behavior a harness page relies on must be inside that range.
+- **Check it's released.** Find the commit that added the export (`git log -S '<symbol>' --oneline -- <index.ts, __init__.py, or lib.rs>`), then the first release with it: `git tag --contains <commit> | grep -E '^<prefix>/v[0-9]' | sort -V | head -1`, where `<prefix>` is `python`, `typescript`, `rust`, `harness-python`, `harness-typescript`, `harness-rust`, `harness-cli`, or `mcp`. If no matching `rust/v*` or `harness-rust/v*` tag contains a Rust API, classify it as `unreleased`. Harnesses depend on the published SDK (ranges in `harness-py/pyproject.toml`, `harness-ts/package.json`, and the Rust release workflow's `strands_version` input), so SDK behavior a harness page relies on must be inside that range.
 - **Check `sourceLinks`:** each path exists and implements what the page describes.
+- **Check model-visible parity:** prompts, tool names, tool descriptions, and
+  policy strings match across SDK examples unless the page explains a
+  deliberate semantic difference.
 
 ### Step 4: Check the code mechanically
 
@@ -77,6 +89,27 @@ Compile every code block, and run it when you can. Put scratch files under `.con
 `tsc: not found` (exit 127) is a setup failure, not a pass. The check covers the whole site, so report only this page's errors; confirm its files were included with `npx tsc -p site/test-snippets --listFiles | grep <page-dir>`.
 
 Then type-check each rendered block on its own (the `_imports` region plus the body region), since lines outside the markers never render. A region that ends before its class or function closes is `incorrect`. If several regions are meant to be read together, also check them combined.
+
+**Rust snippet files:** run the site check, then inspect every rendered block:
+
+```bash
+(cd site && npm run typecheck:snippets)
+cargo check --manifest-path site/rust-snippets/Cargo.toml --locked --all-targets
+```
+
+The Cargo gate compiles each complete sibling source file, not every extracted
+region as a standalone crate. Confirm that the rendered block contains its
+required `use` declarations and does not rely on setup hidden from the reader.
+A passing gate can still hide an undeclared reader dependency because the
+site-owned crate contains a superset. Inventory every direct crate and optional
+feature used inside the rendered region and confirm the page tells readers to
+add it.
+A sequence may use a helper or type rendered earlier on the same page, and a
+wrapper used only to provide async or fallible compilation context may remain
+outside the marker. For a standalone example, copy the rendered region into a
+scratch binary under `.context/verify/rust/` with only the dependencies and
+features documented on the page, then run `cargo check`. If the PR claims
+Clippy coverage, run `cargo clippy -- -D warnings`; otherwise do not claim it.
 
 **Inlined TypeScript** (no CI covers it; the convention break itself is `docs-audit`'s finding): copy each block verbatim into a scratch file.
 
@@ -127,7 +160,7 @@ Install only the documented package and what the page's install line names. If a
 ### Step 5: Check links
 
 - **Internal links and anchors:** the target page or heading exists and covers what the sentence promises. The build only catches dead links.
-- **API reference links:** they point at a real public symbol. Run `npm run sdk:generate` in `site/` first, because `api/*/_generated` symlinks into the gitignored `site/.build`.
+- **API reference links:** they point at a real public symbol. Run `npm run sdk:generate` in `site/` first, because `api/*/_generated` symlinks into the gitignored `site/.build`. Rust links point directly to the corresponding public docs.rs item until rustdoc is embedded in the site.
 - **GitHub links:** they point at a path that exists on `main`.
 
 ### Step 6: Assess each claim

@@ -20,7 +20,7 @@ We're using [Astro](https://astro.build/) with the [Starlight](https://starlight
 
 ### 2. Route Middleware (`src/route-middleware.ts`)
 
-**What it does:** Filters the sidebar at buildtime so each page only shows items from its section, and applies collapse behavior via `applyCollapse()`. For API pages (Python and TypeScript), it dynamically generates sidebars from the docs collection and computes pagination links.
+**What it does:** Filters the sidebar at buildtime so each page only shows items from its section, and applies collapse behavior via `applyCollapse()`. For generated API pages (Python and TypeScript), it dynamically generates sidebars from the docs collection and computes pagination links. The Rust API route is a static landing page linking to docs.rs and uses the normal scoped sidebar.
 
 **Why:** The sidebar is organized around products (Strands harness, SDK, Shell, Evals SDK) plus Examples and Community. Without this middleware, every page would show the entire tree. The middleware scopes it to the current section (matched by the longest `basePath` in `navigation.yml`'s `navbar`), so more specific paths win. Each product's sidebar follows the same shape — Get started → Build guides → Run guides → Components → Reference. First-level bands always render open; depth ≥ 1 subgroups collapse by default (see `applyCollapse()`), and no first-level band sets `collapsed:`. The SDK is the largest scope — the SDK concepts, deploy, observability, and safety pages plus the generated API reference (`/docs/api/`) all resolve to it — while Strands harness, Shell, and Evals SDK each scope to their own product pages under `user-guide/`.
 
@@ -75,6 +75,13 @@ The importer warns when a guide links to a missing file and fails when a guide r
 const example = "This code will be included"
 // --8<-- [end:section_name]
 ```
+
+Rust `.rs` files use the same `// --8<--` region markers and live beside the
+page that includes them. The site-owned `rust-snippets` Cargo crate discovers
+and compiles them. Its dependency set is intentionally a superset for aggregate
+checking, so each page must still document the direct crates and optional
+features its rendered Rust regions use. TypeScript and Rust snippets are checked
+by `npm run typecheck:snippets`.
 
 ### 5. Relative Link Resolution (`src/util/links.ts`, `src/components/PageLink.astro`)
 
@@ -343,16 +350,37 @@ keeps the provenance without the caution.
 
 ### `languages`
 
-Indicates a feature is only available in specific SDK languages.
+Declares an explicit subset of SDK languages documented on a page. Omission
+means the page covers Python, TypeScript, and Rust.
 
 ```yaml
 ---
 title: My Feature
-languages: Python
+languages: [Python, TypeScript]
 ---
 ```
 
-Renders a note aside: "This provider is only supported in {languages}."
+Use this field for a documentation gap, not for an unavailable feature. The
+site preserves the reader's selected language and shows the gap only when that
+language is selected. The unavailable state replaces the page body and table
+of contents so another SDK's examples are never shown under that selection.
+
+### `unsupportedLanguages`
+
+Declares SDKs that do not implement the documented feature.
+
+```yaml
+---
+title: My Feature
+unsupportedLanguages: Rust
+---
+```
+
+An omitted `languages` field still covers every default language except those
+listed in `unsupportedLanguages`. The site preserves the reader's selected
+language and shows the unavailable state only for that language. The other
+SDKs' page body and table of contents remain hidden until the reader selects an
+available language.
 
 ### `community`
 
@@ -414,6 +442,7 @@ import { Tabs, TabItem } from '@astrojs/starlight/components';
 <Tabs>
   <TabItem label="Python">Python code here</TabItem>
   <TabItem label="TypeScript">TypeScript code here</TabItem>
+  <TabItem label="Rust">Rust code here</TabItem>
 </Tabs>
 ```
 
@@ -428,6 +457,7 @@ We use [astro-auto-import](https://github.com/delucis/astro-auto-import) to make
 <Tabs>
   <Tab label="Python">pip install strands</Tab>
   <Tab label="TypeScript">npm install @strands-agents/sdk</Tab>
+  <Tab label="Rust">cargo add strands</Tab>
 </Tabs>
 ```
 
@@ -443,20 +473,21 @@ A wrapper around Starlight's `Tabs` that auto-generates a `syncKey` from tab lab
 
 ### `Syntax`
 
-Inline component for language-specific identifiers in prose. Renders the Python or TypeScript variant based on the global language toggle, avoiding the `"python_name (Python) or tsName (TypeScript)"` pattern. Auto-imported.
+Inline component for language-specific identifiers in prose. Renders the selected SDK variant based on the global language toggle, avoiding the `"python_name (Python) or tsName (TypeScript)"` pattern. Auto-imported.
 
 ```mdx
-Pass <Syntax py="context_manager" ts="contextManager" /> to configure...
+Pass <Syntax py="context_manager" ts="contextManager" rs="context_manager" /> to configure...
 ```
 
 Props:
 - `py` (required): Python syntax variant
 - `ts` (required): TypeScript syntax variant
+- `rs` (optional): Rust syntax variant; include it on shared three-language pages
 - `plain` (default: `false`): Renders as plain text instead of `<code>`.
 
 The component reads the same `localStorage` key as the language toggle and swaps live without page reload.
 
-**When to use:** Any time a single identifier, method name, or parameter differs between Python and TypeScript and you're writing shared prose (not inside a `<Tab>` section).
+**When to use:** Any time a single identifier, method name, or parameter differs between SDKs and you're writing shared prose (not inside a `<Tab>` section).
 
 **When NOT to use:** For code blocks (use `<Tabs>`), for conceptual differences between SDKs that aren't simple name swaps, or for content that only applies to one language.
 
@@ -739,6 +770,12 @@ extend: z.object({
 ```
 
 This allows the content collection to validate and expose the category for sidebar generation.
+
+## Rust API Reference
+
+The Rust API route (`src/content/docs/api/rust/index.mdx`) is a static landing page that links to the published crate documentation on docs.rs. Rust API pages are not generated into `.build/api-docs/`, so `npm run sdk:generate` continues to generate only the Python and TypeScript references.
+
+Keep this landing page aligned with the Rust crate names and publication status. It participates in the normal SDK navigation and language preference, but it does not use a generated dynamic sidebar.
 
 
 ## Custom Landing Page

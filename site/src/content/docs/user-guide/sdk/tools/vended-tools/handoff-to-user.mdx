@@ -5,13 +5,15 @@ tags: [tool-authoring]
 sourceLinks:
   - path: strands-ts/src/vended-tools/handoff-to-user/handoff-to-user.ts
   - path: strands-py/src/strands/vended_tools/handoff_to_user/handoff_to_user.py
+  - path: strands-rs/strands/src/vended_tools/handoff_to_user.rs
 ---
 
 Lets the model pause the agent loop and surface a message to the user for
 human-in-the-loop input. Use this when the agent needs explicit confirmation,
 additional information, or user approval before proceeding.
 
-_Supported in: Node.js, modern browsers (TypeScript); all platforms (Python)._
+_Supported in: Node.js and modern browsers (TypeScript); all platforms
+(Python and Rust)._
 
 :::note[Bidirectional streaming not supported]
 `handoff_to_user` relies on the interrupt/resume mechanism, which requires the agent loop to fully halt and restart. It cannot be used inside bidirectional streaming sessions, where the loop runs continuously without a clean pause point.
@@ -69,6 +71,13 @@ resumed = agent([
         }
     }
 ])
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/handoff-to-user.rs:example"
 ```
 
 </Tab>

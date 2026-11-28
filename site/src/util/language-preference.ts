@@ -1,22 +1,26 @@
 /**
- * Shared constants and helpers for the site-wide Python/TypeScript language
+ * Shared constants and helpers for the site-wide SDK language
  * preference and clipboard interactions used by the landing page and header.
  */
+import { SDK_LANGUAGE_LABELS } from '../config/languages'
 
 /**
- * localStorage key for the selected language. Derived from Starlight's synced
- * tabs hash of "Python|TypeScript" (djb2 -> "jarkqt"). It is referenced from
- * both processed scripts (via import) and inline scripts (via define:vars), so
- * keep it here as the single source of truth. If Starlight changes its hash
- * format or AutoSyncTabs changes its hash function, update this one place.
+ * Stable sync key for every SDK language tab group. Keep this value when
+ * adding languages so existing preferences remain valid.
  */
-export const LANGUAGE_STORAGE_KEY = 'starlight-synced-tabs__jarkqt'
+export const LANGUAGE_SYNC_KEY = 'jarkqt'
 
 /**
- * Language assumed when no preference is stored yet. Label form ("TypeScript"/
- * "Python") because that is what Starlight's synced tabs write to storage.
+ * localStorage key for the selected language. The key retains the original
+ * Python/TypeScript sync key so preferences survive the addition of Rust.
  */
-export const DEFAULT_LANGUAGE_LABEL = 'TypeScript'
+export const LANGUAGE_STORAGE_KEY = `starlight-synced-tabs__${LANGUAGE_SYNC_KEY}`
+
+/**
+ * Language assumed when no preference is stored yet. Uses the display label
+ * because that is what Starlight's synced tabs write to storage.
+ */
+export const DEFAULT_LANGUAGE_LABEL = SDK_LANGUAGE_LABELS.typescript
 
 /**
  * Copy text to the clipboard, resolving to whether it succeeded. Returns false

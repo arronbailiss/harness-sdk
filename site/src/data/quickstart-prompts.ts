@@ -1,13 +1,12 @@
 /**
- * Prompts behind the "Copy prompt" button on the Python and TypeScript quickstarts.
+ * Prompts behind the "Copy prompt" button on the SDK quickstarts.
  *
  * Each prompt is written for a coding agent (Kiro, Claude Code, Cursor, etc.) and
  * mirrors the steps on the page so the agent lands on the same first agent a human
  * reader would. It carries the exact code so the coding agent doesn't guess at
  * Strands APIs, and it asks (never assumes) before installing the Strands MCP server.
  *
- * Keep these in sync with quickstart/python.mdx, quickstart/typescript.mdx, and
- * harness/quickstart.mdx.
+ * Keep these in sync with the language quickstarts and harness/quickstart.mdx.
  */
 
 const MCP_STEP = `
@@ -212,6 +211,152 @@ counting to letter_counter and the file write to fileEditor.
 ${MCP_STEP}
 `.trim()
 
+export const RUST_QUICKSTART_PROMPT = `
+Help me build my first agent with the Strands Harness SDK in Rust. The Rust SDK is in
+developer preview, so verify every API against the current repository documentation.
+Work through these steps in order, checking with me before installing software or
+writing files.
+
+Step 1: Environment
+Confirm Rust 1.96 or newer is available. Create a new project and add the Tokio async
+runtime. Wait until I choose a provider before adding the Strands dependency:
+  cargo new strands-quickstart
+  cd strands-quickstart
+  cargo add tokio --features macros,rt-multi-thread
+
+Step 2: Pick a model provider and run a first agent
+Ask me which model provider I want to use:
+  - Amazon Bedrock (default): AWS credentials or AWS_BEARER_TOKEN_BEDROCK
+  - Anthropic: ANTHROPIC_API_KEY
+  - OpenAI: OPENAI_API_KEY
+  - Amazon Bedrock Mantle: AWS credentials, AWS_REGION, and optionally MANTLE_MODEL_ID
+
+Add the matching dependency:
+  - Amazon Bedrock: cargo add strands
+  - Anthropic: cargo add strands --no-default-features --features anthropic
+  - OpenAI: cargo add strands --no-default-features --features openai
+  - Amazon Bedrock Mantle: cargo add strands --no-default-features --features mantle
+
+Then create src/main.rs with the exact snippet for my provider.
+
+Amazon Bedrock:
+
+  use strands::Agent;
+
+  #[tokio::main]
+  async fn main() -> strands::Result<()> {
+      let mut agent = Agent::builder()
+          .system_prompt("You are a concise assistant.")
+          .build()?;
+      agent
+          .invoke("What is an agent harness, in one sentence?")
+          .await?;
+      agent.shutdown().await
+  }
+
+Anthropic:
+
+  use strands::models::anthropic::AnthropicModel;
+  use strands::Agent;
+
+  #[tokio::main]
+  async fn main() -> strands::Result<()> {
+      let model = AnthropicModel::builder()
+          .model_id("claude-sonnet-4-6")
+          .max_tokens(1024)
+          .build()?;
+      let mut agent = Agent::builder()
+          .model(model)
+          .system_prompt("You are a concise assistant.")
+          .build()?;
+      agent
+          .invoke("What is an agent harness, in one sentence?")
+          .await?;
+      agent.shutdown().await
+  }
+
+OpenAI:
+
+  use strands::models::openai::OpenAIModel;
+  use strands::Agent;
+
+  #[tokio::main]
+  async fn main() -> strands::Result<()> {
+      let model = OpenAIModel::builder()
+          .model_id("gpt-5.4-mini")
+          .build()?;
+      let mut agent = Agent::builder()
+          .model(model)
+          .system_prompt("You are a concise assistant.")
+          .build()?;
+      agent
+          .invoke("What is an agent harness, in one sentence?")
+          .await?;
+      agent.shutdown().await
+  }
+
+Amazon Bedrock Mantle:
+
+  use strands::models::openai::{
+      BedrockMantleConfig,
+      OpenAIModel,
+      OpenAIModelOptions,
+  };
+  use strands::Agent;
+
+  #[tokio::main]
+  async fn main() -> strands::Result<()> {
+      let region =
+          std::env::var("AWS_REGION").unwrap_or_else(|_| "us-east-1".to_owned());
+      let model_id = std::env::var("MANTLE_MODEL_ID")
+          .unwrap_or_else(|_| "openai.gpt-oss-120b".to_owned());
+      let model = OpenAIModel::bedrock_mantle(
+          OpenAIModelOptions::builder()
+              .model_id(model_id)
+              .build_options(),
+          BedrockMantleConfig::builder().region(region).build(),
+      )?;
+      let mut agent = Agent::builder()
+          .model(model)
+          .system_prompt("You are a concise assistant.")
+          .build()?;
+      agent
+          .invoke("What is an agent harness, in one sentence?")
+          .await?;
+      agent.shutdown().await
+  }
+
+Run it with cargo run.
+
+Step 3: Add a custom tool
+Keep the provider imports and model construction from Step 2. Replace
+use strands::Agent with:
+
+  use strands::{Agent, ToolError, tool};
+
+  #[tool(description = "Count occurrences of a letter in a word.")]
+  async fn letter_counter(word: String, letter: char) -> Result<usize, ToolError> {
+      Ok(word
+          .chars()
+          .filter(|candidate| candidate.eq_ignore_ascii_case(&letter))
+          .count())
+  }
+
+In the existing Agent::builder() chain, add .tools([LetterCounter]) before .build().
+Keep .model(model) when the selected provider created an explicit model. Then replace
+the invocation prompt with:
+
+  agent
+      .invoke(r#"How many letter R's are in the word "strawberry"?"#)
+      .await?;
+
+Run cargo run again. Explain that #[tool] uses the signature for the input schema,
+the function name for the LetterCounter struct, and the description attribute for
+the model-facing description.
+
+${MCP_STEP}
+`.trim()
+
 export const HARNESS_QUICKSTART_PROMPT = `
 Help me get started with Strands harness. Strands harness is a complete, pre-configured agent harness built
 on the Strands Harness SDK: one call returns a ready agent with a shell, file tools, web access,
@@ -220,8 +365,9 @@ before anything that installs software or writes files.
 
 Step 1: Pick a path
 Ask me whether I want to (a) build an agent with the Strands CLI, no code required, or
-(b) use Strands harness as a Python or TypeScript library. If I pick the CLI, do Step 2 and then
-offer Step 3 as the way to turn the result into code. If I pick the library, skip to Step 3.
+(b) use Strands harness as a Python, TypeScript, or Rust library. If I pick the CLI, do
+Step 2 and then offer Step 3 as the way to turn the result into code. If I pick the
+library, skip to Step 3.
 
 Step 2: Build an agent with the CLI
 Install it (Node.js 20+):
@@ -241,10 +387,11 @@ To skip setup and start from an exported agent file:
 
 When I'm ready to embed the agent in an application, /export inside the chat (or Export in
 setup) writes a Python or TypeScript project with my choices set on create_harness(...) /
-createHarness(...) and exports a ready-to-import agent.
+createHarness(...) and exports a ready-to-import agent. Rust is not an export target yet;
+start a Rust project through Step 3.
 
 Step 3: Use Strands harness as a library
-Ask me whether I want Python or TypeScript.
+Ask me whether I want Python, TypeScript, or the Rust developer preview.
   - Python (3.10+): create and activate a virtual environment, then
       pip install strands-harness
   - TypeScript (Node.js 20+): in a new project directory run
@@ -252,16 +399,22 @@ Ask me whether I want Python or TypeScript.
       npm pkg set type=module
       npm install @strands-agents/harness
       npm install --save-dev @types/node typescript
+  - Rust (1.96+): create a new project, then
+      cargo new strands-harness-quickstart
+      cd strands-harness-quickstart
+      cargo add strands-harness strands
+      cargo add tokio --features macros,rt-multi-thread
 
-Then ask me which model provider I want: Amazon Bedrock (default, needs AWS credentials or
-a Bedrock API key in AWS_BEARER_TOKEN_BEDROCK), Anthropic (ANTHROPIC_API_KEY), OpenAI
-(OPENAI_API_KEY), Google (GEMINI_API_KEY), or Ollama (local, no key; run \`ollama serve\`
-and \`ollama pull llama3.1\` first). Strands harness picks the provider from a "provider/name"
-model string. Bedrock is the default, so it needs no model argument.
+Then ask which model provider I want. Amazon Bedrock is the default and needs AWS
+credentials or a Bedrock API key in AWS_BEARER_TOKEN_BEDROCK. Python and TypeScript
+also offer Anthropic (ANTHROPIC_API_KEY), OpenAI (OPENAI_API_KEY), Google
+(GEMINI_API_KEY), and Ollama. The Rust preview supports Amazon Bedrock, Anthropic,
+OpenAI, and Amazon Bedrock Mantle. Strands harness picks the provider from a
+"provider/name" model string. Amazon Bedrock needs no model argument.
 
-Create agent.py (Python) or src/agent.ts (TypeScript) with the snippet for my choices.
-The task exercises web access, file tools, and multi-step work; the agent writes
-api-versioning.md itself.
+Create agent.py (Python), src/agent.ts (TypeScript), or src/main.rs (Rust) with the
+snippet for my choices. The task exercises web access, file tools, and multi-step
+work; the agent writes api-versioning.md itself.
 
   # Python, Amazon Bedrock (default)
   from strands_harness import create_harness
@@ -297,10 +450,37 @@ api-versioning.md itself.
   // TypeScript, Ollama
   const agent = await createHarness({ model: 'ollama/llama3.1' })
 
-For the non-Bedrock providers, keep the same import and the same invoke line as the
-Bedrock snippet; only the create_harness / createHarness call changes.
+  // Rust, Amazon Bedrock (default)
+  use strands_harness::{HarnessAgentOptions, create_harness};
 
-Run it with: python -u agent.py  (Python)  or  npx tsx src/agent.ts  (TypeScript)
+  #[tokio::main]
+  async fn main() -> strands::Result<()> {
+      let mut agent = create_harness(HarnessAgentOptions::default()).await?;
+      agent
+          .invoke(
+              "Research the three most common strategies for versioning a REST API, \
+               compare their tradeoffs, and write a recommendation to api-versioning.md",
+          )
+          .await?;
+      agent.shutdown().await
+  }
+
+  // Rust, Anthropic (replace the default create_harness line with these lines)
+  let options = HarnessAgentOptions::builder()
+      .model("anthropic/claude-sonnet-5")
+      .build();
+  let mut agent = create_harness(options).await?;
+
+  // Rust, OpenAI (replace the default create_harness line with these lines)
+  let options = HarnessAgentOptions::builder().model("openai/gpt-5.4").build();
+  let mut agent = create_harness(options).await?;
+
+For the non-Amazon Bedrock providers, keep the same import and invoke line as the
+Amazon Bedrock snippet; only the create_harness / createHarness call or Rust options change.
+For Rust, choose exactly one provider block and place it inside main.
+
+Run it with python -u agent.py (Python), npx tsx src/agent.ts (TypeScript), or
+cargo run (Rust).
 
 Confirm api-versioning.md was created. Explain briefly that the default agent already had
 web access to research, file tools to write the recommendation, and a tuned system prompt
@@ -308,10 +488,10 @@ that had it explore before acting.
 
 Step 4: Keep a conversation across runs
 Show me that Strands harness persists conversations. Sessions are on by default with a generated
-id; pass session={"id": ...} (Python) or session: { id } (TypeScript) to choose the id so a
-later run can resume it. Ask a follow-up that only makes sense with the earlier context.
-Strands harness stores the session under ./.agent/sessions and rehydrates it next time you build
-an agent with the same id.
+id; pass session={"id": ...} (Python), session: { id } (TypeScript), or a
+SessionConfig (Rust) to choose the id so a later run can resume it. Ask a follow-up that
+only makes sense with the earlier context. Strands harness stores the session under
+./.agent/sessions and rehydrates it next time you build an agent with the same id.
 
   # Python
   agent = create_harness(session={"id": "api-design"})
@@ -320,6 +500,19 @@ an agent with the same id.
   // TypeScript
   const agent = await createHarness({ session: { id: 'api-design' } })
   await agent.invoke("Which of those would you pick for an API with external customers, and why?")
+
+  // Rust
+  use strands_harness::{HarnessAgentOptions, SessionConfig, create_harness};
+  let session = SessionConfig::builder().id("api-design").build();
+  let options = HarnessAgentOptions::builder().session(session).build();
+  let mut agent = create_harness(options).await?;
+  agent
+      .invoke(
+          "Which versioning strategy would you pick for an API with external \
+           customers, and why?",
+      )
+      .await?;
+  agent.shutdown().await?;
 
 Keep the model argument from Step 3 if I chose a non-Bedrock provider. Run the Step 3
 script first so there is a conversation to resume, then run this one.

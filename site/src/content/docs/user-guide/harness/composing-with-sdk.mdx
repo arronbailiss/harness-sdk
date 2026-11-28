@@ -6,6 +6,7 @@ sourceLinks:
   - path: harness-ts/src/agent.ts
   - path: harness-py/src/strands_harness/__init__.py
   - path: harness-ts/src/index.ts
+  - path: harness-rs/strands-harness/src/lib.rs
 sidebar:
   label: "Compose with the Strands Harness SDK"
 ---
@@ -23,34 +24,33 @@ The factory does three things in order: it resolves your options into concrete S
 (a `Model` from a `provider/name` string, a memory manager, intervention handlers), it
 assembles the built-in tools, plugins, subagents, and behaviors, and it constructs a plain
 `Agent` from the result. Nothing wraps that agent afterward. The built-in tools are
-ordinary registered tools, `todos` and `environment` are ordinary plugins, and sessions and
-memory use the Strands Harness SDK's own managers.
+ordinary registered tools, the built-in integrations are ordinary plugins, and sessions
+and memory use the Strands Harness SDK's own managers.
 
 ## The return value is a plain Agent
 
-`create_harness()` returns a plain Strands `Agent`, the same class you get from the Strands Harness SDK
-directly. There is no Strands harness type around it. Because you hold a normal `Agent`, the full Strands Harness SDK
-is available and nothing about Strands harness blocks a feature the Strands Harness SDK offers.
+The harness factory returns a plain Strands `Agent`, the same type you get from
+the Strands Harness SDK directly. There is no Strands harness type around it.
+Because you hold a normal `Agent`, the full Strands Harness SDK is available, and
+nothing about Strands harness blocks a feature the Strands Harness SDK offers.
 
 ## Compose Strands Harness SDK features alongside Strands harness's defaults
 
-Any argument the factory does not name is passed straight through to the `Agent`
-constructor, and your explicit value wins over the default it corresponds to. This is the
-seam for Strands Harness SDK-native features. Pass your own `plugins` or `interventions` alongside Strands harness's
-and they compose:
+SDK configuration fields pass through the harness factory, and an explicit value wins
+over the harness default it replaces. Pass your own `plugins` or `interventions`
+alongside Strands harness's and they compose:
 
 <Tabs>
   <Tab label="Python">
     ```python
     from strands_harness import create_harness
     from strands.vended_interventions.hitl import HumanInTheLoop
-
-    from my_plugins import MyMetricsPlugin  # your own Plugin subclass
+    from strands.vended_plugins.todos import Todos
 
     agent = create_harness(
         context_manager="agentic",
-        plugins=[MyMetricsPlugin()],       # runs next to Strands harness's built-in plugins
-        interventions=[HumanInTheLoop()],  # a Strands Harness SDK feature, wired straight through
+        plugins=[Todos()],
+        interventions=[HumanInTheLoop()],
     )
     ```
   </Tab>
@@ -58,14 +58,18 @@ and they compose:
     ```typescript
     import { createHarness } from '@strands-agents/harness'
     import { HumanInTheLoop } from '@strands-agents/sdk/vended-interventions/hitl'
-
-    import { MyMetricsPlugin } from './my-plugins' // your own Plugin implementation
+    import { Todos } from '@strands-agents/sdk/vended-plugins/todos'
 
     const agent = await createHarness({
       contextManager: 'agentic',
-      plugins: [new MyMetricsPlugin()], // runs next to Strands harness's built-in plugins
-      interventions: [new HumanInTheLoop()], // a Strands Harness SDK feature, wired through
+      plugins: [new Todos()],
+      interventions: [new HumanInTheLoop()],
     })
+    ```
+  </Tab>
+  <Tab label="Rust">
+    ```rust
+    --8<-- "user-guide/harness/composing-with-sdk.rs:compose"
     ```
   </Tab>
 </Tabs>
@@ -92,19 +96,34 @@ field are yours to adjust:
     agent.systemPrompt += '\n\nAlways cite file paths as file:line.'
     ```
   </Tab>
+  <Tab label="Rust">
+    ```rust
+    --8<-- "user-guide/harness/composing-with-sdk.rs:modify"
+    ```
+  </Tab>
 </Tabs>
 
 ## The building blocks are exported too
 
-Strands harness exports the pieces its factory composes, so you can reuse them without building the
-whole agent:
+Strands harness exports the pieces its factory composes, so you can reuse them without
+building the whole agent:
 
-- `HARNESS_CONTRACT`: the model-neutral behavioral contract, as a string.
-- `build_system_prompt` / `buildSystemPrompt`: concatenates the contract, your
-  instructions, and any request-scoped context.
-- `resolve_memory` (Python only): Strands harness's memory manager over a store.
-- `resolve_interventions` (Python only): the intervention sugar coerced into Strands Harness SDK
-  handlers.
+<Tabs>
+  <Tab label="Python">
+    `HARNESS_CONTRACT` contains the model-neutral behavioral contract.
+    `build_system_prompt` combines it with your instructions and request-scoped context.
+    `resolve_memory` and `resolve_interventions` expose the harness's memory and
+    intervention builders.
+  </Tab>
+  <Tab label="TypeScript">
+    `HARNESS_CONTRACT` contains the model-neutral behavioral contract.
+    `buildSystemPrompt` combines it with your instructions and request-scoped context.
+  </Tab>
+  <Tab label="Rust">
+    `HARNESS_CONTRACT` contains the model-neutral behavioral contract.
+    `build_system_prompt` combines it with your instructions and request-scoped context.
+  </Tab>
+</Tabs>
 
 If you build an agent from Strands Harness SDK building blocks directly, you can still borrow Strands harness's tuned
 prompt:
@@ -124,6 +143,11 @@ prompt:
     import { buildSystemPrompt } from '@strands-agents/harness'
 
     const agent = new Agent({ systemPrompt: buildSystemPrompt('You are a migration assistant.') })
+    ```
+  </Tab>
+  <Tab label="Rust">
+    ```rust
+    --8<-- "user-guide/harness/composing-with-sdk.rs:prompt"
     ```
   </Tab>
 </Tabs>

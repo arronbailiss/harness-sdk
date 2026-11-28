@@ -147,4 +147,23 @@ describe('loadEntries', () => {
       rmSync(dir, { recursive: true, force: true })
     }
   })
+
+  it('treats a Rust package as package-backed without inventing download stats', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'catalog-'))
+    try {
+      writeFileSync(
+        path.join(dir, 'rust-tool.yaml'),
+        [
+          'name: rust-tool',
+          'github: https://github.com/example/rust-tool',
+          'languages:',
+          '  rust:',
+          '    package: strands-rust-tool',
+        ].join('\n')
+      )
+      expect(loadEntries(dir)).toEqual([{ id: 'rust-tool', github: 'https://github.com/example/rust-tool' }])
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
 })

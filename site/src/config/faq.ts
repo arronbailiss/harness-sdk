@@ -91,19 +91,21 @@ export const faqItems: FaqItem[] = [
   {
     id: 'python-or-typescript',
     category: 'choose',
-    question: 'Should I use Python or TypeScript?',
+    question: 'Which Strands SDK should I use?',
     featuredSummary:
-      'Choose the SDK that matches your runtime. Both cover the core agent loop; check the feature pages for gaps such as Python-only bidirectional agents.',
+      'Choose the SDK that matches your runtime. Python, TypeScript, and Rust share the same core concepts and aim for API parity.',
     answer: [
       paragraph(
-        "Use the SDK that matches your application's runtime. Both implement the core agent loop and support tools, MCP tools, streaming, structured output, sessions, and the main multi-agent patterns."
+        "Use the SDK that matches your application's runtime and ecosystem. Python, TypeScript, and Rust share the same core concepts and aim for API parity while keeping language-idiomatic APIs."
       ),
       paragraph(
-        'Support for features and providers varies between the SDKs. Bidirectional agents are currently Python-only, for example. Start with the ',
+        'Start with the ',
         link('Python quickstart', '/docs/user-guide/sdk/quickstart/python/'),
-        ' or ',
+        ', ',
         link('TypeScript quickstart', '/docs/user-guide/sdk/quickstart/typescript/'),
-        ', then check the language tabs and provider pages for the feature you need.'
+        ', or ',
+        link('Rust quickstart', '/docs/user-guide/sdk/quickstart/rust/'),
+        '. Feature pages identify any SDK that does not implement the documented feature.'
       ),
     ],
   },
@@ -115,7 +117,7 @@ export const faqItems: FaqItem[] = [
       paragraph(
         'Standard ',
         link('streaming', '/docs/user-guide/sdk/streaming/async-iterators/'),
-        ' emits events as one agent invocation produces its response. Both SDKs support async iteration, and Python also supports callback handlers.'
+        ' emits events as one agent invocation produces its response. Consume the async iterator when you need incremental output from a single request.'
       ),
       paragraph(
         link('Bidirectional agents', '/docs/user-guide/sdk/bidi/'),
@@ -502,9 +504,9 @@ export const faqItems: FaqItem[] = [
         '.'
       ),
       paragraph(
-        'In Python and TypeScript on Node.js, omitting the ',
+        'Without an explicitly isolated ',
         code('sandbox'),
-        ' setting makes command and file tools use the host process permissions. Configure a ',
+        ' backend, sandbox operations use the host process permissions. Configure a ',
         link('Docker or SSH sandbox', '/docs/user-guide/sdk/sandbox/'),
         ', or a custom backend with the guarantees you need. The sandbox interface routes operations, while the backend and its environment determine the actual isolation boundary.'
       ),

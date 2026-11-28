@@ -2,6 +2,10 @@
 title: Vended Tools
 description: "Pre-built tools included in the SDK for common agent tasks like file operations, shell commands, HTTP requests, and persistent notes."
 tags: [tool-authoring]
+sourceLinks:
+  - path: strands-py/src/strands/vended_tools/__init__.py
+  - path: strands-ts/src/vended-tools/index.ts
+  - path: strands-rs/strands/src/vended_tools/mod.rs
 ---
 
 Vended tools are pre-built tools included directly in the Strands Harness SDK for common agent tasks like file operations, shell commands, HTTP requests, and persistent notes.
@@ -10,7 +14,12 @@ They ship as part of the SDK package and are updated alongside it. See [Versioni
 
 ## Quickstart
 
-Each tool is imported from its own module under <Syntax py="strands.vended_tools" ts="@strands-agents/sdk/vended-tools" />, with no additional packages required:
+Each tool is imported from its own module under
+<Syntax
+  py="strands.vended_tools"
+  ts="@strands-agents/sdk/vended-tools"
+  rs="strands::vended_tools"
+/>:
 
 <Tabs>
 <Tab label="TypeScript">
@@ -35,40 +44,66 @@ agent = Agent(tools=[shell, edit, http_request, notebook])
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/index.rs:quickstart"
+```
+
+</Tab>
 </Tabs>
 
 ## Available tools
 
+`All` means Python, TypeScript, and Rust.
+
 | Tool | Description | Supported in |
 |------|-------------|--------------|
-| [Edit](edit.mdx) | Make in-place changes to a text file | Python, TypeScript (Node.js) |
-| [File Editor](file-editor.mdx) *(deprecated)* | View, create, and edit files | Python, TypeScript (Node.js) |
-| [Read](read.mdx) | Read a file as numbered text or a media block | Python, TypeScript (Node.js) |
-| [Write](write.mdx) | Create or overwrite a text file with the full provided content | Python, TypeScript (Node.js) |
-| [HTTP Request](http-request.mdx) | Make HTTP requests to external APIs | Python, TypeScript (Node.js 22+, browsers) |
-| [Notebook](notebook.mdx) | Manage persistent text notebooks | Python, TypeScript (Node.js, browsers) |
-| [Bash](shell.mdx) | Execute shell commands with persistent sessions | Python, TypeScript (Node.js, Unix/Linux/macOS) |
-| [MCP Router](mcp-router.mdx) | Connect to Model Context Protocol servers on a developer-set allowlist | Python, TypeScript (Node.js) |
-| [Sleep](sleep.mdx) | Pause execution for a bounded, cancellable duration | Python, TypeScript (Node.js, browsers) |
-| [Handoff to User](handoff-to-user.mdx) | Pause the agent loop and surface a message to the user | Python, TypeScript (Node.js, browsers) |
-| [Stop](stop.mdx) | Gracefully end the agent loop when the task is complete | Python, TypeScript (Node.js, browsers) |
-| [Web Fetch](web-fetch.mdx) | Fetch a URL and return cleaned markdown for a model to read | Python, TypeScript (Node.js) |
+| [Edit](edit.mdx) | Make in-place changes to a text file | All |
+| [File Editor](file-editor.mdx) *(deprecated)* | View, create, and edit files | All |
+| [Read](read.mdx) | Read a file as numbered text or a media block | All |
+| [Write](write.mdx) | Create or overwrite a text file with full content | All |
+| [HTTP Request](http-request.mdx) | Make HTTP requests to external APIs | All |
+| [Notebook](notebook.mdx) | Manage persistent text notebooks | All |
+| [Shell](shell.mdx) | Execute shell commands through the agent's sandbox | All |
+| [MCP Router](mcp-router.mdx) | Connect to developer-allowlisted MCP servers | All |
+| [Sleep](sleep.mdx) | Pause for a bounded, cancellable duration | All |
+| [Handoff to User](handoff-to-user.mdx) | Pause and surface a message to the user | All |
+| [Stop](stop.mdx) | Gracefully end the agent loop | All |
+| [Web Fetch](web-fetch.mdx) | Fetch a URL and return cleaned markdown | All |
 | [A2A Client](a2a-client.mdx) | Discover and send messages to remote A2A-protocol agents | Python, TypeScript (Node.js, browsers) |
-| [Python REPL](python-repl.mdx) | Execute Python code through the agent's sandbox | Python, TypeScript (Node.js, Unix/Linux/macOS) |
-| [Subagent](subagent.mdx) | Delegate a self-contained task to a child agent | Python, TypeScript (Node.js, browsers) |
+| [Python REPL](python-repl.mdx) | Run Python in a sandbox | All |
+| [Subagent](subagent.mdx) | Delegate to a child agent | All |
 | [Swarm](swarm.mdx) | Spin up a team of agents that collaborate via the swarm pattern | Python, TypeScript (Node.js, browsers) |
 | [Graph](graph.mdx) | Run a team of sub-agents as a directed acyclic graph designed by the model | Python, TypeScript (Node.js, browsers) |
 
 ## Multi-agent tools
 
-The [subagent](subagent.mdx), [swarm](swarm.mdx), and [graph](graph.mdx) tools let the model configure child agents at runtime. They use axis policies to control how much freedom the model has over each parameter. Import them from <Syntax py="strands.multiagent" ts="@strands-agents/sdk/multiagent" />.
+The [subagent](subagent.mdx), [swarm](swarm.mdx), and [graph](graph.mdx)
+tools let the model configure child agents at runtime. Import policies from
+<Syntax
+  py="strands.multiagent"
+  ts="@strands-agents/sdk/multiagent"
+  rs="strands::multiagent"
+/>.
 
-- <Syntax py="Inherit()" ts="new Inherit()" />: the child inherits the parent's value. Hidden from the model.
-- <Syntax py="Fixed(value)" ts="new Fixed(value)" />: you pin the value. Hidden from the model.
-- <Syntax py="Open()" ts="new Open()" />: the model writes a free-form string value.
-- <Syntax py="Choice([...], multiple=True)" ts="new Choice([...], true)" />: the model picks from a set you define (one value, or several when `multiple` is set).
+- <Syntax py="Inherit()" ts="new Inherit()" rs="Inherit::new()" />:
+  the child inherits the parent's value; hidden from the model.
+- <Syntax py="Fixed(value)" ts="new Fixed(value)" rs="Fixed::new(value)" />:
+  pin the value; hidden from the model.
+- <Syntax py="Open()" ts="new Open()" rs="Open::new()" />:
+  let the model write a free-form string.
+- <Syntax
+    py="Choice([...], multiple=True)"
+    ts="new Choice([...], true)"
+    rs="Choice::new([...]).multiple(true)"
+  />: let the model pick one or more values.
 
-Use `Option` inside a `Choice` to map model-facing names to runtime values. Bundle axis defaults into a `Preset` that the model selects via `agent_type`. When the model omits both `agent_type` and `instructions`, the child uses <Syntax py="default_preset" ts="defaultPreset" />, or the first preset if none is set.
+Use `Option` or `ChoiceOption` to map model-facing names to runtime values.
+Bundle axis defaults into a `Preset` selected through `agent_type`. When the
+model omits both `agent_type` and `instructions`, the child uses
+<Syntax py="default_preset" ts="defaultPreset" rs="default_preset" />,
+or the first preset.
 
 <Tabs>
 <Tab label="TypeScript">
@@ -111,9 +146,27 @@ agent("Have a subagent summarize the latest Python release notes, then run the t
 ```
 
 </Tab>
+<Tab label="Rust">
+
+`subagent` supports these policies. `swarm` and `graph` are not available.
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/index.rs:multi_agent"
+```
+
+</Tab>
 </Tabs>
 
-Tools that accept axis policies use a default builder to turn resolved specs into child agents. By default, it produces child agents that inherit the parent's tools, model, and interventions, so a child's tool calls go through the same approval and authorization checks as the parent's. Each child gets <Syntax py='context_manager="auto"' ts="contextManager: 'auto'" /> (unless its model is stateful) in place of the parent's context-management tools, and accesses the parent's long-term memory through inherited memory tools.
+Tools that accept axis policies use a default builder to turn resolved specs
+into child agents. By default, a child inherits the parent's tools, model, and
+interventions, so its tool calls pass through the same approval and
+authorization checks. It receives
+<Syntax
+  py='context_manager="auto"'
+  ts="contextManager: 'auto'"
+  rs="ContextManagerStrategy::Auto"
+/> unless its model is stateful, and it accesses the parent's long-term memory
+through inherited memory tools.
 
 The default builder does not pass the parent's [hooks](../../agents/hooks.mdx) or [plugins](../../plugins/index.mdx) to the child. A hook that logs or audits the parent's tool calls does not run for the child's. Tools that a plugin added to the parent are still inherited like any other tool, but they run in the child without the plugin's hooks. For a child that needs the hooks or plugins, use a custom builder.
 
@@ -142,6 +195,13 @@ def build_child(spec: AgentSpec) -> Agent:
 
 delegate = make_subagent(builder=build_child)
 agent = Agent(tools=[delegate])
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/index.rs:custom_builder"
 ```
 
 </Tab>

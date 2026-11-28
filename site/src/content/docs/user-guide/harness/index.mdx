@@ -5,6 +5,8 @@ sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-ts/src/agent.ts
   - path: harness-py/src/strands_harness/prompt.py
+  - path: harness-rs/strands-harness/src/agent.rs
+  - path: harness-rs/strands-harness/src/prompt.rs
 sidebar:
   label: "Overview"
 ---
@@ -39,18 +41,37 @@ You do not have to pass anything. Import it, instantiate it, then give the agent
     await agent.invoke("Research the top three vector databases, compare pricing and limits, and write it up in comparison.md")
     ```
   </Tab>
+  <Tab label="Rust">
+    Build the default with
+    [`create_harness`](https://docs.rs/strands-harness/latest/strands_harness/fn.create_harness.html)
+    and customize it through
+    [`HarnessAgentOptions`](https://docs.rs/strands-harness/latest/strands_harness/struct.HarnessAgentOptions.html).
+
+    ```bash
+    cargo add strands-harness strands
+    cargo add tokio --features macros,rt-multi-thread
+    ```
+
+    ```rust
+    --8<-- "user-guide/harness/index.rs:basic"
+    ```
+  </Tab>
 </Tabs>
 
-Amazon Bedrock is the default. See [choose a model](./configure/model/) to run on Anthropic, OpenAI, Google, or Ollama.
+Amazon Bedrock is the default. See [choose a model](./configure/model/) to select
+another provider.
 
-Strands harness is open source — browse the source on GitHub:
+Strands harness is open source. Browse the source on GitHub:
 
 <Tabs>
   <Tab label="Python">
-    [`harness-py`](https://github.com/strands-agents/harness-sdk/tree/main/harness-py) — the Python package.
+    [`harness-py`](https://github.com/strands-agents/harness-sdk/tree/main/harness-py)
   </Tab>
   <Tab label="TypeScript">
-    [`harness-ts`](https://github.com/strands-agents/harness-sdk/tree/main/harness-ts) — the TypeScript package.
+    [`harness-ts`](https://github.com/strands-agents/harness-sdk/tree/main/harness-ts)
+  </Tab>
+  <Tab label="Rust">
+    [`harness-rs`](https://github.com/strands-agents/harness-sdk/tree/main/harness-rs)
   </Tab>
 </Tabs>
 
@@ -70,9 +91,7 @@ with the same configuration you already have on Strands harness.
 Without any customization, Strands harness hands you back a fully functional agent. Every default
 below can be narrowed, swapped, or turned off; the linked page shows how:
 
-- Runs on the [model of your choice](./configure/model/), with providers across Amazon
-  Bedrock, Anthropic, OpenAI, and Google, plus Ollama for running locally, and reasoning
-  turned on.
+- Runs on the [model of your choice](./configure/model/), with reasoning turned on.
 - Follows a [tuned system prompt](./configure/tools-and-instructions/):
   explore first, then act, confirm before anything irreversible, and verify before finishing.
 - Has a [shell and file tools](./tools/shell-and-files/) (`read`,

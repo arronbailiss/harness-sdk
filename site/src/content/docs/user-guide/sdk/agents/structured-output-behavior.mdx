@@ -11,6 +11,8 @@ sourceLinks:
   - path: strands-ts/src/agent/agent.ts
   - path: strands-py/src/strands/models/_native_output.py
   - path: strands-ts/src/models/native-output.ts
+  - path: strands-rs/strands/src/agent/event_loop.rs
+  - path: strands-rs/strands/src/tools/structured_output_tool.rs
 ---
 
 import Diagram from '@components/Diagram.astro'
@@ -37,7 +39,11 @@ For each call with a schema:
 2. The model works as usual and can call your other tools along the way.
 3. The model calls the structured output tool with the field values.
 4. Strands validates that input. If it passes, the invocation ends and the object is on
-   <Syntax py="result.structured_output" ts="result.structuredOutput" />. When you
+   <Syntax
+     py="result.structured_output"
+     ts="result.structuredOutput"
+     rs="result.structured_output()"
+   />. When you
    stream the call, it's on the final result event.
 5. Strands removes the structured output tool when the invocation ends.
 
@@ -60,6 +66,21 @@ tool. The class docstring becomes the tool description, and each
 A schema is a [Zod](https://zod.dev/) object schema. The tool is named
 `strands_structured_output`. A `.describe()` on the object becomes the tool
 description, and a `.describe()` on a field describes that field to the model.
+
+</Tab>
+<Tab label="Rust">
+
+Add the schema derives to your project:
+
+```bash
+cargo add schemars
+cargo add serde --features derive
+```
+
+A schema is a type that derives `schemars::JsonSchema` and
+`serde::Deserialize`. The tool is named `strands_structured_output`.
+`schemars` field attributes add constraints and descriptions to the generated
+JSON Schema.
 
 </Tab>
 </Tabs>
@@ -129,6 +150,13 @@ Typical output:
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/structured-output-behavior.rs:defaults"
+```
+
+</Tab>
 </Tabs>
 
 An agent schema applies to every call, including turns that only build up context. If
@@ -195,6 +223,17 @@ Typical output:
 ```
 
 </Tab>
+<Tab label="Rust">
+
+Strands validates the generated JSON Schema before deserializing the result into
+your type. Constraints such as `length` and `range` become actionable validation
+errors for the model:
+
+```rust
+--8<-- "user-guide/sdk/agents/structured-output-behavior.rs:validation"
+```
+
+</Tab>
 </Tabs>
 
 The model doesn't know today's date, so its first guess can fail the check:
@@ -228,7 +267,8 @@ make the model's reply match your schema (native structured output). If native
 structured output isn't available or rejects your schema, the retry offers the
 structured output tool without requiring it, so the result is best effort. A schema
 that native structured output can't represent, such as one with
-<Syntax py="dict" ts="record" plain />, tuple, or untyped fields, goes straight to that
+<Syntax py="dict" ts="record" rs="untyped JSON" plain />, tuple, or untyped
+fields, goes straight to that
 best-effort retry, and Strands warns about it.
 
 <Tabs>
@@ -270,10 +310,21 @@ Strands drops the text reply and retries without adding a message, so there's no
 prompt to configure.
 
 </Tab>
+<Tab label="Rust">
+
+Strands drops the text reply and retries with the `strands_structured_output`
+tool required when the provider supports forced tool choice. Otherwise, it uses
+provider-native structured output or offers the tool without requiring it.
+
+</Tab>
 </Tabs>
 
 If the retry still doesn't return valid structured output, the call raises
-<Syntax py="StructuredOutputException" ts="StructuredOutputError" />. Catch it where
+<Syntax
+  py="StructuredOutputException"
+  ts="StructuredOutputError"
+  rs="StructuredOutputError"
+/>. Catch it where
 your application can fall back.
 [Return structured output](./structured-output.md#request-structured-output) shows an
 example. To retry again instead of raising, set an attempt limit.
@@ -281,24 +332,30 @@ example. To retry again instead of raising, set an attempt limit.
 ## Limit attempts
 
 To cap how many times the model can fail to produce structured output, set
-<Syntax py="limits['structured_output_attempts']" ts="limits.structuredOutputAttempts" />
+<Syntax
+  py="limits['structured_output_attempts']"
+  ts="limits.structuredOutputAttempts"
+  rs="InvokeLimits::structured_output_attempts"
+/>
 on the call. Each model response that fails counts as one attempt: a structured
 output tool call that fails validation, or a forced retry that doesn't return valid
 structured output. With a limit set, Strands retries a failed forced retry instead of
 raising. Calls to your other tools before the forced retry don't count.
 
-In TypeScript, a forced retry that a content filter or guardrail stops also counts as a
-failed attempt and is retried within the limit. In Python, that retry ends the call with
-its own stop reason, such as
-<Syntax py="content_filtered" ts="contentFiltered" />.
-
 When the limit is reached, the call stops before the next model call. The result has
 the stop reason
-<Syntax py="limit_structured_output_attempts" ts="limitStructuredOutputAttempts" />
+<Syntax
+  py="limit_structured_output_attempts"
+  ts="limitStructuredOutputAttempts"
+  rs="StopReason::LimitStructuredOutputAttempts"
+/>
 and no structured output.
 
 <Tabs>
 <Tab label="Python">
+
+If a content filter or guardrail stops a forced retry, the call ends with its own
+stop reason, such as `content_filtered`.
 
 ```python
 from pydantic import BaseModel
@@ -325,10 +382,23 @@ else:
 </Tab>
 <Tab label="TypeScript">
 
+If a content filter or guardrail stops a forced retry, Strands counts it as a
+failed attempt and retries within the limit.
+
 ```typescript
 --8<-- "user-guide/sdk/agents/structured-output-behavior_imports.ts:attempt_limit_imports"
 
 --8<-- "user-guide/sdk/agents/structured-output-behavior.ts:attempt_limit"
+```
+
+</Tab>
+<Tab label="Rust">
+
+If a content filter or guardrail stops a forced retry, Strands counts it as a
+failed attempt and retries within the limit.
+
+```rust
+--8<-- "user-guide/sdk/agents/structured-output-behavior.rs:attempt_limit"
 ```
 
 </Tab>
@@ -337,5 +407,9 @@ else:
 The limit covers the whole request, like the other
 [invocation limits](./lifecycle-controls.md#cap-the-work-one-call-can-do). Agents that
 run as tools in the same request count toward it, and passing
-<Syntax py="result.invocation_context" ts="result.invocationContext" /> to a later call
+<Syntax
+  py="result.invocation_context"
+  ts="result.invocationContext"
+  rs="result.invocation_context()"
+/> to a later call
 continues it.

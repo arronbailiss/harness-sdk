@@ -7,6 +7,7 @@ tags: [memory]
 sourceLinks:
   - path: strands-py/src/strands/vended_memory_stores/file_memory_store/store.py
   - path: strands-ts/src/vended-memory-stores/file-memory-store/store.ts
+  - path: strands-rs/strands/src/vended_memory_stores/file_memory_store/mod.rs
 addedDate: 2026-10-20
 sidebar:
   label: "File Store"
@@ -52,12 +53,19 @@ agent = Agent(
 --8<-- "user-guide/sdk/memory/file-memory-store.ts:basic"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/memory/file-memory-store.rs:basic"
+```
+</Tab>
 </Tabs>
 
 The agent can recall from the store right away, but
 nothing writes to it until you turn on a way to add
 memories. Pass
-<Syntax py="add_tool_config=True" ts="addToolConfig: true" />
+<Syntax py="add_tool_config=True" ts="addToolConfig: true"
+rs="add_tool_config(true.into())" />
 to the `MemoryManager` to give the agent the
 [`add_memory` tool](./managing-memory#memory-tools), or set
 `extraction` on the store to turn on
@@ -93,7 +101,8 @@ operations. It defaults to `LocalFileStorage` at
 The store also accepts the
 [shared `MemoryStore` fields](./managing-memory#stores) (`name`,
 `description`,
-<Syntax py="max_search_results" ts="maxSearchResults" />,
+<Syntax py="max_search_results" ts="maxSearchResults"
+rs="max_search_results" />,
 `writable`, `extraction`). `extraction` is off until you
 set it (see [Extraction](#extraction)).
 
@@ -128,6 +137,15 @@ store = FileMemoryStore(
 --8<-- "user-guide/sdk/memory/file-memory-store_imports.ts:custom_storage_imports"
 
 --8<-- "user-guide/sdk/memory/file-memory-store.ts:custom_storage"
+```
+</Tab>
+<Tab label="Rust">
+
+Use `InMemoryStorage` for an ephemeral store, or implement `Storage` for another
+backend:
+
+```rust
+--8<-- "user-guide/sdk/memory/file-memory-store.rs:custom_storage"
 ```
 </Tab>
 </Tabs>
@@ -199,6 +217,12 @@ for entry in results:
 --8<-- "user-guide/sdk/memory/file-memory-store.ts:search_and_add"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/memory/file-memory-store.rs:search_and_add"
+```
+</Tab>
 </Tabs>
 
 The store serializes concurrent writes through one
@@ -267,6 +291,11 @@ each search, so existing files are searchable:
 --8<-- "user-guide/sdk/memory/file-memory-store.ts:custom_search"
 ```
 </Tab>
+<Tab label="Rust">
+
+`KeywordSearchStrategy` is the default. Implement the `SearchStrategy` trait and
+attach it to a custom `Storage` backend to supply another ranking strategy.
+</Tab>
 </Tabs>
 
 See [BM25 search](../storage/search-strategies#bm25-search)
@@ -304,9 +333,16 @@ store = FileMemoryStore(
 --8<-- "user-guide/sdk/memory/file-memory-store.ts:extraction"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/memory/file-memory-store.rs:extraction"
+```
+</Tab>
 </Tabs>
 
-With <Syntax py="extraction=True" ts="extraction: true" />,
+With <Syntax py="extraction=True" ts="extraction: true"
+rs="extraction(true.into())" />,
 the store creates a **key-aware
 extractor** that reads the existing topic filenames from
 storage and injects them into the extraction prompt. The
@@ -378,10 +414,18 @@ the built-in extractor without replacing it:
 --8<-- "user-guide/sdk/memory/file-memory-store.ts:extraction_custom"
 ```
 </Tab>
+<Tab label="Rust">
+
+Set the key-aware extractor's model and system prompt without replacing it:
+
+```rust
+--8<-- "user-guide/sdk/memory/file-memory-store.rs:extraction_custom"
+```
+</Tab>
 </Tabs>
 
 The store implements `add` but not
-<Syntax py="add_messages" ts="addMessages" />, so
+<Syntax py="add_messages" ts="addMessages" rs="add_messages" />, so
 extraction runs client-side: a `ModelExtractor` distills
 facts from the conversation and writes each through `add`.
 

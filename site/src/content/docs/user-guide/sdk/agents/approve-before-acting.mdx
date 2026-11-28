@@ -7,6 +7,8 @@ tags: [interventions, tool-execution]
 sourceLinks:
   - path: strands-py/src/strands/vended_interventions/hitl/hitl.py
   - path: strands-ts/src/vended-interventions/hitl/hitl.ts
+  - path: strands-rs/strands/src/vended_interventions/hitl/mod.rs
+  - path: strands-rs/strands/src/vended_interventions/cedar/mod.rs
 ---
 
 An agent chooses and runs its own tools. Most calls are fine to run unattended, but a
@@ -62,6 +64,13 @@ agent("Delete the rotated logs in /var/log/app")
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/approve-before-acting.rs:classifier"
+```
+
+</Tab>
 </Tabs>
 
 Typical output:
@@ -101,8 +110,13 @@ option. Without a classifier, every tool call prompts.
 
 The classifier is a judgment, not a guarantee: it can rate a risky call safe. For a
 tool that must always ask, negate it with
-<Syntax py='allowed_tools=["!delete_files"]' ts="allowedTools: ['!delete_files']" />. A
-negated tool always prompts and can't be trusted.
+
+<Syntax
+  py='allowed_tools=["!delete_files"]'
+  ts="allowedTools: ['!delete_files']"
+  rs='allowed_tools: vec!["!delete_files".into()]'
+/>
+. A negated tool always prompts and can't be trusted.
 
 For limits no one can approve past, such as tools only some users may call, add
 [Cedar Authorization](./interventions/cedar-authorization.md) before
@@ -150,6 +164,22 @@ agent("Delete the rotated logs in /var/log/app", invocation_state={"user_id": "b
 --8<-- "user-guide/sdk/agents/approve-before-acting_imports.ts:cedar_imports"
 
 --8<-- "user-guide/sdk/agents/approve-before-acting.ts:cedar"
+```
+
+</Tab>
+<Tab label="Rust">
+
+Enable the `cedar` Cargo feature:
+
+```bash
+cargo add strands --features cedar
+```
+
+Invocation state is typed, so the principal resolver reads a `UserId` value
+rather than a string key:
+
+```rust
+--8<-- "user-guide/sdk/agents/approve-before-acting.rs:cedar"
 ```
 
 </Tab>

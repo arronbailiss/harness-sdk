@@ -7,6 +7,8 @@ sourceLinks:
   - path: strands-ts/src/registry/tool-registry.ts
   - path: strands-ts/src/tools/tool.ts
   - path: strands-ts/src/tools/tool-factory.ts
+  - path: strands-rs/strands/src/tools/registry.rs
+  - path: strands-rs/strands/src/agent/tool_caller.rs
 ---
 
 Once you have tools, whether you [wrote them yourself](custom-tools.md), pulled
@@ -43,6 +45,12 @@ agent("Get https://example.com and summarize the response status.")
 --8<-- "user-guide/sdk/tools/tools.ts:adding_tools"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/using-tools.rs:adding_tools"
+```
+</Tab>
 </Tabs>
 
 ## Loading Tools from Files
@@ -58,7 +66,14 @@ agent = Agent(tools=["/path/to/my_tool.py"])
 </Tab>
 <Tab label="TypeScript">
 
-Loading tools from a file path is available in the Python SDK.
+Import or construct tools as compiled values. Tool source files are not loaded
+from a path at runtime.
+
+</Tab>
+<Tab label="Rust">
+
+Construct tools as compiled values. Tool source files are not loaded from a
+path at runtime.
 
 </Tab>
 </Tabs>
@@ -79,19 +94,26 @@ from strands import Agent
 
 agent = Agent(load_tools_from_directory=True)
 ```
+
+:::note[Tool loading implications]
+When automatic tool loading is enabled, every `.py` file in `./tools/` is
+executed by the agent. Ensure that only safe, trusted code can be written to
+that directory.
+:::
 </Tab>
 <Tab label="TypeScript">
 
-Automatic loading and reloading from a directory is available in the Python SDK.
+Tools are imported as part of the application. Directory watching and runtime
+source reloading are not built in.
+
+</Tab>
+<Tab label="Rust">
+
+Tools are compiled into the application. Directory watching and runtime source
+reloading are not built in.
 
 </Tab>
 </Tabs>
-
-
-
-:::note[Tool Loading Implications]
-When enabling automatic tool loading, any Python file placed in the `./tools/` directory will be executed by the agent. Under the shared responsibility model, it is your responsibility to ensure that only safe, trusted code is written to the tool loading directory, as the agent will automatically pick up and execute any tools found there.
-:::
 
 ## Accessing Tools
 
@@ -117,13 +139,25 @@ Access the tools array directly:
 console.log(agent.tools)
 ```
 </Tab>
+<Tab label="Rust">
+
+Use `agent.tools()` to inspect the registered tools:
+
+```rust
+--8<-- "user-guide/sdk/tools/using-tools.rs:accessing_tools"
+```
+</Tab>
 </Tabs>
 
 
 By default, agents send tool definitions to the model in registration order. To
 keep identical tool catalogs stable across requests, for example when MCP servers
 return the same tools in different orders, turn on sorting with
-<Syntax py="Agent(sort_tools=True)" ts="new Agent({ sortTools: true })" />.
+<Syntax
+  py="Agent(sort_tools=True)"
+  ts="new Agent({ sortTools: true })"
+  rs="Agent::builder().sort_tools(true)"
+/>.
 Tool definitions are then sorted by name on every request the agent makes,
 including context summaries. This helps avoid prompt-cache misses; it does not
 enable caching.
@@ -154,6 +188,12 @@ agent('Read the "ideas" notebook.')
 
 ```typescript
 --8<-- "user-guide/sdk/tools/tools.ts:natural_language_invocation"
+```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/using-tools.rs:natural_language"
 ```
 </Tab>
 </Tabs>
@@ -201,6 +241,26 @@ Note `agent.tool` (singular) is the direct-call accessor; `agent.tools` (plural)
 The accessor resolves names by exact match first, then with underscores substituted for hyphens, then case-insensitively. `agent.tool.read_all` resolves to a tool registered as `read-all`. Calling a name that doesn't resolve throws `ToolNotFoundError`.
 
 By default, direct calls are recorded in the agent's message history. Pass `{ recordDirectToolCall: false }` to skip recording. This is required when calling tools during an active agent invocation (otherwise `ConcurrentInvocationError` is thrown), and useful for side-effect tools whose output should stay out of conversation context.
+</Tab>
+<Tab label="Rust">
+
+Use `agent.tool("name").invoke(input)`:
+
+The JSON input in this example uses `serde_json`:
+
+```bash
+cargo add serde_json
+```
+
+```rust
+--8<-- "user-guide/sdk/tools/using-tools.rs:direct_call"
+```
+
+Names resolve by exact match, then with underscores substituted for hyphens,
+then case-insensitively. Direct calls record their tool use and result in message
+history by default. Use `invoke_with` and
+`DirectToolCallOptions::builder().record_direct_tool_call(false).build()` to
+skip recording.
 </Tab>
 </Tabs>
 

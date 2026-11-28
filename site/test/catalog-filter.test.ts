@@ -48,6 +48,7 @@ describe('matchesFilters', () => {
   it('filters by language', () => {
     expect(matchesFilters(card, state({ languages: new Set(['python']) }))).toBe(true)
     expect(matchesFilters(card, state({ languages: new Set(['typescript']) }))).toBe(false)
+    expect(matchesFilters({ ...card, languages: ['rust'] }, state({ languages: new Set(['rust']) }))).toBe(true)
   })
 
   it('filters by badge', () => {
@@ -78,7 +79,7 @@ describe('URL state round-trip', () => {
     const s = state({
       search: 'sql',
       types: new Set(['tool', 'plugin']),
-      languages: new Set(['python']),
+      languages: new Set(['python', 'rust']),
       badges: new Set(['verified']),
       maintainedBy: new Set(['partner']),
       sdk: 'evals',
@@ -86,7 +87,7 @@ describe('URL state round-trip', () => {
     const back = queryToState(stateToQuery(s))
     expect(back.search).toBe('sql')
     expect(back.types).toEqual(new Set(['tool', 'plugin']))
-    expect(back.languages).toEqual(new Set(['python']))
+    expect(back.languages).toEqual(new Set(['python', 'rust']))
     expect(back.badges).toEqual(new Set(['verified']))
     expect(back.maintainedBy).toEqual(new Set(['partner']))
     expect(back.sdk).toBe('evals')
@@ -124,10 +125,14 @@ describe('URL state round-trip', () => {
   })
 
   it('drops unknown values when parsing', () => {
-    const back = queryToState('type=widget&lang=rust&sdk=nope')
+    const back = queryToState('type=widget&lang=go&sdk=nope')
     expect(back.types.size).toBe(0)
     expect(back.languages.size).toBe(0)
     expect(back.sdk).toBe('agents')
+  })
+
+  it('parses Rust language deep links', () => {
+    expect(queryToState('lang=rust').languages).toEqual(new Set(['rust']))
   })
 
   it('accepts every registered catalog type in type filters', () => {

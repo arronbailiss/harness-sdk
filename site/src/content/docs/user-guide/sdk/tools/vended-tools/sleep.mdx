@@ -5,13 +5,15 @@ tags: [tool-authoring]
 sourceLinks:
   - path: strands-ts/src/vended-tools/sleep/sleep.ts
   - path: strands-py/src/strands/vended_tools/sleep/sleep.py
+  - path: strands-rs/strands/src/vended_tools/sleep.rs
 ---
 
 Pauses the agent for a bounded number of seconds. Cancelling the enclosing
 invocation aborts the sleep immediately rather than waiting for the full
 duration, so a long timer never ties up a session the caller has moved on from.
 
-_Supported in: Node.js, modern browsers (TypeScript); all platforms (Python)._
+_Supported in: Node.js and modern browsers (TypeScript); all platforms
+(Python and Rust)._
 
 The maximum duration is configurable at construction (default: 60 seconds) and
 cannot be raised by the model. Negative, `NaN`, infinite, non-numeric, and
@@ -40,6 +42,13 @@ agent("Pause for two seconds, then continue.")
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/sleep.rs:example"
+```
+
+</Tab>
 </Tabs>
 
 **Custom maximum:**
@@ -62,6 +71,13 @@ from strands.vended_tools import make_sleep
 
 short_sleep = make_sleep(max_duration=5)
 agent = Agent(tools=[short_sleep])
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/sleep.rs:custom"
 ```
 
 </Tab>

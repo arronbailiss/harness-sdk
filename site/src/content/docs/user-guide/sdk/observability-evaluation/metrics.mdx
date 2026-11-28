@@ -2,6 +2,14 @@
 title: Metrics
 description: 'Track agent performance metrics in Strands: token usage, latency, tool call counts, and event loop cycles, all available through AgentResult.'
 tags: [observability]
+sourceLinks:
+  - path: strands-py/src/strands/telemetry/metrics.py
+  - path: strands-py/src/strands/agent/agent_result.py
+  - path: strands-ts/src/telemetry/meter.ts
+  - path: strands-ts/src/types/agent.ts
+  - path: strands-rs/strands/src/telemetry/meter.rs
+  - path: strands-rs/strands/src/agent/result.rs
+  - path: strands-rs/strands/src/telemetry/tracer.rs
 ---
 
 To understand how your agent performs, tune its behavior, and watch resource usage, read the metrics the SDK records on every invocation. Strands tracks these metrics automatically and returns them with each result.
@@ -46,7 +54,8 @@ The `metrics` attribute of `AgentResult` (an instance of [`EventLoopMetrics`](@a
 </Tab>
 <Tab label="TypeScript">
 
-The TypeScript SDK automatically tracks key metrics during agent execution through the `AgentMetrics` class:
+The SDK automatically tracks key metrics during agent execution through the
+`AgentMetrics` class:
 
 - **Token usage**: Input tokens, output tokens, total tokens consumed, and cache metrics
 - **Performance metrics**: Latency and execution time measurements
@@ -60,6 +69,20 @@ All these metrics are accessible through the `AgentResult` object returned when 
 ```
 
 The `metrics` property on `AgentResult` is an instance of `AgentMetrics` that holds the performance data for the agent's execution.
+</Tab>
+<Tab label="Rust">
+
+The SDK records token usage, model latency, loop cycles, and per-tool metrics in
+`AgentMetrics`. Read the optional snapshot from `AgentResult::metrics()`:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/metrics.rs:basic_metrics"
+```
+
+`accumulated_usage` contains token counts, while `cycle_count`,
+`total_duration`, and `accumulated_metrics` describe loop and model
+performance.
+
 </Tab>
 </Tabs>
 
@@ -155,6 +178,16 @@ This allows you to track metrics at both the individual invocation level and acr
 --8<-- "user-guide/sdk/observability-evaluation/metrics.ts:agent_loop_metrics"
 ```
 </Tab>
+<Tab label="Rust">
+
+`AgentMetrics` keeps recent invocation and cycle records. Use
+`latest_agent_invocation()` for the most recent invocation:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/metrics.rs:agent_loop_metrics"
+```
+
+</Tab>
 </Tabs>
 
 ## Tool Metrics
@@ -184,6 +217,16 @@ Tool metrics provide insights into:
 - **Computed statistics**: The `toolUsage` getter adds computed `averageTime` and `successRate` fields
 
 These metrics help you identify performance bottlenecks, tools with high error rates, and opportunities for optimization.
+</Tab>
+<Tab label="Rust">
+
+`tool_usage()` returns each tool's raw counts plus its computed average time
+and success rate:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/metrics.rs:tool_metrics"
+```
+
 </Tab>
 </Tabs>
 
@@ -249,6 +292,20 @@ The `AgentMetrics` class implements `toJSON()`, so you can serialize the complet
 
 This summary provides a complete picture of the agent's execution, including cycle information, token usage, and tool performance.
 </Tab>
+<Tab label="Rust">
+
+`AgentMetrics` implements `Serialize`, so you can produce a complete JSON
+snapshot. Add `serde_json` for this example:
+
+```bash
+cargo add serde_json
+```
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/metrics.rs:metrics_summary"
+```
+
+</Tab>
 </Tabs>
 
 ## Local Execution Traces
@@ -300,6 +357,20 @@ Each `AgentTrace` contains:
 - **message**: The model output message (for model invocation traces)
 
 Traces are separate from `AgentMetrics` and are accessed via `result.traces`. `AgentResult.toJSON()` excludes traces and metrics by default to keep API responses lean, so access them directly via `result.traces` and `result.metrics`.
+</Tab>
+<Tab label="Rust">
+
+The SDK records the same in-memory hierarchy in `AgentTrace` values. Access them
+through `AgentResult::traces()`:
+
+```rust
+--8<-- "user-guide/sdk/observability-evaluation/metrics.rs:local_traces"
+```
+
+Each trace exposes its name, duration in milliseconds, child traces, metadata,
+and optional model message. Result serialization omits traces and metrics, so
+read them directly before forwarding the result.
+
 </Tab>
 </Tabs>
 

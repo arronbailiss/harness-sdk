@@ -5,6 +5,7 @@ tags: [tool-authoring]
 sourceLinks:
   - path: strands-ts/src/vended-tools/edit/edit.ts
   - path: strands-py/src/strands/vended_tools/edit/edit.py
+  - path: strands-rs/strands/src/vended_tools/edit.rs
 ---
 
 Lets your agent make surgical, in-place changes to a text file by replacing an exact, unique string (`old_str` must appear in the file exactly once).
@@ -35,6 +36,13 @@ agent("In /tmp/hello.txt, replace 'world' with 'Strands'.")
 --8<-- "user-guide/sdk/tools/vended-tools/edit_imports.ts:edit_import"
 
 --8<-- "user-guide/sdk/tools/vended-tools/edit.ts:edit_example"
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/edit.rs:example"
 ```
 
 </Tab>

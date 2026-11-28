@@ -73,7 +73,7 @@ const issueHref = documentationIssueHref(issueRepository, pageUrl)
 
 <script>
   import { LANGUAGE_STORAGE_KEY, DEFAULT_LANGUAGE_LABEL } from '../../util/language-preference'
-  import { showFooterLanguage } from '../../util/footer'
+  import { bindFooterLanguage } from '../../util/footer'
 
   // For products released per language, show only the stream matching the
   // reader's language preference.
@@ -85,8 +85,7 @@ const issueHref = documentationIssueHref(issueRepository, pageUrl)
     }
   }
 
-  showFooterLanguage(document, storedLanguage())
-  window.addEventListener('lang-change', (e) => showFooterLanguage(document, (e as CustomEvent<string>).detail))
+  bindFooterLanguage(document, window, storedLanguage())
 </script>
 
 <style>

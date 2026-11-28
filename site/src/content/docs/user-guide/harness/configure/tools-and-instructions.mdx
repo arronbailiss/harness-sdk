@@ -5,6 +5,7 @@ sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-ts/src/agent.ts
   - path: harness-py/src/strands_harness/prompt.py
+  - path: harness-rs/strands-harness/src/agent.rs
 sidebar:
   label: "Add tools and instructions"
 ---
@@ -41,6 +42,11 @@ harness's contract handles the general "how to act like an agent" behavior, so k
         })
         ```
       </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/tools-and-instructions.rs:instructions"
+        ```
+      </Tab>
     </Tabs>
   </Tab>
   <Tab label="SDK">
@@ -65,13 +71,19 @@ harness's contract handles the general "how to act like an agent" behavior, so k
         })
         ```
       </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/tools-and-instructions.rs:system_prompt"
+        ```
+      </Tab>
     </Tabs>
   </Tab>
 </Tabs>
 
-If you pass a full `system_prompt` through to the `Agent` instead, `instructions` is
-ignored: the prompt you supply replaces the contract entirely. To build on the contract
-programmatically, see [compose with the Strands Harness SDK](../../composing-with-sdk/).
+If you supply a full system prompt to the `Agent`, the harness ignores
+`instructions`: the prompt you supply replaces the contract entirely. To build on
+the contract programmatically, see
+[compose with the Strands Harness SDK](../../composing-with-sdk/).
 
 ## Register your own tools
 
@@ -114,6 +126,11 @@ built-in ones. Define them the same way you would for any Strands agent:
     })
     ```
   </Tab>
+  <Tab label="Rust">
+    ```rust
+    --8<-- "user-guide/harness/configure/tools-and-instructions.rs:custom_tool"
+    ```
+  </Tab>
 </Tabs>
 
 A tool name must be unique across every source (built-in tools, `tools`, and plugin-vended
@@ -124,8 +141,9 @@ built-in first.
 ## Select or disable built-in tools
 
 The built-in tools are `shell`, `read`, `write`, `edit`, `web_fetch`, `web_search`,
-`programmatic_tool_caller`, and `subagent`, all on by default. Pass `builtin_tools` a subset to narrow the
-set, or an empty list to turn them all off and bring your own:
+`programmatic_tool_caller`, and `subagent`, all on by default. Pass a subset with the
+built-in-tools option to narrow the set, or an empty list to disable all built-ins and
+bring your own:
 
 <Tabs>
   <Tab label="Strands harness">
@@ -142,6 +160,11 @@ set, or an empty list to turn them all off and bring your own:
         import { createHarness } from '@strands-agents/harness'
 
         const agent = await createHarness({ builtinTools: ['read', 'shell'] }) // [] for none
+        ```
+      </Tab>
+      <Tab label="Rust">
+        ```rust
+        --8<-- "user-guide/harness/configure/tools-and-instructions.rs:builtin_tools"
         ```
       </Tab>
     </Tabs>
@@ -169,6 +192,10 @@ set, or an empty list to turn them all off and bring your own:
         const agent = new Agent({ tools: [fileEditor, bash] })
         ```
       </Tab>
+      <Tab label="Rust">
+        The raw SDK has no harness built-in toggle. Pass exactly the tools you want to
+        `Agent::builder().tools(...)`.
+      </Tab>
     </Tabs>
   </Tab>
 </Tabs>
@@ -181,9 +208,9 @@ does, see [shell and file tools](../../tools/shell-and-files/),
 ## Change the web_fetch summarizer
 
 `web_fetch` answers over a fetched page using a small, fast summarizer model chosen for
-your main provider so credentials line up. Override it with `{"web_fetch": {"model": ...}}` in `builtin_tools`, which takes
-the same forms as `model`. This is covered on the
-[web access](../../tools/web-access/) page.
+your main provider so credentials line up. Configure the `web_fetch` built-in with a
+model override, which accepts the same model forms as the main agent. See
+[web access](../../tools/web-access/) for details.
 
 For the full option list, see the
 [configuration reference](../../reference/configuration/).

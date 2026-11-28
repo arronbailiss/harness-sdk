@@ -1,6 +1,11 @@
 ---
 import { pathWithBase } from '../../util/links'
 import { LANGUAGE_STORAGE_KEY, DEFAULT_LANGUAGE_LABEL } from '../../util/language-preference'
+import { SDK_LANGUAGE_LABELS } from '../../config/languages'
+
+const LANGUAGE_SLUGS = Object.fromEntries(
+  Object.entries(SDK_LANGUAGE_LABELS).map(([slug, label]) => [label, slug])
+)
 ---
 
 <div class="keep-going">
@@ -12,7 +17,14 @@ import { LANGUAGE_STORAGE_KEY, DEFAULT_LANGUAGE_LABEL } from '../../util/languag
   <a href="https://discord.gg/strands">Join Discord →</a>
 </div>
 
-<script is:inline define:vars={{ STORAGE_KEY: LANGUAGE_STORAGE_KEY, DEFAULT_LANG: DEFAULT_LANGUAGE_LABEL }}>
+<script
+  is:inline
+  define:vars={{
+    STORAGE_KEY: LANGUAGE_STORAGE_KEY,
+    DEFAULT_LANG: DEFAULT_LANGUAGE_LABEL,
+    LANGUAGE_SLUGS,
+  }}
+>
   (function () {
     function updateApiLink() {
       var link = document.getElementById('keep-going-api-link');
@@ -24,11 +36,8 @@ import { LANGUAGE_STORAGE_KEY, DEFAULT_LANGUAGE_LABEL } from '../../util/languag
         lang = DEFAULT_LANG;
       }
       var href = link.getAttribute('href') || '';
-      if (lang === 'Python') {
-        link.setAttribute('href', href.replace('typescript', 'python'));
-      } else {
-        link.setAttribute('href', href.replace('python', 'typescript'));
-      }
+      var slug = LANGUAGE_SLUGS[lang] || 'typescript';
+      link.setAttribute('href', href.replace(/\/api\/(?:python|typescript|rust)\//, '/api/' + slug + '/'));
     }
 
     if (document.readyState === 'loading') {

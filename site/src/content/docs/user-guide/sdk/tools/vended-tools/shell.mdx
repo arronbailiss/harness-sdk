@@ -6,15 +6,20 @@ sourceLinks:
   - path: strands-ts/src/vended-tools/bash/bash.ts
   - path: strands-ts/src/vended-tools/shell/make-shell.ts
   - path: strands-py/src/strands/vended_tools/shell/shell.py
+  - path: strands-rs/strands/src/vended_tools/shell.rs
 ---
 
 Lets your agent run shell commands and act on the output. The two SDKs expose
 different tools here:
 
 - **TypeScript `bash`** spawns a persistent `bash` process on the host. Shell state (variables, working directory, exported functions) persists across invocations within the same session, so the agent can build up context incrementally. Sessions can be restarted to clear state.
-- **Python `shell`** (and TypeScript's `makeShell`) routes each command through the agent's [Sandbox](../../sandbox/index.mdx) and is stateless: every call runs in a fresh shell, so variables and the working directory do not carry over. The sandbox decides the interpreter (`sh` locally and in Docker, the remote login shell over SSH), so use portable POSIX syntax.
+- **Python and Rust `shell`** (and TypeScript's `makeShell`) route each
+  command through the agent's [Sandbox](../../sandbox/index.mdx) and are
+  stateless: every call runs in a fresh shell, so variables and the working
+  directory do not carry over.
 
-_Supported in: Node.js on Unix/Linux/macOS (TypeScript), all platforms (Python)._
+_Supported in: Node.js on Unix/Linux/macOS (TypeScript), all platforms
+(Python and Rust)._
 
 :::caution[Security Warning]
 These tools execute arbitrary shell commands. Without a [Sandbox](../../sandbox/index.mdx), commands run with the full permissions of the process. Only use with trusted input and consider running in a [sandboxed environment](../../sandbox/index.mdx) for production.
@@ -40,6 +45,13 @@ from strands.vended_tools import shell
 
 agent = Agent(tools=[shell])
 agent("List all Python files in the current directory and count them")
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/shell.rs:example"
 ```
 
 </Tab>

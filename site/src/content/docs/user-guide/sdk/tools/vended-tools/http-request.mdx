@@ -5,19 +5,33 @@ tags: [tool-authoring]
 sourceLinks:
   - path: strands-ts/src/vended-tools/http-request/http-request.ts
   - path: strands-py/src/strands/vended_tools/http_request/http_request.py
+  - path: strands-rs/strands/src/vended_tools/http_request.rs
 ---
 
 Lets your agent call external APIs and fetch web content. Supports all HTTP methods, custom headers, and request bodies. Default timeout is 30 seconds.
 
-_Supported in: Python; Node.js 22+, modern browsers (TypeScript)._
-
 <Tabs>
 <Tab label="Python">
 
-The Python tool delegates all networking to an `httpx.AsyncClient`. Use the `make_http_request` factory to supply a pre-configured client with authentication, timeouts, redirects, proxies, or other transport-level configuration.
+Supported on every platform supported by the SDK.
+
+The tool delegates networking to an `httpx.AsyncClient`. Use the
+`make_http_request` factory to supply a pre-configured client with authentication,
+timeouts, redirects, proxies, or other transport-level configuration.
 
 </Tab>
 <Tab label="TypeScript">
+
+Supported in Node.js 22 or newer and modern browsers.
+
+</Tab>
+<Tab label="Rust">
+
+Supported on every platform supported by the SDK.
+
+The tool uses its built-in HTTP client. Configure request headers, body, and timeout
+through each tool call.
+
 </Tab>
 </Tabs>
 
@@ -58,6 +72,31 @@ agent = Agent(tools=[tool])
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/tools/vended-tools/http-request.rs:example"
+```
+
+</Tab>
 </Tabs>
 
-Full API reference: [TypeScript](https://github.com/strands-agents/harness-sdk/blob/main/strands-ts/src/vended-tools/http-request/README.md), [Python](https://github.com/strands-agents/harness-sdk/blob/main/strands-py/src/strands/vended_tools/http_request/README.md)
+<Tabs>
+<Tab label="Python">
+
+See the
+[Python API reference](https://github.com/strands-agents/harness-sdk/blob/main/strands-py/src/strands/vended_tools/http_request/README.md).
+
+</Tab>
+<Tab label="TypeScript">
+
+See the
+[TypeScript API reference](https://github.com/strands-agents/harness-sdk/blob/main/strands-ts/src/vended-tools/http-request/README.md).
+
+</Tab>
+<Tab label="Rust">
+
+See the [Rust API reference](../../../../../api/rust/).
+
+</Tab>
+</Tabs>

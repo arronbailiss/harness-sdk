@@ -8,6 +8,9 @@ sourceLinks:
   - path: strands-py/src/strands/types/events.py
   - path: strands-ts/src/middleware/stages.ts
   - path: strands-ts/src/middleware/registry.ts
+  - path: strands-rs/strands/src/middleware/stages.rs
+  - path: strands-rs/strands/src/middleware/registry.rs
+  - path: strands-rs/strands/src/middleware/types.rs
 ---
 
 Middleware is a mechanism for wrapping stages of an agent to influence or change how
@@ -44,6 +47,14 @@ in) and a result (what comes back), and its handlers can transform either one.
 | [`ExecuteToolStage`](@api/typescript/ExecuteToolStage) | A single tool call | [`ExecuteToolContext`](@api/typescript/ExecuteToolContext) | [`ExecuteToolResult`](@api/typescript/ExecuteToolResult) |
 
 </Tab>
+<Tab label="Rust">
+
+| Stage | Wraps | Context | Result |
+|---|---|---|---|
+| `InvokeModelStage` | One model call | `InvokeModelContext` | `InvokeModelResult` |
+| `ExecuteToolStage` | One tool call | `ExecuteToolContext` | `ExecuteToolResult` |
+
+</Tab>
 </Tabs>
 
 Tool execution also supports
@@ -76,7 +87,12 @@ flowchart LR
 
 ## Middleware registration
 
-Register a handler with <Syntax py="agent.add_middleware()" ts="agent.addMiddleware()" />,
+Register a handler with
+<Syntax
+  py="agent.add_middleware()"
+  ts="agent.addMiddleware()"
+  rs="agent.add_middleware()"
+/>,
 passing a stage token for the Wrap phase or a phase sub-token for a pure transform.
 
 Transform the context before the model runs with the Input phase:
@@ -112,10 +128,30 @@ The context is read-only, so return a modified copy with object spread rather th
 mutating it in place.
 
 </Tab>
+<Tab label="Rust">
+
+The Rust examples on this page use these direct dependencies:
+
+```bash
+cargo add futures serde_json
+cargo add tokio --features time
+```
+
+```rust
+--8<-- "user-guide/sdk/agents/middleware.rs:register_input"
+```
+
+The context is owned by the handler. Change the copy and return it.
+
+</Tab>
 </Tabs>
 
 The new prompt applies to this model call only.
-<Syntax py="agent.system_prompt" ts="agent.systemPrompt" /> is unchanged, so the next call
+<Syntax
+  py="agent.system_prompt"
+  ts="agent.systemPrompt"
+  rs="agent.system_prompt()"
+/> is unchanged, so the next call
 starts from it again.
 
 Transform the result after the model runs with the Output phase:
@@ -143,6 +179,13 @@ agent.add_middleware(InvokeModelStage.Output, log_stop_reason)
 --8<-- "user-guide/sdk/agents/middleware_imports.ts:register_output_imports"
 
 --8<-- "user-guide/sdk/agents/middleware.ts:register_output"
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/middleware.rs:register_output"
 ```
 
 </Tab>
@@ -189,6 +232,17 @@ The result is the value the generator returns via `yield* next(context)`. Regist
 returns a cleanup function; call it to remove the handler.
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/middleware.rs:register_wrap"
+```
+
+`StageStream::map_result()` forwards every stream event and transforms only the
+final stage result. Registration returns a `MiddlewareCleanup`; call
+`remove()` to unregister the handler.
+
+</Tab>
 </Tabs>
 
 ## Retrying, caching, and short-circuiting
@@ -228,6 +282,13 @@ agent.add_middleware(InvokeModelStage, retry_on_throttle)
 --8<-- "user-guide/sdk/agents/middleware_imports.ts:retry_imports"
 
 --8<-- "user-guide/sdk/agents/middleware.ts:retry"
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/middleware.rs:retry"
 ```
 
 </Tab>
@@ -279,6 +340,13 @@ yields it back on a hit.
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/middleware.rs:cache"
+```
+
+</Tab>
 </Tabs>
 
 ## Routing a call to a different model
@@ -316,6 +384,13 @@ agent.add_middleware(InvokeModelStage.Input, route_by_size)
 --8<-- "user-guide/sdk/agents/middleware_imports.ts:model_routing_imports"
 
 --8<-- "user-guide/sdk/agents/middleware.ts:model_routing"
+```
+
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/middleware.rs:model_routing"
 ```
 
 </Tab>
@@ -364,6 +439,13 @@ agent.add_middleware(ExecuteToolStage, approval_gate)
 ```
 
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "user-guide/sdk/agents/middleware.rs:tool_gate"
+```
+
+</Tab>
 </Tabs>
 
 ## How middleware relates to hooks
@@ -380,7 +462,11 @@ wrapping it, and they work differently:
   per-attempt observability, put that logic in middleware, not a hook.
 - **Hooks change agent state; middleware changes the call.** To give one model call a
   different system prompt from a hook, you set
-  <Syntax py="agent.system_prompt" ts="agent.systemPrompt" /> and restore it afterward.
+  <Syntax
+    py="agent.system_prompt"
+    ts="agent.systemPrompt"
+    rs="agent.set_system_prompt()"
+  /> and restore it afterward.
   Middleware passes a modified context to `next`, and the agent's own state is never
   touched.
 

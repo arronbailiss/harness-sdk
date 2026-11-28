@@ -7,6 +7,8 @@ sourceLinks:
   - path: strands-py/src/strands/tools/decorator.py
   - path: strands-ts/src/types/messages.ts
   - path: strands-ts/src/tools/tool-factory.ts
+  - path: strands-rs/strands/src/types/messages.rs
+  - path: strands-rs/strands/src/tools/function_tool.rs
 ---
 
 A tool returns a result that the agent adds to the conversation and sends back to
@@ -49,6 +51,21 @@ The `ToolResultBlock` schema:
 }
 ```
 </Tab>
+<Tab label="Rust">
+
+`ToolResultBlock` carries the tool-use ID, status, content, and an optional
+in-memory error:
+
+The JSON examples on this page use `serde_json`:
+
+```bash
+cargo add serde_json
+```
+
+```rust
+--8<-- "user-guide/sdk/tools/tool-results.rs:result_structure"
+```
+</Tab>
 </Tabs>
 
 ## Content Types
@@ -56,12 +73,44 @@ The `ToolResultBlock` schema:
 The `content` field is a list of content blocks. Each block carries one type of
 output:
 
+<Tabs>
+<Tab label="Python">
+
 - `text`: a string of text output
 - `json`: any JSON-serializable data structure
+- `image`: image content
+- `document`: document content
 
-Both SDKs also accept `image` and `document` blocks; TypeScript additionally
-accepts `video`. A single result can mix block types, for example a text summary
-alongside a JSON payload.
+A result can mix block types, for example a text summary alongside a JSON
+payload.
+
+</Tab>
+<Tab label="TypeScript">
+
+- `text`: a string of text output
+- `json`: any JSON-serializable data structure
+- `image`: image content
+- `document`: document content
+- `video`: video content
+
+A result can mix block types, for example a text summary alongside a JSON
+payload.
+
+</Tab>
+<Tab label="Rust">
+
+- `text`: a string of text output
+- `json`: any JSON-serializable data structure
+- `image`: image content
+- `document`: document content
+- `video`: video content
+- tool-reference content for deferred tool loading
+
+A result can mix block types, for example a text summary alongside a JSON
+payload.
+
+</Tab>
+</Tabs>
 
 ## Response Examples
 
@@ -130,6 +179,14 @@ An error response carries an `'error'` status and an optional [`Error`](https://
 }
 ```
 </Tab>
+<Tab label="Rust">
+
+Use the `success` and `error` constructors:
+
+```rust
+--8<-- "user-guide/sdk/tools/tool-results.rs:response_examples"
+```
+</Tab>
 </Tabs>
 
 ## How Return Values Become Tool Results
@@ -150,5 +207,23 @@ The `tool()` function converts a callback's return value into a `ToolResultBlock
 
 1. A value of type `string | number | boolean | null | { [key: string]: JSONValue } | JSONValue[]` is converted to a `ToolResultBlock`.
 2. A thrown exception is caught and converted to an error response.
+</Tab>
+<Tab label="Rust">
+
+The `#[tool]` macro converts a function's return value into a
+`ToolResultBlock`:
+
+1. A serializable scalar becomes text. A serializable object normally becomes
+   JSON; a one-key object shaped like a supported content block becomes that
+   `ToolResultContent` variant.
+2. A `Vec<ToolResultContent>` becomes the content of a successful result.
+3. A returned `ToolResultBlock` is used directly after the macro assigns the
+   current tool-use ID.
+4. An `Err` normally becomes an error result. `InterruptError` instead becomes
+   `ToolOutcome::Interrupt`, which pauses the invocation.
+
+```rust
+--8<-- "user-guide/sdk/tools/tool-results.rs:return_conversion"
+```
 </Tab>
 </Tabs>
