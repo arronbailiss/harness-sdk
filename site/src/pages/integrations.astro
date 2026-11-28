@@ -10,6 +10,7 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro'
 import CatalogCard from '../components/catalog/CatalogCard.astro'
 import CatalogFacets from '../components/catalog/CatalogFacets.astro'
 import { CATALOG_TYPES, MAINTAINED_BY_TIERS } from '../components/catalog/types'
+import { SDK_LANGUAGES } from '../config/languages'
 import { toCardModel, sortEntries, type CatalogStatsFile } from '../util/catalog'
 import { pathWithBase } from '../util/links'
 import { integrationsSchema } from '../util/structured-data'
@@ -31,6 +32,9 @@ const showSdkFacet = cards.some((c) => c.sdk === 'evals')
 const hasVerified = cards.some((c) => c.badges.includes('verified'))
 const hasFeatured = cards.some((c) => c.featured)
 const hasNew = cards.some((c) => c.badges.includes('new'))
+const availableLanguages = SDK_LANGUAGES.filter((language) =>
+  cards.some((card) => card.languages.includes(language))
+)
 
 // Counts span both SDKs while filtering is per-SDK; with no evals entries the
 // two coincide, so if/when evals entries land these need client-side recompute.
@@ -95,6 +99,7 @@ const sidebar = [
         the mobile filter bar) and drives the same filter state document-wide. */}
     <div class="cat-facets" data-pagefind-ignore>
       <CatalogFacets
+        availableLanguages={availableLanguages}
         maintainedBy={maintainedByFacets}
         showSdkFacet={showSdkFacet}
         hasVerified={hasVerified}
@@ -146,7 +151,7 @@ const sidebar = [
   const badgeBtns = Array.from(document.querySelectorAll<HTMLElement>('[data-cat-badge]'))
   const maintainedBtns = Array.from(document.querySelectorAll<HTMLElement>('[data-cat-maintained]'))
   const sdkBtns = Array.from(document.querySelectorAll<HTMLElement>('[data-cat-sdk]'))
-  const langBtns = Array.from(document.querySelectorAll<HTMLElement>('[data-cat-lang]'))
+  const langBtns = Array.from(document.querySelectorAll<HTMLElement>('[data-cat-lang]:not(:disabled)'))
   const emptyEl = document.querySelector<HTMLElement>('[data-cat-empty]')
   const countEl = document.querySelector<HTMLElement>('[data-cat-count]')
 

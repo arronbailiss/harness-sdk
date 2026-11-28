@@ -1,7 +1,6 @@
 ---
 title: Gate tool calls with interventions
 description: "Gate Strands harness's tool calls behind human approval or a policy: an ask/smart preset, a natural-language rule, a Cedar policy, or a Strands Harness SDK handler."
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/interventions.py
   - path: harness-ts/src/interventions.ts
@@ -166,12 +165,12 @@ own rubric:
 ## Enforce a Cedar policy
 
 A string ending in `.cedar` loads a [Cedar](../../../sdk/agents/interventions/cedar-authorization/)
-policy file for programmatic authorization. Cedar needs an optional dependency:
-`strands-agents[cedar]` in Python, the `@cedar-policy/cedar-wasm` package in TypeScript,
-or the `cedar` Cargo feature in Rust.
+policy file for programmatic authorization.
 
 <Tabs>
   <Tab label="Python">
+    Install `strands-agents[cedar]` before loading a policy.
+
     ```python
     from strands_harness import create_harness
 
@@ -179,6 +178,8 @@ or the `cedar` Cargo feature in Rust.
     ```
   </Tab>
   <Tab label="TypeScript">
+    Install `@cedar-policy/cedar-wasm` before loading a policy.
+
     ```typescript
     import { createHarness } from '@strands-agents/harness'
 
@@ -186,6 +187,9 @@ or the `cedar` Cargo feature in Rust.
     ```
   </Tab>
   <Tab label="Rust">
+    The default crate features include Cedar. If you disable default features, include
+    `cedar` with the other features your application uses.
+
     ```rust
     --8<-- "user-guide/harness/configure/interventions.rs:cedar"
     ```

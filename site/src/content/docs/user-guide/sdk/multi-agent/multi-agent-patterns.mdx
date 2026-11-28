@@ -4,7 +4,6 @@ description: >-
   Choose how to coordinate agents: delegate through tools, write a workflow,
   define a Graph, or use a Swarm. Let an agent build a Graph with the vended tool.
 tags: [multi-agent]
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/multiagent/base.py
   - path: strands-py/src/strands/multiagent/graph.py
@@ -104,8 +103,8 @@ of three phases: **research** (gather), **analysis** (reason), and **review**
 |---|---|---|
 | **[Agents as tools](./agents-as-tools.md)** | The orchestrator LLM picks a specialist per query. | One agent delegates a research or analysis sub-question to an expert, then folds the answer back in. |
 | **[Workflow in your code](./workflow.md)** | Your application calls agents in a defined order and passes results between them. | Research, analysis, and review always run in the same sequence. Your code handles failures and decides whether to continue. |
-| **[Graph](./graph.md)** | Fixed edges (not in Rust). | Parallel or cyclic flows. |
-| **[Swarm](./swarm.md)** | Handoffs (not in Rust). | Self-routing teams. |
+| **[Graph](./graph.md)** | Fixed edges. | Parallel or cyclic flows. |
+| **[Swarm](./swarm.md)** | Handoffs. | Self-routing teams. |
 
 <CardGrid>
   <LinkCard
@@ -159,7 +158,7 @@ Use the Graph SDK API when you want to define the nodes and edges yourself.
 | Execution flow | Follows the edges: fixed chains, parallel branches, or conditional routes. | Sequential and autonomous. | Follows your application logic; you schedule any parallel work. |
 | Cycles | Yes. | Yes. | Use loops in your application code. |
 | State sharing | Shared state object all nodes read and write. | Shared context and working memory. | Your code passes results between agents. |
-| Error handling | A conditional edge can route on a result a node returns, such as a validator's verdict. Execution errors are not routed to another node. In Python, a node exception raises from the graph call and ends the run. In TypeScript, the failed node records `FAILED`, its downstream nodes do not run, and parallel branches continue. Timeouts end the run in both (see [Graph](./graph.md)). | Agents can hand off to an error specialist; handoff limits and timeouts stop runaway loops by ending the run. | Your code catches errors and decides whether to retry, stop, or continue. There is no separate orchestrator status to inspect. |
+| Error handling | A conditional edge can route on a result a node returns, such as a validator's verdict. Execution errors are not routed to another node, and timeouts end the run (see [Graph](./graph.md)). | Agents can hand off to an error specialist; handoff limits and timeouts stop runaway loops by ending the run. | Your code catches errors and decides whether to retry, stop, or continue. There is no separate orchestrator status to inspect. |
 
 The sections below give one or two concrete triggers for each.
 
@@ -174,8 +173,26 @@ conditional edges let the next step depend on what the current one returned.
 - **Validation with a rejection path**: an agent validates data, and conditional
   edges that read its verdict route the data to a processing node or a
   rejection-handling node. This routes on a returned result. An exception
-  raised while a node runs is never routed: in Python it ends the run, and in
-  TypeScript the node records `FAILED` and its downstream nodes do not run.
+  raised while a node runs is never routed.
+
+<Tabs>
+<Tab label="Python">
+
+A node exception raises from the graph call and ends the run.
+
+</Tab>
+<Tab label="TypeScript">
+
+A failed node records `FAILED`, its downstream nodes do not run, and parallel
+branches continue.
+
+</Tab>
+<Tab label="Rust">
+
+Graph is not available.
+
+</Tab>
+</Tabs>
 
 #### Reach for a Swarm
 
@@ -346,86 +363,79 @@ else:
 </Tab>
 <Tab label="Rust">
 
-The Rust SDK supports agents as tools and workflows in application code.
-The Graph and Swarm orchestrators used by this supervisor are not available.
+Agents as tools and workflows in application code are available. The Graph and
+Swarm orchestrators used by this supervisor are not.
 
 </Tab>
 </Tabs>
 
 ### How each guardrail works
 
-- **Deadlines**:
-  <Syntax
-    py="builder.set_node_timeout(seconds)"
-    ts="nodeTimeout"
-    rs="not available"
-  />
-  bounds any single node and
-  <Syntax
-    py="builder.set_execution_timeout(seconds)"
-    ts="timeout"
-    rs="not available"
-  />
-  bounds the whole run. A timeout fails the run; it is not routed to another
-  node. In Python, a node timeout raises from the graph call, while the
-  execution timeout is checked before each batch of nodes and returns a
-  `FAILED` result, so it does not stop a node that is already running. In
-  TypeScript, either deadline makes `invoke()` throw once the in-flight node
-  settles, and the timeouts are cooperative: a tool or model call that ignores
-  its cancel signal can still run past the deadline.
-- **Cancellation with a recorded reason**: setting
-  <Syntax
-    py="event.cancel_node"
-    ts="event.cancel"
-    rs="not available"
-  />
-  to a message skips the
-  node and records that message. In Python, the graph call raises a
-  `RuntimeError` carrying the message and the run ends `FAILED`. In TypeScript,
-  the node and the run end `CANCELLED` and a `NodeCancelEvent` carries the
-  message.
-- **Approval gate**:
-  <Syntax
-    py="event.interrupt(name, reason=...)"
-    ts="event.interrupt({ name, reason })"
-    rs="not available"
-  />
-  on `BeforeNodeCallEvent` halts the orchestrator before the gated node. The run
-  returns with `Status.INTERRUPTED`; you answer each interrupt by id and resume
-  by invoking the graph again. See
-  [Interrupts in multi-agent systems](../interrupts-multi-agent.md) for the full
-  interrupt/resume contract.
-- **Handoff logging**: because `BeforeNodeCallEvent` fires before every node, a
-  single callback records each transition. If you prefer to consume handoffs
-  from the event stream instead, watch for the
-  <Syntax
-    py="multiagent_handoff"
-    ts="multiAgentHandoffEvent"
-    rs="not available"
-  />
-  event in
-  <Syntax py="stream_async" ts="stream" rs="not available" /> (see
+<Tabs>
+<Tab label="Python">
+
+- **Deadlines**: `builder.set_node_timeout(seconds)` bounds one node, and
+  `builder.set_execution_timeout(seconds)` bounds the whole run. A node timeout
+  raises from the graph call. The execution timeout is checked before each
+  batch of nodes and returns a `FAILED` result, so it does not stop a node that
+  is already running.
+- **Cancellation with a recorded reason**: set `event.cancel_node` to a message
+  to skip the node and record that message. The graph call raises a
+  `RuntimeError` carrying the message, and the run ends `FAILED`.
+- **Approval gate**: call `event.interrupt(name, reason=...)` on
+  `BeforeNodeCallEvent` to halt before the gated node. The run returns with
+  `Status.INTERRUPTED`; answer each interrupt by ID and invoke the graph again
+  to resume.
+- **Handoff logging**: `BeforeNodeCallEvent` fires before every node, so one
+  callback can record each transition. To consume handoffs from the event
+  stream instead, watch for `multiagent_handoff` in `stream_async` (see
   [Graph](./graph.md#streaming-events)).
 
 A [Swarm](./swarm.md) supports the same `BeforeNodeCallEvent` hook and
-interrupts, and takes its own node and execution timeouts, so you can apply
-this supervision to autonomous handoffs as well.
+interrupts, plus its own node and execution timeouts.
+
+</Tab>
+<Tab label="TypeScript">
+
+- **Deadlines**: `nodeTimeout` bounds one node, and `timeout` bounds the whole
+  run. Either deadline makes `invoke()` throw once the in-flight node settles.
+  Timeouts are cooperative, so a tool or model call that ignores its cancel
+  signal can run past the deadline.
+- **Cancellation with a recorded reason**: set `event.cancel` to a message to
+  skip the node and record that message. The node and run end `CANCELLED`, and
+  a `NodeCancelEvent` carries the message.
+- **Approval gate**: call `event.interrupt({ name, reason })` on
+  `BeforeNodeCallEvent` to halt before the gated node. The run returns with
+  `Status.INTERRUPTED`; answer each interrupt by ID and invoke the graph again
+  to resume.
+- **Handoff logging**: `BeforeNodeCallEvent` fires before every node, so one
+  callback can record each transition. To consume handoffs from the event
+  stream instead, watch for `multiAgentHandoffEvent` in `stream` (see
+  [Graph](./graph.md#streaming-events)).
+
+A [Swarm](./swarm.md) supports the same `BeforeNodeCallEvent` hook and
+interrupts, plus its own node and execution timeouts.
+
+</Tab>
+<Tab label="Rust">
+
+Graph and Swarm are not available, so their orchestrator deadlines, node
+cancellation, approval gates, and handoff events are not available.
+
+</Tab>
+</Tabs>
+
+See [Interrupts in multi-agent systems](../interrupts-multi-agent.md) for the
+full interrupt and resume contract.
 
 ## Shared state across multi-agent patterns
 
-Both Graph and Swarm support passing shared state to every agent through
-<Syntax
-  py="invocation_state"
-  ts="invocationState"
-  rs="not available"
-/>.
-This shares context and
-configuration across agents without exposing it to the LLM. Use it for things
-like user ids, feature flags, or a database handle, kept separate from the
-data the model should reason about.
-
 <Tabs>
 <Tab label="Python">
+
+Both Graph and Swarm pass shared state to every agent through
+`invocation_state`. This shares context and configuration without exposing it
+to the model.
 
 The `invocation_state` is automatically propagated to:
 
@@ -474,6 +484,10 @@ def query_data(query: str, tool_context: ToolContext) -> str:
     return f"Results for {user_id}"
 ```
 
+Use shared state for context and configuration that should not appear in
+prompts. Use each pattern's own data flow for data the model should reason
+about.
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -508,19 +522,19 @@ and a `StateStore` (`app`) for custom shared data.
 --8<-- "user-guide/sdk/multi-agent/multi-agent-patterns.ts:multi_agent_state"
 ```
 
+Use shared state for context and configuration that should not appear in
+prompts. Use each pattern's own data flow for data the model should reason
+about.
+
 </Tab>
 <Tab label="Rust">
 
-Graph and Swarm shared state is not available in Rust. For agents used as
-tools, pass per-invocation application data through `InvokeOptions` and read it
-from `ToolContext`.
+Graph and Swarm shared state is not available. For agents used as tools, pass
+per-invocation application data through `InvokeOptions` and read it from
+`ToolContext`.
 
 </Tab>
 </Tabs>
-
-Use shared state for context and configuration that should not appear in
-prompts; use each pattern's own data flow (shared context for swarms, node
-inputs for graphs) for data the LLM should reason about.
 
 ## Where to go next
 

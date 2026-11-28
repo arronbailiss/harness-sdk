@@ -2,7 +2,6 @@
 title: Agent Loop
 tags: [event-loop, tool-execution, hooks]
 description: "How Strands agents reason, plan, and act. Understand the model-driven loop that orchestrates tool use, reflection, and goal completion."
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/agent/agent.py
   - path: strands-py/src/strands/event_loop/event_loop.py
@@ -176,7 +175,7 @@ Use
 <Syntax
   py="agent.cancel()"
   ts="agent.cancel()"
-  rs="agent.cancel_handle().cancel()"
+  rs="agent.cancel_handle().cancel(CancelOptions::default())"
 />
 to stop the loop from outside, such as on a client disconnect, a timeout, or a
 UI "Stop" button. Cancellation sets a signal that the agent checks at key
@@ -305,6 +304,12 @@ immediately reusable.
   ```
   </Tab>
   <Tab label="Rust">
+
+  The cancellation examples use Tokio's task and timer APIs:
+
+  ```bash
+  cargo add tokio --features rt,time
+  ```
 
   The agent observes cancellation during model streaming, before it starts a
   tool batch, while tools cooperate through their signal, and before the next
@@ -516,11 +521,13 @@ Sometimes more than one request targets the same agent instance at once: a retri
   </Tab>
   <Tab label="TypeScript">
 
-  TypeScript rejects overlapping invocations: invoking an agent that is already running throws `ConcurrentInvocationError`. It does not offer a configurable concurrency mode or idempotency-token deduplication of retries; both are available only in the Python SDK.
+  Invoking an agent that is already running throws `ConcurrentInvocationError`.
+  Use a separate agent per task for independent parallel work, and handle retry
+  deduplication in the application.
   </Tab>
   <Tab label="Rust">
 
-  Rust requires a mutable borrow for `invoke()` and `stream()`, so the compiler
+  A mutable borrow is required for `invoke()` and `stream()`, so the compiler
   prevents overlapping calls on one agent value. Use a separate agent per
   independent conversation. If tasks share an agent behind synchronization,
   serialize access so their histories cannot interleave.

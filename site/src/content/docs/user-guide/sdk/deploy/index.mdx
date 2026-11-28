@@ -1,10 +1,9 @@
 ---
 title: Deploy to production
-description: "Take a Strands agent to production: pick a target such as Bedrock AgentCore, Lambda, Fargate, or EKS, and ship the agent you already built."
+description: 'Take a Strands agent to production: pick a target such as Bedrock AgentCore, Lambda, Fargate, or EKS, and ship the agent you already built.'
 sidebar:
   label: Overview
 tags: [deployment]
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/agent/agent.py
   - path: strands-ts/src/agent/agent.ts
@@ -62,11 +61,7 @@ the agent itself.
     href="deploy_to_kubernetes/"
     description="Deploy the container to any Kubernetes cluster."
   />
-  <LinkCard
-    title="Terraform"
-    href="deploy_to_terraform/"
-    description="Provision the agent's infrastructure as code."
-  />
+  <LinkCard title="Terraform" href="deploy_to_terraform/" description="Provision the agent's infrastructure as code." />
   <LinkCard
     title="Nx Plugin for AWS"
     href="deploy_with_nx_plugin_for_aws/"
@@ -114,9 +109,15 @@ def ping():
 </Tab>
 <Tab label="Rust">
 
-Wire these handlers to `/invocations` and `/ping` with your Rust HTTP
-framework. Keep one agent per concurrent request, or guard a shared agent so
-invocations do not overlap.
+The handler types use Serde derives:
+
+```bash
+cargo add serde --features derive
+```
+
+Wire these handlers to `/invocations` and `/ping` with your HTTP framework.
+Keep one agent per concurrent request, or guard a shared agent so invocations
+do not overlap.
 
 ```rust
 --8<-- "user-guide/sdk/deploy/index.rs:deploy_ready_agent"

@@ -3,7 +3,6 @@ title: Task tracking and environment
 description: >-
   Use the environment plugin for runtime context and the SDK Todos plugin for
   task tracking.
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/plugins/todos.py
   - path: harness-py/src/strands_harness/plugins/environment.py
@@ -15,22 +14,29 @@ sidebar:
 
 The `environment` integration is a plugin rather than a tool. It shapes how the agent
 works without being something the model calls like `shell` or `read`, and it is on by
-default. Python and TypeScript also keep an opt-in, deprecated harness `todos` plugin.
-Rust uses the SDK `Todos` plugin directly.
+default. Task tracking comes from the SDK's `Todos` plugin.
 
 ## todos
 
-:::caution[Moved to the SDK]
-The harness `todos` built-in is deprecated and is removed in a later harness minor. The
-plugin now ships in the SDK as `Todos`: construct it yourself and pass it in `plugins`.
-[Todos](../../../sdk/plugins/todos/) documents what it does and how to configure it, and
-[issue #5279](https://github.com/strands-agents/harness-sdk/issues/5279) tracks the move.
-:::
+<Tabs>
+  <Tab label="Python">
+    The harness `todos` built-in is deprecated. Construct the SDK plugin and pass it in
+    `plugins`. Naming `todos` in the harness built-ins still works during the deprecation
+    window and emits a warning.
+  </Tab>
+  <Tab label="TypeScript">
+    The harness `todos` built-in is deprecated. Construct the SDK plugin and pass it in
+    `plugins`. Naming `todos` in the harness built-ins still works during the deprecation
+    window and emits a warning.
+  </Tab>
+  <Tab label="Rust">
+    Task tracking is available through the SDK plugin. Pass it in `plugins`.
+  </Tab>
+</Tabs>
 
-In Python and TypeScript, naming `todos` in the harness built-in plugins still adds the
-`todo_write` tool and keeps the list in view, but it warns on construction. Rust exposes
-task tracking only through the SDK plugin. Moving to the SDK plugin changes how you attach
-it and nothing about how the agent behaves:
+[Todos](../../../sdk/plugins/todos/) documents what the plugin does and how to configure
+it. [Issue #5279](https://github.com/strands-agents/harness-sdk/issues/5279) tracks the
+move from the harness.
 
 <Tabs>
   <Tab label="Python">
@@ -56,9 +62,19 @@ it and nothing about how the agent behaves:
   </Tab>
 </Tabs>
 
-In Python and TypeScript, drop `todos` from the harness built-in plugins when you add the
-SDK plugin. Keeping both registers `todo_write` twice and creates a name conflict. Rust
-has no harness `todos` entry to remove.
+<Tabs>
+  <Tab label="Python">
+    Drop `todos` from the harness built-ins when you add the SDK plugin. Keeping both
+    registers `todo_write` twice and creates a name conflict.
+  </Tab>
+  <Tab label="TypeScript">
+    Drop `todos` from the harness built-ins when you add the SDK plugin. Keeping both
+    registers `todo_write` twice and creates a name conflict.
+  </Tab>
+  <Tab label="Rust">
+    The harness has no `todos` built-in, so the SDK plugin has no duplicate to remove.
+  </Tab>
+</Tabs>
 
 ## environment
 
@@ -77,25 +93,24 @@ the platform, directory, and files describe where the agent actually runs. The d
 injected each turn (rather than baked into the system prompt) precisely so it does not
 change the cached prompt prefix; the rest is discovered once and reused.
 
-## Select or disable them
+## Disable environment context
 
-The built-in-plugins option selects these by name and defaults to `["environment"]`.
-Python and TypeScript can still name `todos` during the deprecation window. Rust uses
-the SDK `Todos` plugin directly. Pass an empty list to turn the harness plugins off:
+The built-in-plugins option defaults to `environment`. Pass an empty list to turn it
+off:
 
 <Tabs>
   <Tab label="Python">
     ```python
     from strands_harness import create_harness
 
-    agent = create_harness(builtin_plugins=["todos", "environment"])
+    agent = create_harness(builtin_plugins=[])
     ```
   </Tab>
   <Tab label="TypeScript">
     ```typescript
     import { createHarness } from '@strands-agents/harness'
 
-    const agent = await createHarness({ builtinPlugins: ['todos', 'environment'] })
+    const agent = await createHarness({ builtinPlugins: [] })
     ```
   </Tab>
   <Tab label="Rust">

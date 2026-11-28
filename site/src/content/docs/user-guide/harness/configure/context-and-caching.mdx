@@ -1,7 +1,6 @@
 ---
 title: Manage context and caching
 description: "Strands harness manages the context window and offloads bulky tool results as tasks grow, and caches the reused parts of each request where the provider allows."
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-py/src/strands_harness/models.py
@@ -24,9 +23,7 @@ not overflow the context. It also offloads bulky tool results: each is replaced 
 short preview and a reference, and the full content stays in offloaded storage, where
 the agent reads it back with the `retrieve_context` tool when it actually needs it.
 
-In Python and TypeScript, the option takes `"auto"` (the default), `"agentic"`,
-or an off value. Rust uses `ContextManagerStrategy::Auto`,
-`ContextManagerStrategy::Agentic`, or `ContextManagerStrategy::Disabled`:
+The option accepts automatic, agentic, and disabled strategies:
 
 <Tabs>
   <Tab label="Strands harness">
@@ -85,10 +82,22 @@ or an off value. Rust uses `ContextManagerStrategy::Auto`,
 </Tabs>
 
 The auto and agentic choices select the Strands Harness SDK's context-management
-strategy; both offload bulky tool results. Turning context management off
-(`False`/`null` in Python and TypeScript,
-`ContextManagerStrategy::Disabled` in Rust, or `off` on the CLI) disables
-offloading too, so the full history stays in the window and you own its size.
+strategy; both offload bulky tool results. Turning context management off also disables
+offloading, so the full history stays in the window and you own its size.
+
+<Tabs>
+  <Tab label="Python">
+    Disable it with `context_manager=False`.
+  </Tab>
+  <Tab label="TypeScript">
+    Disable it with `contextManager: null`.
+  </Tab>
+  <Tab label="Rust">
+    Disable it with `ContextManagerStrategy::Disabled`.
+  </Tab>
+</Tabs>
+
+From the CLI, use `--context-manager off`.
 
 When a [session](../sessions/) is active, offloaded artifacts
 persist under the session directory; without a session they stay in memory and do not
@@ -103,21 +112,42 @@ conversation is cheaper and faster to process each turn. It is on by default.
 
 How caching reaches the provider depends on the provider:
 
-- On Amazon Bedrock and Anthropic direct, Strands harness configures cache points and cached tool
-  definitions.
-- On OpenAI and bedrock-mantle, Strands harness sends a per-session cache key (when a session is
-  active) and, on GPT-5.6+ models listed in the SDK model info, places cache points ahead of the
-  per-turn memory, todo, and environment context, so the conversation prefix stays cached across
-  turns.
-- On Google, caching happens automatically server-side, so there is nothing for Strands harness to
-  configure.
+<Tabs>
+  <Tab label="Python">
+    - On Amazon Bedrock and Anthropic direct, Strands harness configures cache
+      points and cached tool definitions.
+    - On OpenAI and bedrock-mantle, Strands harness sends a per-session cache
+      key when a session is active. On GPT-5.6+ models listed in the SDK model
+      info, it also places cache points ahead of the per-turn memory, todo, and
+      environment context.
+    - Google and LiteLLM cache automatically. Ollama does not support prompt
+      caching.
+  </Tab>
+  <Tab label="TypeScript">
+    - On Amazon Bedrock and Anthropic direct, Strands harness configures cache
+      points and cached tool definitions.
+    - On OpenAI and bedrock-mantle, Strands harness sends a per-session cache
+      key when a session is active. On GPT-5.6+ models listed in the SDK model
+      info, it also places cache points ahead of the per-turn memory, todo, and
+      environment context.
+    - Google and LiteLLM cache automatically. Ollama does not support prompt
+      caching.
+  </Tab>
+  <Tab label="Rust">
+    - On Amazon Bedrock and Anthropic direct, Strands harness configures cache
+      points and cached tool definitions.
+    - On OpenAI and bedrock-mantle, Strands harness sends a per-session cache
+      key when a session is active. On GPT-5.6+ models listed in the SDK model
+      info, it also places cache points ahead of the per-turn memory, todo, and
+      environment context.
+  </Tab>
+</Tabs>
 
 On models with only implicit caching, such as OpenAI models on the Amazon Bedrock Converse API, the
 context Strands harness injects each turn changes the request and breaks the cache. See
 [Prompt caching: known gaps](../../../sdk/model-providers/prompt-caching/#known-gaps).
 
-Set `caching` to `False`/`false` to disable what Strands harness configures
-(`None`/`null` also disables it in Python and TypeScript):
+Disable caching to turn off what Strands harness configures:
 
 <Tabs>
   <Tab label="Strands harness">

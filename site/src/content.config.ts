@@ -49,6 +49,15 @@ export const docsLanguagesSchema = z
         message: 'languages must not contain duplicates',
       })
     }
+    if (
+      normalized.length === DEFAULT_DOC_LANGUAGES.length &&
+      DEFAULT_DOC_LANGUAGES.every((language) => normalized.includes(language))
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'omit languages when the page documents every default SDK language',
+      })
+    }
   })
 
 export const docsUnsupportedLanguagesSchema = z
@@ -72,8 +81,10 @@ function validateDocsLanguageSupport(
   },
   ctx: z.RefinementCtx
 ) {
-  const documented = normalizeSdkLanguages(data.languages ?? DEFAULT_DOC_LANGUAGES)
   const unsupported = normalizeSdkLanguages(data.unsupportedLanguages ?? [])
+  const documented = normalizeSdkLanguages(
+    data.languages ?? DEFAULT_DOC_LANGUAGES.filter((language) => !unsupported.includes(language))
+  )
   for (const language of unsupported) {
     if (documented.includes(language)) {
       ctx.addIssue({

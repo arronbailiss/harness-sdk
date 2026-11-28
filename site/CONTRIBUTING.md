@@ -31,10 +31,13 @@ npm run build      # generates static site
 
 - Content lives in `src/content/docs/` as Markdown and MDX files
 - Navigation structure is defined in `src/config/navigation.yml`
-- Use `<Tabs>` / `<Tab label="...">` for Python, TypeScript, and verified Rust code tabs (auto-imported)
-- Use `<Syntax py="python_name" ts="tsName" rs="rust_name" />` for inline language-specific identifiers in prose (auto-imported). The `rs` prop is required on pages that support Rust. The component renders as `<code>` by default; pass `plain` for plain text. It reacts live to the global language toggle.
+- Use `<Tabs>` / `<Tab label="...">` for Python, TypeScript, and Rust code tabs (auto-imported)
+- Use `<Syntax py="python_name" ts="tsName" rs="rust_name" />` for inline language-specific identifiers in prose (auto-imported). Include every documented language variant. The component renders as `<code>` by default; pass `plain` for plain text. It reacts live to the global language toggle.
 - Use `--8<-- "path/to/file.ts:snippet_name"` or a sibling `.rs` file to pull in code snippets from external files
-- Omit `languages` frontmatter for the default Python and TypeScript coverage. Explicitly include `Rust` only after the page's Rust prose, links, and examples have been verified.
+- In each Rust tab, list every direct crate and optional Cargo feature used by
+  its rendered snippets; the site-owned snippet crate intentionally has a
+  broader dependency set
+- Omit `languages` frontmatter when a page covers Python, TypeScript, and Rust. Use an explicit subset for a documentation gap and `unsupportedLanguages` when the feature is unavailable in an SDK.
 - Relative file links (e.g. `../tools/index.md`) resolve automatically: no need to use slugs
 - Link to API reference pages with the `@api` shorthand: `[@api/python/strands.agent.agent](#Class)`
 

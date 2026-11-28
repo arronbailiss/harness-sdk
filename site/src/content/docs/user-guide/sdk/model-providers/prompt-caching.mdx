@@ -2,7 +2,6 @@
 title: Prompt caching
 description: "How Strands caches tools, system prompts, and messages on model providers with explicit or implicit prompt caching, and where caching falls short today."
 tags: [caching]
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/injection/_message_injection.py
   - path: strands-ts/src/injection/message-injection.ts
@@ -52,6 +51,12 @@ agent = Agent(model=model)
 ```
 </Tab>
 <Tab label="Rust">
+
+The Rust examples on this page use `serde_json` directly:
+
+```bash
+cargo add serde_json
+```
 
 ```rust
 --8<-- "user-guide/sdk/model-providers/prompt-caching.rs:explicit_cache_config"

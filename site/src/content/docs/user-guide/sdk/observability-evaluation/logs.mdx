@@ -3,7 +3,6 @@ title: Logging
 description: >-
   Configure logging for Strands agents: set log levels, add handlers, and
   capture debug output from SDK operations.
-languages: [Python, TypeScript, Rust]
 sidebar:
   label: "Logs"
 tags: [observability, pii]
@@ -20,9 +19,12 @@ To see what the SDK is doing internally, turn on its logging. Strands ships logg
 <Tabs>
 <Tab label="Python">
 
-Strands Harness SDK uses Python's standard [`logging`](https://docs.python.org/3/library/logging.html) module. The SDK implements a straightforward logging approach:
+The SDK uses the standard
+[`logging`](https://docs.python.org/3/library/logging.html) module:
 
-1. **Module-level Loggers**: Each module creates its own logger using `logging.getLogger(__name__)`, following Python best practices for hierarchical logging.
+1. **Module-level Loggers**: Each module creates its own logger with
+   `logging.getLogger(__name__)`, following standard hierarchical logging
+   practices.
 
 2. **Root Logger**: All loggers are children of the "strands" root logger, making it easy to configure logging for the entire SDK.
 
@@ -40,7 +42,7 @@ Strands Harness SDK provides a simple logging infrastructure with a global logge
 </Tab>
 <Tab label="Rust">
 
-The Rust SDK emits structured events through the
+The SDK emits structured events through the
 [`tracing`](https://docs.rs/tracing/) ecosystem.
 
 1. **Structured fields**: Events carry fields such as tool names, IDs, and
@@ -112,29 +114,47 @@ cargo add tracing-subscriber
 
 ### Log Levels
 
-The Strands Agents SDKs use their language's standard log levels:
+<Tabs>
+<Tab label="Python">
 
 - **DEBUG**: Detailed operational information for troubleshooting. Extensively used for tool registration, discovery, configuration, and execution flows.
-
 - **INFO**: General informational messages.
-
 - **WARNING**: Potential issues that don't prevent operation, such as validation failures, specification errors, and compatibility warnings.
-
 - **ERROR**: Significant problems that prevent specific operations from completing successfully, such as execution failures and handler errors.
-
 - **CRITICAL**: Reserved for catastrophic failures.
 
-In the Python SDK, notices about *how the SDK is being used* (an unset `context_window_limit`, an unknown cache strategy, a graph built without execution limits) are emitted through Python's [`warnings`](https://docs.python.org/3/library/warnings.html) module instead of the logger. The standard library deduplicates repeats, so each warning surfaces once rather than on every call. The TypeScript SDK reports these through its logger.
+Notices about *how the SDK is being used*—such as an unset
+`context_window_limit`, an unknown cache strategy, or a graph built without
+execution limits—use the standard library
+[`warnings`](https://docs.python.org/3/library/warnings.html) module. The
+standard library deduplicates repeats, so each warning surfaces once rather
+than on every call.
 
-Rust uses `TRACE`, `DEBUG`, `INFO`, `WARN`, and `ERROR` through `tracing`;
-there is no separate `CRITICAL` level.
-
-Control Python warnings with `-W` or `PYTHONWARNINGS`:
+Control warnings with `-W` or `PYTHONWARNINGS`:
 
 ```bash
 # Promote all UserWarnings, including SDK usage warnings, to errors (useful in CI)
 python -W error::UserWarning my_agent.py
 ```
+
+</Tab>
+<Tab label="TypeScript">
+
+- **debug**: Detailed operational information for troubleshooting.
+- **info**: General informational messages.
+- **warn**: Potential issues that do not prevent operation.
+- **error**: Problems that prevent an operation from completing.
+
+SDK usage notices are emitted through the configured logger.
+
+</Tab>
+<Tab label="Rust">
+
+The `tracing` subscriber filters the standard `TRACE`, `DEBUG`, `INFO`, `WARN`,
+and `ERROR` levels. There is no separate `CRITICAL` level.
+
+</Tab>
+</Tabs>
 
 ## Key Logging Areas
 
@@ -206,7 +226,7 @@ DEBUG | strands.models.bedrock | Found blocked output guardrail. Redacting outpu
 </Tab>
 <Tab label="TypeScript">
 
-The TypeScript SDK currently has minimal logging, primarily focused on model interactions. Logs are generated for:
+Logging currently focuses on model interactions. Logs are generated for:
 
 - **Model configuration warnings**: Unsupported features (e.g., cache points in OpenAI, guard content)
 - **Model response warnings**: Invalid formats, unexpected data structures
@@ -233,13 +253,13 @@ Future versions will include more detailed logging for tool operations and event
 </Tab>
 <Tab label="Rust">
 
-Rust emits structured events around model calls, tool registration and
-execution, retries, session work, and agent lifecycle operations. Fields use
-snake case and messages use the shared structured format:
+Structured events cover model calls, tool registration and execution, retries,
+session work, and agent lifecycle operations. Fields use snake case and
+messages use the shared structured format:
 
 ```text
-tool_name=<weather>, tool_use_id=<tool-123> | tool call started
-attempt=<2>, error=<service unavailable> | retrying model call
+tool_name=<sandbox_shell> | sandbox-vended tool skipped, user already registered a tool with this name
+retry_delay_ms=<4000> attempt_count=<1> max_attempts=<6> | retryable model error, delaying before retry
 ```
 
 Set the subscriber to `DEBUG` for operational details or `TRACE` for the most

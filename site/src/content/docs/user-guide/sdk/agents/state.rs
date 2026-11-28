@@ -120,7 +120,7 @@ mod tool_state {
     // --8<-- [start:state_in_tools]
     use strands::{Agent, ToolContext, tool, tool_list};
 
-    #[tool(description = "Track a user action.")]
+    #[tool(description = "Track user actions in agent state")]
     async fn track_user_action(
         #[tool(context)] context: &ToolContext,
         action: String,
@@ -131,10 +131,12 @@ mod tool_state {
         })?;
         state.set("last_action", &action)?;
         let count = state.get::<u32>("action_count")?.unwrap_or_default();
-        Ok(format!("Recorded {action}. Total actions: {count}"))
+        Ok(format!(
+            "Action '{action}' recorded. Total actions: {count}",
+        ))
     }
 
-    #[tool(description = "Return user action statistics.")]
+    #[tool(description = "Get user statistics from agent state")]
     async fn get_user_stats(
         #[tool(context)] context: &ToolContext,
     ) -> Result<String, strands::ToolError> {
@@ -143,7 +145,9 @@ mod tool_state {
         let last = state
             .get::<String>("last_action")?
             .unwrap_or_else(|| "none".into());
-        Ok(format!("Actions: {count}, last action: {last}"))
+        Ok(format!(
+            "Actions performed: {count}, Last action: {last}",
+        ))
     }
 
     fn agent() -> strands::Result<Agent> {
@@ -170,7 +174,7 @@ mod invocation {
         user_id: String,
     }
 
-    #[tool(description = "Return the current user's id.")]
+    #[tool(description = "Return the user ID carried in the invocation state.")]
     async fn whoami(
         #[tool(context)] context: &ToolContext,
     ) -> String {

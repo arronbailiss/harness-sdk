@@ -1,7 +1,6 @@
 ---
 title: Retry Strategies
 description: 'Handle model provider rate limits in Strands agents. Configure retry strategies with exponential backoff, custom parameters, or your own retry logic.'
-languages: [Python, TypeScript, Rust]
 tags: [event-loop, error-handling]
 sourceLinks:
   - path: strands-py/src/strands/event_loop/_retry.py
@@ -14,18 +13,15 @@ sourceLinks:
 Model providers occasionally encounter errors such as rate limits, service
 unavailability, or network timeouts. By default, the agent retries provider errors
 automatically with exponential backoff. The
-<Syntax
-  py="Agent.retry_strategy"
-  ts="Agent.retryStrategy"
-  rs="Agent::builder().retry_strategy()"
-/>
+
+<Syntax py="Agent.retry_strategy" ts="Agent.retryStrategy" rs="Agent::builder().retry_strategy()" />
 parameter lets you customize this behavior.
 
 ## Default Behavior
 
 Without configuration, agents retry up to 5 times (6 total attempts) with
-exponential backoff starting at 4 seconds. TypeScript and Rust apply full jitter,
-so the sequence below shows the maximum delay before each retry:
+exponential backoff starting at 4 seconds. The sequence below shows the
+exponential schedule before any configured jitter:
 
 ```
 Attempt 1: fails → wait 4s
@@ -54,18 +50,27 @@ agent = Agent(
     )
 )
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
-In TypeScript, `ModelRetryStrategy` is the abstract base class. Use `DefaultModelRetryStrategy` for the standard configurable strategy:
+`ModelRetryStrategy` is the abstract base class. Use
+`DefaultModelRetryStrategy` for the standard configurable strategy:
 
 ```typescript
 --8<-- "user-guide/sdk/agents/retry-strategies_imports.ts:default_strategy_imports"
 
 --8<-- "user-guide/sdk/agents/retry-strategies.ts:default_strategy"
 ```
+
 </Tab>
 <Tab label="Rust">
+
+The hook example later on this page uses Tokio's timer API:
+
+```bash
+cargo add tokio --features time
+```
 
 ```rust
 --8<-- "user-guide/sdk/agents/retry-strategies.rs:default_strategy"
@@ -79,41 +84,38 @@ In TypeScript, `ModelRetryStrategy` is the abstract base class. Use `DefaultMode
 <Tabs>
 <Tab label="Python">
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `max_attempts` | `int` | `6` | Total number of attempts including the initial call. Set to `1` to disable retries. |
-| `initial_delay` | `float` | `4` | Seconds to wait before the first retry. Subsequent retries double this value. |
-| `max_delay` | `float` | `128` | Maximum seconds to wait between retries. Caps the exponential growth. |
+| Parameter       | Type    | Default | Description                                                                         |
+| --------------- | ------- | ------- | ----------------------------------------------------------------------------------- |
+| `max_attempts`  | `int`   | `6`     | Total number of attempts including the initial call. Set to `1` to disable retries. |
+| `initial_delay` | `float` | `4`     | Seconds to wait before the first retry. Subsequent retries double this value.       |
+| `max_delay`     | `float` | `128`   | Maximum seconds to wait between retries. Caps the exponential growth.               |
 
 </Tab>
 <Tab label="TypeScript">
 
 `DefaultModelRetryStrategy` accepts:
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `maxAttempts` | `number` | `6` | Total number of attempts including the initial call. Must be `>= 1`. |
-| `backoff` | `BackoffStrategy` | `new ExponentialBackoff({ baseMs: 4000, maxMs: 240000 })` | Computes delay between retries. See [Backoff Strategies](#backoff-strategies). |
+| Parameter     | Type              | Default                                                   | Description                                                                    |
+| ------------- | ----------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `maxAttempts` | `number`          | `6`                                                       | Total number of attempts including the initial call. Must be `>= 1`.           |
+| `backoff`     | `BackoffStrategy` | `new ExponentialBackoff({ baseMs: 4000, maxMs: 240000 })` | Computes delay between retries. See [Backoff Strategies](#backoff-strategies). |
 
 </Tab>
 <Tab label="Rust">
 
 `DefaultModelRetryStrategyOptions` accepts:
 
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `max_attempts` | `u32` | `6` | Total attempts, including the initial call. |
-| `backoff` | `Arc<dyn BackoffStrategy>` | 4–240s exponential | Computes delay. |
+| Parameter      | Type                       | Default            | Description                                 |
+| -------------- | -------------------------- | ------------------ | ------------------------------------------- |
+| `max_attempts` | `u32`                      | `6`                | Total attempts, including the initial call. |
+| `backoff`      | `Arc<dyn BackoffStrategy>` | 4–240s exponential | Computes delay.                             |
 
 </Tab>
 </Tabs>
 
 ### Backoff Strategies
 
-In TypeScript and Rust, the delay between retries is delegated to a
-`BackoffStrategy` passed through the strategy options. The Python SDK does not
-expose a separate backoff interface; configure exponential backoff through the
-`initial_delay` and `max_delay` parameters above.
+Configure how the strategy delays each retry:
 
 <Tabs>
 <Tab label="Python">
@@ -123,7 +125,7 @@ Configure backoff through `ModelRetryStrategy` parameters in [Customizing Retry 
 </Tab>
 <Tab label="TypeScript">
 
-The TypeScript SDK ships three built-in strategies:
+The SDK ships three built-in strategies:
 
 - `ExponentialBackoff` (default): delay grows as `baseMs * multiplier^(attempt-1)`, capped at `maxMs`.
 - `LinearBackoff`: delay grows as `baseMs * attempt`, capped at `maxMs`.
@@ -140,7 +142,7 @@ The TypeScript SDK ships three built-in strategies:
 </Tab>
 <Tab label="Rust">
 
-Rust ships `ExponentialBackoff`, `LinearBackoff`, and `ConstantBackoff`.
+The SDK ships `ExponentialBackoff`, `LinearBackoff`, and `ConstantBackoff`.
 Exponential and linear backoff support `None`, `Full`, `Equal`, and
 `Decorrelated` jitter through `JitterKind`.
 
@@ -168,6 +170,7 @@ agent = Agent(
 
 The agent loop still re-asks the model when a response stops for tool use
 but contains no tool use block. That retry is part of the loop, not the retry strategy.
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -176,6 +179,7 @@ but contains no tool use block. That retry is part of the loop, not the retry st
 
 --8<-- "user-guide/sdk/agents/retry-strategies.ts:disable"
 ```
+
 </Tab>
 <Tab label="Rust">
 
@@ -188,14 +192,28 @@ but contains no tool use block. That retry is part of the loop, not the retry st
 
 ## When Retries Occur
 
-Python and TypeScript retry provider throttling errors
-(<Syntax
-  py="ModelThrottledException"
-  ts="ModelThrottledError"
-  rs="ModelThrottledError"
-/>).
-Rust retries both `ModelThrottledError` and `ModelNetworkError`. Other errors
-propagate immediately unless you expand the retryable set.
+The default strategy retries provider errors that are safe to repeat:
+
+<Tabs>
+<Tab label="Python">
+
+The default strategy retries `ModelThrottledException`. Other errors propagate
+immediately unless you expand the retryable set.
+
+</Tab>
+<Tab label="TypeScript">
+
+The default strategy retries `ModelThrottledError` and `ModelNetworkError`.
+Other errors propagate immediately unless you expand the retryable set.
+
+</Tab>
+<Tab label="Rust">
+
+The default strategy retries `ModelThrottledError` and `ModelNetworkError`.
+Other errors propagate immediately unless you expand the retryable set.
+
+</Tab>
+</Tabs>
 
 To extend or narrow the retryable set, see [Custom Retry Logic](#custom-retry-logic).
 
@@ -205,11 +223,7 @@ For more control over retry decisions, such as validating model responses or han
 
 1. Customize or implement a retry strategy to own the full decision shape.
 2. Use a hook on `AfterModelCallEvent` and request a retry with
-   <Syntax
-     py="event.retry = True"
-     ts="event.retry = true"
-     rs="event.set_retry(true)"
-   />.
+   <Syntax py="event.retry = True" ts="event.retry = true" rs="event.set_retry(true)" />.
 
 ### Subclassing the Retry Strategy
 
@@ -236,7 +250,11 @@ A retry-strategy instance carries per-turn state and must not be shared across a
 </Tab>
 <Tab label="TypeScript">
 
-To extend or narrow which errors are retryable, subclass `DefaultModelRetryStrategy` and override `isRetryable`. The default implementation retries `ModelThrottledError` only; `super.isRetryable(error)` preserves that base behavior so you can opt additional error types in (or specific ones out) without reimplementing the rest of the retry policy.
+To extend or narrow which errors are retryable, subclass
+`DefaultModelRetryStrategy` and override `isRetryable`. The default
+implementation retries `ModelThrottledError` and `ModelNetworkError`;
+`super.isRetryable(error)` preserves that behavior while you add or remove
+specific error types.
 
 ```typescript
 --8<-- "user-guide/sdk/agents/retry-strategies_imports.ts:custom_subclass_imports"
@@ -269,13 +287,9 @@ agents. Create a new instance per agent.
 
 Hooks are simpler when you only need to inspect a model error and request a
 retry. From an `AfterModelCallEvent` callback, use
-<Syntax
-  py="event.retry = True"
-  ts="event.retry = true"
-  rs="event.set_retry(true)"
-/>.
-Hooks do not introduce delays automatically; the example below adds a 2-second
-wait.
+
+<Syntax py="event.retry = True" ts="event.retry = true" rs="event.set_retry(true)" />. Hooks do not introduce delays
+automatically; the example below adds a 2-second wait.
 
 <Tabs>
 <Tab label="Python">
@@ -302,6 +316,7 @@ class CustomRetry(HookProvider):
 
 agent = Agent(hooks=[CustomRetry()])
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -312,6 +327,7 @@ The `AfterModelCallEvent` exposes `attemptCount` (1-indexed). Use it to bound re
 
 --8<-- "user-guide/sdk/agents/retry-strategies.ts:hook_retry"
 ```
+
 </Tab>
 <Tab label="Rust">
 

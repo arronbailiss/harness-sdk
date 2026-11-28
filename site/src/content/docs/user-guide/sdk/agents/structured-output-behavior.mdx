@@ -3,7 +3,6 @@ title: Structured output
 description: >-
   How structured output works in Strands: define a schema, set it on an agent or a
   call, and read the validated object. Covers validation retries and errors.
-languages: [Python, TypeScript, Rust]
 tags: [structured-output, error-handling]
 sourceLinks:
   - path: strands-py/src/strands/tools/structured_output/structured_output_tool.py
@@ -226,9 +225,9 @@ Typical output:
 </Tab>
 <Tab label="Rust">
 
-Rust validates the generated JSON Schema before deserializing the result into
-your type. Constraints such as `length` and `range` become actionable
-validation errors for the model:
+Strands validates the generated JSON Schema before deserializing the result into
+your type. Constraints such as `length` and `range` become actionable validation
+errors for the model:
 
 ```rust
 --8<-- "user-guide/sdk/agents/structured-output-behavior.rs:validation"
@@ -313,10 +312,9 @@ prompt to configure.
 </Tab>
 <Tab label="Rust">
 
-Rust drops the text reply and retries with the
-`strands_structured_output` tool required when the provider supports forced
-tool choice. Otherwise, it uses provider-native structured output or offers the
-tool without requiring it.
+Strands drops the text reply and retries with the `strands_structured_output`
+tool required when the provider supports forced tool choice. Otherwise, it uses
+provider-native structured output or offers the tool without requiring it.
 
 </Tab>
 </Tabs>
@@ -344,15 +342,6 @@ output tool call that fails validation, or a forced retry that doesn't return va
 structured output. With a limit set, Strands retries a failed forced retry instead of
 raising. Calls to your other tools before the forced retry don't count.
 
-In TypeScript and Rust, a forced retry that a content filter or guardrail stops also
-counts as a failed attempt and is retried within the limit. In Python, that retry ends
-the call with its own stop reason, such as
-<Syntax
-  py="content_filtered"
-  ts="contentFiltered"
-  rs="StopReason::ContentFiltered"
-/>.
-
 When the limit is reached, the call stops before the next model call. The result has
 the stop reason
 <Syntax
@@ -364,6 +353,9 @@ and no structured output.
 
 <Tabs>
 <Tab label="Python">
+
+If a content filter or guardrail stops a forced retry, the call ends with its own
+stop reason, such as `content_filtered`.
 
 ```python
 from pydantic import BaseModel
@@ -390,6 +382,9 @@ else:
 </Tab>
 <Tab label="TypeScript">
 
+If a content filter or guardrail stops a forced retry, Strands counts it as a
+failed attempt and retries within the limit.
+
 ```typescript
 --8<-- "user-guide/sdk/agents/structured-output-behavior_imports.ts:attempt_limit_imports"
 
@@ -398,6 +393,9 @@ else:
 
 </Tab>
 <Tab label="Rust">
+
+If a content filter or guardrail stops a forced retry, Strands counts it as a
+failed attempt and retries within the limit.
 
 ```rust
 --8<-- "user-guide/sdk/agents/structured-output-behavior.rs:attempt_limit"

@@ -218,17 +218,28 @@ Work through these steps in order, checking with me before installing software o
 writing files.
 
 Step 1: Environment
-Confirm Rust 1.96 or newer is available. Create a new project and add the SDK with the
-Tokio async runtime:
+Confirm Rust 1.96 or newer is available. Create a new project and add the Tokio async
+runtime. Wait until I choose a provider before adding the Strands dependency:
   cargo new strands-quickstart
   cd strands-quickstart
-  cargo add strands
   cargo add tokio --features macros,rt-multi-thread
 
-Step 2: Run a first agent
-Use Amazon Bedrock, the default model provider. Confirm AWS credentials or a Bedrock API
-key are configured and AWS_REGION points to a region where the default model is
-available. Create src/main.rs:
+Step 2: Pick a model provider and run a first agent
+Ask me which model provider I want to use:
+  - Amazon Bedrock (default): AWS credentials or AWS_BEARER_TOKEN_BEDROCK
+  - Anthropic: ANTHROPIC_API_KEY
+  - OpenAI: OPENAI_API_KEY
+  - Amazon Bedrock Mantle: AWS credentials, AWS_REGION, and optionally MANTLE_MODEL_ID
+
+Add the matching dependency:
+  - Amazon Bedrock: cargo add strands
+  - Anthropic: cargo add strands --no-default-features --features anthropic
+  - OpenAI: cargo add strands --no-default-features --features openai
+  - Amazon Bedrock Mantle: cargo add strands --no-default-features --features mantle
+
+Then create src/main.rs with the exact snippet for my provider.
+
+Amazon Bedrock:
 
   use strands::Agent;
 
@@ -243,10 +254,83 @@ available. Create src/main.rs:
       agent.shutdown().await
   }
 
+Anthropic:
+
+  use strands::models::anthropic::AnthropicModel;
+  use strands::Agent;
+
+  #[tokio::main]
+  async fn main() -> strands::Result<()> {
+      let model = AnthropicModel::builder()
+          .model_id("claude-sonnet-4-6")
+          .max_tokens(1024)
+          .build()?;
+      let mut agent = Agent::builder()
+          .model(model)
+          .system_prompt("You are a concise assistant.")
+          .build()?;
+      agent
+          .invoke("What is an agent harness, in one sentence?")
+          .await?;
+      agent.shutdown().await
+  }
+
+OpenAI:
+
+  use strands::models::openai::OpenAIModel;
+  use strands::Agent;
+
+  #[tokio::main]
+  async fn main() -> strands::Result<()> {
+      let model = OpenAIModel::builder()
+          .model_id("gpt-5.4-mini")
+          .build()?;
+      let mut agent = Agent::builder()
+          .model(model)
+          .system_prompt("You are a concise assistant.")
+          .build()?;
+      agent
+          .invoke("What is an agent harness, in one sentence?")
+          .await?;
+      agent.shutdown().await
+  }
+
+Amazon Bedrock Mantle:
+
+  use strands::models::openai::{
+      BedrockMantleConfig,
+      OpenAIModel,
+      OpenAIModelOptions,
+  };
+  use strands::Agent;
+
+  #[tokio::main]
+  async fn main() -> strands::Result<()> {
+      let region =
+          std::env::var("AWS_REGION").unwrap_or_else(|_| "us-east-1".to_owned());
+      let model_id = std::env::var("MANTLE_MODEL_ID")
+          .unwrap_or_else(|_| "openai.gpt-oss-120b".to_owned());
+      let model = OpenAIModel::bedrock_mantle(
+          OpenAIModelOptions::builder()
+              .model_id(model_id)
+              .build_options(),
+          BedrockMantleConfig::builder().region(region).build(),
+      )?;
+      let mut agent = Agent::builder()
+          .model(model)
+          .system_prompt("You are a concise assistant.")
+          .build()?;
+      agent
+          .invoke("What is an agent harness, in one sentence?")
+          .await?;
+      agent.shutdown().await
+  }
+
 Run it with cargo run.
 
 Step 3: Add a custom tool
-Replace src/main.rs with a typed letter-counting tool:
+Keep the provider imports and model construction from Step 2. Replace
+use strands::Agent with:
 
   use strands::{Agent, ToolError, tool};
 
@@ -258,14 +342,13 @@ Replace src/main.rs with a typed letter-counting tool:
           .count())
   }
 
-  #[tokio::main]
-  async fn main() -> strands::Result<()> {
-      let mut agent = Agent::builder().tools([LetterCounter]).build()?;
-      agent
-          .invoke(r#"How many letter R's are in the word "strawberry"?"#)
-          .await?;
-      agent.shutdown().await
-  }
+In the existing Agent::builder() chain, add .tools([LetterCounter]) before .build().
+Keep .model(model) when the selected provider created an explicit model. Then replace
+the invocation prompt with:
+
+  agent
+      .invoke(r#"How many letter R's are in the word "strawberry"?"#)
+      .await?;
 
 Run cargo run again. Explain that #[tool] uses the signature for the input schema,
 the function name for the LetterCounter struct, and the description attribute for

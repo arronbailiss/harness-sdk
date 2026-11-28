@@ -12,6 +12,8 @@ const kw = (text: string) => ({ text, color: 'var(--code-keyword)' })
 const str = (text: string) => ({ text, color: 'var(--code-string)' })
 const t = (text: string) => ({ text })
 
+type UseCaseLanguage = 'python' | 'typescript' | 'rust'
+
 interface UseCase {
   id: string
   icon: string
@@ -22,6 +24,7 @@ interface UseCase {
   ts?: Array<{ line: number; tokens: Array<{ text: string; color?: string }> }>
   py: Array<{ line: number; tokens: Array<{ text: string; color?: string }> }>
   rs?: Array<{ line: number; tokens: Array<{ text: string; color?: string }> }>
+  unsupportedLanguages?: UseCaseLanguage[]
 }
 
 const useCases: UseCase[] = [
@@ -245,29 +248,27 @@ const useCases: UseCase[] = [
     icon: hammerIcon,
     title: 'Build research agents',
     description:
-      'Build agents that work autonomously through multi-step tasks, calling tools to gather and synthesize information. The agent loops on its own — you describe the goal, not the steps.',
+      'Build agents that work autonomously through multi-step tasks, calling tools to gather and synthesize information. The agent loops on its own. You describe the goal, not the steps.',
     active: false,
     filename: { ts: 'research_agent.ts', py: 'research_agent.py', rs: 'research_agent.rs' },
     ts: [
       { line: 1, tokens: [kw('import'), t(' { createHarness } '), kw('from'), t(' '), str("'@strands-agents/harness'")] },
       { line: 2, tokens: [t('')] },
-      { line: 3, tokens: [t('// Web fetch and search are built in, on by default.')] },
-      { line: 4, tokens: [kw('const'), t(' agent = '), kw('await'), t(' createHarness({')] },
-      { line: 5, tokens: [t('  instructions: '), str("'Research the goal, fetch sources, cite them.'"), t(',')] },
-      { line: 6, tokens: [t('})')] },
-      { line: 7, tokens: [t('')] },
-      { line: 8, tokens: [kw('await'), t(' agent.invoke(')] },
-      { line: 9, tokens: [t('  '), str("'Summarize recent advances in solid-state batteries from https://en.wikipedia.org/wiki/Solid-state_battery'")] },
-      { line: 10, tokens: [t(')')] },
+      { line: 3, tokens: [kw('const'), t(' agent = '), kw('await'), t(' createHarness({')] },
+      { line: 4, tokens: [t('  instructions: '), str("'Research the goal, fetch sources, cite them.'"), t(',')] },
+      { line: 5, tokens: [t('})')] },
+      { line: 6, tokens: [t('')] },
+      { line: 7, tokens: [kw('await'), t(' agent.invoke(')] },
+      { line: 8, tokens: [t('  '), str("'Summarize recent advances in solid-state batteries from https://en.wikipedia.org/wiki/Solid-state_battery'")] },
+      { line: 9, tokens: [t(')')] },
     ],
     py: [
       { line: 1, tokens: [kw('from'), t(' strands_harness '), kw('import'), t(' create_harness')] },
       { line: 2, tokens: [t('')] },
-      { line: 3, tokens: [t('# Web fetch and search are built in, on by default.')] },
-      { line: 4, tokens: [t('agent = create_harness(instructions='), str('"Research the goal, fetch sources, cite them."'), t(')')] },
-      { line: 5, tokens: [t('agent(')] },
-      { line: 6, tokens: [t('    '), str('"Summarize recent advances in solid-state batteries from https://en.wikipedia.org/wiki/Solid-state_battery"')] },
-      { line: 7, tokens: [t(')')] },
+      { line: 3, tokens: [t('agent = create_harness(instructions='), str('"Research the goal, fetch sources, cite them."'), t(')')] },
+      { line: 4, tokens: [t('agent(')] },
+      { line: 5, tokens: [t('    '), str('"Summarize recent advances in solid-state batteries from https://en.wikipedia.org/wiki/Solid-state_battery"')] },
+      { line: 6, tokens: [t(')')] },
     ],
     rs: [
       { line: 1, tokens: [kw('use'), t(' strands_harness::{HarnessAgentOptions, create_harness};')] },
@@ -309,23 +310,21 @@ const useCases: UseCase[] = [
     icon: robotIcon,
     title: 'Control robots',
     description:
-      'Drive arms, humanoids, quadrupeds, and drones with natural language. One Robot() call gives an agent a MuJoCo simulation or a real robot — same code, sim or hardware.',
+      'Drive arms, humanoids, quadrupeds, and drones with natural language. One Robot() call gives an agent a MuJoCo simulation or a real robot with the same code.',
     active: false,
     filename: { py: 'robot_agent.py' },
+    unsupportedLanguages: ['typescript', 'rust'],
     py: [
       { line: 1, tokens: [kw('from'), t(' strands_harness '), kw('import'), t(' create_harness')] },
       { line: 2, tokens: [kw('from'), t(' strands_robots '), kw('import'), t(' Robot')] },
       { line: 3, tokens: [t('')] },
-      { line: 4, tokens: [str('# MuJoCo sim by default — no GPU, no hardware.')] },
-      { line: 5, tokens: [str('# Pass mode="real" to drive a physical robot with the same code.')] },
-      { line: 6, tokens: [t('robot = Robot('), str('"so100"'), t(')')] },
-      { line: 7, tokens: [t('')] },
-      { line: 8, tokens: [t('agent = create_harness(tools=[robot])')] },
-      { line: 9, tokens: [t('agent('), str('"pick up the red cube"'), t(')')] },
-      { line: 10, tokens: [t('')] },
-      { line: 11, tokens: [str('# Every robot is a Zenoh peer — coordinate a fleet:')] },
-      { line: 12, tokens: [t('robot.mesh.tell(robot.mesh.peers['), str('0'), t(']['), str('"peer_id"'), t('],')] },
-      { line: 13, tokens: [t('                '), str('"hold the tray steady"'), t(')')] },
+      { line: 4, tokens: [t('robot = Robot('), str('"so100"'), t(')')] },
+      { line: 5, tokens: [t('')] },
+      { line: 6, tokens: [t('agent = create_harness(tools=[robot])')] },
+      { line: 7, tokens: [t('agent('), str('"pick up the red cube"'), t(')')] },
+      { line: 8, tokens: [t('')] },
+      { line: 9, tokens: [t('robot.mesh.tell(robot.mesh.peers['), str('0'), t(']['), str('"peer_id"'), t('],')] },
+      { line: 10, tokens: [t('                '), str('"hold the tray steady"'), t(')')] },
     ],
   },
 ];
@@ -359,6 +358,7 @@ const useCases: UseCase[] = [
           <li
             class:list={['use-cases__item', uc.active && 'is-active']}
             data-use-case={uc.id}
+            data-unsupported-languages={uc.unsupportedLanguages?.join(' ')}
           >
             {/* The whole item is a button so clicking anywhere selects the
                 use case and swaps the terminal to its code sample. */}
@@ -1001,6 +1001,12 @@ const useCases: UseCase[] = [
       const languageLabel = currentLang.trim() || DEFAULT_LANGUAGE_LABEL;
       const langCode = languageLabel.toLowerCase();
       let activePanel: HTMLElement | undefined;
+      const currentItem = [...section!.querySelectorAll<HTMLElement>('.use-cases__item')].find(
+        (item) => item.dataset.useCase === currentCase
+      );
+      const unsupported = (currentItem?.dataset.unsupportedLanguages ?? '')
+        .split(' ')
+        .includes(langCode);
 
       // Show only the panel matching the current use case AND language.
       section!.querySelectorAll<HTMLElement>('.terminal__code').forEach((pre) => {
@@ -1012,11 +1018,21 @@ const useCases: UseCase[] = [
       });
 
       if (filenameEl) {
-        filenameEl.textContent = activePanel?.dataset.filename ?? `No ${languageLabel} example`;
+        filenameEl.textContent =
+          activePanel?.dataset.filename ?? (unsupported ? 'Not available' : 'No example yet');
       }
 
       if (unavailableEl) {
-        unavailableEl.textContent = activePanel ? '' : `No ${languageLabel} example is available yet.`;
+        unavailableEl.dataset.languageAvailability = activePanel
+          ? 'available'
+          : unsupported
+            ? 'unsupported'
+            : 'undocumented';
+        unavailableEl.textContent = activePanel
+          ? ''
+          : unsupported
+            ? 'The Strands Robots library is not available for this SDK. Choose Python to view this example.'
+            : 'No example is available for this SDK yet.';
         unavailableEl.hidden = Boolean(activePanel);
       }
       if (copyButton) copyButton.disabled = !activePanel;

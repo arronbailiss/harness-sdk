@@ -1,4 +1,4 @@
-#![allow(dead_code, deprecated)]
+#![allow(dead_code)]
 
 mod usage {
     // --8<-- [start:usage]
@@ -39,11 +39,13 @@ mod tools {
         AgentSkills,
         AgentSkillsConfig,
     };
-    use strands::vended_tools::file_editor::file_editor;
+    use strands::vended_tools::edit::edit;
+    use strands::vended_tools::read::read;
     use strands::vended_tools::shell::{
         make_shell,
         MakeShellOptions,
     };
+    use strands::vended_tools::write::write;
     use strands::Agent;
 
     fn agent() -> strands::Result<Agent> {
@@ -55,7 +57,7 @@ mod tools {
         let shell = make_shell(MakeShellOptions::default())?;
         Agent::builder()
             .plugins([skills])
-            .tools([file_editor(), shell])
+            .tools([read(), write(), edit(), shell])
             .printer(false)
             .build()
     }

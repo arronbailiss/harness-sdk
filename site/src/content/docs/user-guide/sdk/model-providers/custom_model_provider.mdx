@@ -2,7 +2,6 @@
 title: Creating a Custom Model Provider
 description: 'Build a custom model provider for the Strands Agents SDK. Implement the Model interface to run agents against your own LLM service.'
 tags: [tool-execution]
-languages: [Python, TypeScript, Rust]
 sidebar:
   label: "Custom Providers"
 integrationType: model-provider
@@ -157,13 +156,19 @@ class CustomModel(Model):
 </Tab>
 <Tab label="TypeScript">
 
-Create a TypeScript module that extends the `Model` class. Define an interface for your model configuration to ensure type safety.
+Create a module that extends the `Model` class. Define an interface for your model configuration to ensure type safety.
 
 ```typescript
 --8<-- "user-guide/sdk/model-providers/custom_model_provider.ts:create_model_class"
 ```
 </Tab>
 <Tab label="Rust">
+
+The Rust examples on this page use the `futures` crate:
+
+```bash
+cargo add futures
+```
 
 Store mutable configuration behind synchronization because agents share models
 through `Arc<dyn Model>`:

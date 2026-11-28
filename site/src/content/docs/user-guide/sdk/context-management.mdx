@@ -1,7 +1,6 @@
 ---
 title: Context management
 description: "How the ContextManager keeps your agent's context window in bounds as conversations grow and tool results accumulate."
-languages: [Python, TypeScript, Rust]
 tags: [conversation-management, token-management]
 sourceLinks:
   - path: strands-py/src/strands/_context_manager/context_manager.py
@@ -10,30 +9,60 @@ sourceLinks:
 addedDate: 2026-06-12
 ---
 
-:::caution[Experimental in Python]
-In Python, the `ContextManager` strategy API is still exported from
-`strands.experimental.context_manager` and may change in future versions. The
-TypeScript API is stable.
-:::
+<Tabs>
+<Tab label="Python">
+
+The `ContextManager` strategy API is still exported from
+`strands.experimental.context_manager` and may change in future versions.
+
+</Tab>
+<Tab label="TypeScript">
+
+The context management strategy API is stable.
+
+</Tab>
+<Tab label="Rust">
+
+The context management strategy API is part of the SDK's developer preview.
+
+</Tab>
+</Tabs>
 
 As conversations grow, your agent's context window fills with messages, tool results, and system prompts. Without management, this leads to token limit errors, degraded performance, and loss of relevant information.
 
 The SDK ships context management that works out of the box. Pick a mode and the SDK wires up an ordered strategy pipeline with tuned defaults.
 
+Existing context-management options remain available while you evaluate the
+`ContextManager` strategy API:
+
+<Tabs>
+<Tab label="Python">
+
 You can continue using [conversation managers](./agents/conversation-management)
-while evaluating the `ContextManager` strategy API. Python and TypeScript can
-also continue using [ContextOffloader](./plugins/context-offloader). See
-[Migrating to the strategy API](#migrating-to-the-strategy-api) for optional
+and [ContextOffloader](./plugins/context-offloader).
+
+</Tab>
+<Tab label="TypeScript">
+
+You can continue using [conversation managers](./agents/conversation-management)
+and [ContextOffloader](./plugins/context-offloader).
+
+</Tab>
+<Tab label="Rust">
+
+You can continue using [conversation managers](./agents/conversation-management).
+
+</Tab>
+</Tabs>
+
+See [Migrating to the strategy API](#migrating-to-the-strategy-api) for optional
 migration examples.
 
 ## Quickstart
 
 Pass
-<Syntax
-  py='context_manager="auto"'
-  ts='contextManager: "auto"'
-  rs=".context_manager(ContextManagerStrategy::Auto)"
-/>
+
+<Syntax py='context_manager="auto"' ts='contextManager: "auto"' rs=".context_manager(ContextManagerStrategy::Auto)" />
 and the SDK manages context in the background:
 
 <Tabs>
@@ -44,6 +73,7 @@ from strands import Agent
 
 agent = Agent(context_manager="auto")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -52,12 +82,14 @@ agent = Agent(context_manager="auto")
 
 --8<-- "user-guide/sdk/context-management.ts:basic"
 ```
+
 </Tab>
 <Tab label="Rust">
 
 ```rust
 --8<-- "user-guide/sdk/context-management.rs:basic"
 ```
+
 </Tab>
 </Tabs>
 
@@ -76,18 +108,18 @@ by default.
 
 When <Syntax py="context_manager" ts="contextManager" rs="context_manager" /> is set,
 any co-provided
+
 <Syntax py="conversation_manager" ts="conversationManager" rs="conversation_manager" />
-is ignored. The ContextManager owns overflow recovery and proactive compression
-internally.
+is ignored. The ContextManager owns overflow recovery and proactive compression internally.
 
 ## Choosing a mode
 
-| Mode | Behavior |
-|------|----------|
-| Automatic | Background compression with tuned defaults. No model involvement. |
-| Agentic | Model-driven: the model manages its own context. |
+| Mode          | Behavior                                                          |
+| ------------- | ----------------------------------------------------------------- |
+| Automatic     | Background compression with tuned defaults. No model involvement. |
+| Agentic       | Model-driven: the model manages its own context.                  |
 | Custom config | Full control over the strategy pipeline, targets, and conditions. |
-| Disabled | No context management. Overflow errors propagate directly. |
+| Disabled      | No context management. Overflow errors propagate directly.        |
 
 See [Built-in Modes](./context-management/built-in-modes) for automatic,
 agentic, and disabled configuration in each language. See
@@ -98,8 +130,9 @@ shorthand configurations.
 ## Storage backends
 
 The `ContextManager` uses in-memory
-<Syntax py="stash" ts="archive" rs="archive" /> storage by default. Content does not
-persist across process restarts. Provide a durable storage backend when the
+
+<Syntax py="stash" ts="archive" rs="archive" /> storage by default. Content does not persist across process restarts.
+Provide a durable storage backend when the
 <Syntax py="stash" ts="archive" rs="archive" /> needs to survive restarts:
 
 <Tabs>
@@ -118,6 +151,7 @@ stash = {
     ),
 }
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -126,6 +160,7 @@ stash = {
 
 --8<-- "user-guide/sdk/context-management.ts:storage_backends"
 ```
+
 </Tab>
 <Tab label="Rust">
 
@@ -133,7 +168,8 @@ stash = {
 --8<-- "user-guide/sdk/context-management.rs:storage_backends"
 ```
 
-The Rust SDK currently provides in-memory and local-file storage.
+The SDK currently provides in-memory and local-file storage.
+
 </Tab>
 </Tabs>
 
@@ -144,44 +180,65 @@ reference.
 ## Limitations
 
 **Stateful models.** Stateful models manage conversation state server-side. Setting
-<Syntax py="context_manager" ts="contextManager" rs="context_manager" /> with a
-stateful model raises an error.
+
+<Syntax py="context_manager" ts="contextManager" rs="context_manager" /> with a stateful model raises an error.
 
 ## Migrating to the strategy API
 
-If you currently use a conversation manager, use these examples as starting
-points. The Python and TypeScript tabs also cover `ContextOffloader`. Review the
-strategy conditions and preservation settings for your workload because the
-strategy API does not map one-to-one to every existing option.
+Use the matching migration path as a starting point:
 
 <Tabs>
 <Tab label="Python">
 
-| Before | After |
-|--------|-------|
-| `SummarizingConversationManager(...)` | `Offload.summarize("*").when(utilization=0.85, preserve_recent=4)` |
-| `ContextOffloader(max_result_tokens=2500, preview_tokens=500)` | `Offload.truncate("tool_results", {"preview_tokens": 500}).when(threshold=2500)` |
-| `SlidingWindowConversationManager(...)` | No exact equivalent. Use `Offload.drop` or `Offload.truncate` with utilization and preservation conditions. |
-| `context_manager="auto"` | Unchanged |
+This covers `SummarizingConversationManager`, `ContextOffloader`, and the
+`conversation_manager` setting.
 
 </Tab>
 <Tab label="TypeScript">
 
-| Before | After |
-|--------|-------|
-| `new SummarizingConversationManager(...)` | `Offload.summarize("*").when({ contextUtilization: "85%", preserveRecent: 4 })` |
-| `new ContextOffloader({ maxResultTokens: 2500, previewTokens: 500 })` | `Offload.truncate("toolResults", { previewTokens: 500 }).when({ blockThreshold: 2500 })` |
-| `new SlidingWindowConversationManager(...)` | No exact equivalent. Use `Offload.drop` or `Offload.truncate` with utilization and preservation conditions. |
-| `contextManager: "auto"` | Unchanged |
+This covers `SummarizingConversationManager`, `ContextOffloader`, and the
+`conversationManager` setting.
 
 </Tab>
 <Tab label="Rust">
 
-- `SummarizingConversationManager::new(...)` becomes
-  `Offload::summarize(OffloadTarget::All, ...)`.
-- `SlidingWindowConversationManager::new(...)` has no exact equivalent. Use
-  `Offload::drop` or `Offload::truncate`.
-- `ContextManagerStrategy::Auto` is unchanged.
+This covers the summarizing and sliding-window conversation managers and
+`ContextManagerStrategy::Auto`.
+
+</Tab>
+</Tabs>
+
+Review the strategy conditions and preservation settings for your workload
+because the strategy API does not map one-to-one to every existing option.
+
+<Tabs>
+<Tab label="Python">
+
+| Before                                                         | After                                                                                                       |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `SummarizingConversationManager(...)`                          | `Offload.summarize("*").when(utilization=0.85, preserve_recent=4)`                                          |
+| `ContextOffloader(max_result_tokens=2500, preview_tokens=500)` | `Offload.truncate("tool_results", {"preview_tokens": 500}).when(threshold=2500)`                            |
+| `SlidingWindowConversationManager(...)`                        | No exact equivalent. Use `Offload.drop` or `Offload.truncate` with utilization and preservation conditions. |
+| `context_manager="auto"`                                       | Unchanged                                                                                                   |
+
+</Tab>
+<Tab label="TypeScript">
+
+| Before                                                                | After                                                                                                       |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `new SummarizingConversationManager(...)`                             | `Offload.summarize("*").when({ contextUtilization: "85%", preserveRecent: 4 })`                             |
+| `new ContextOffloader({ maxResultTokens: 2500, previewTokens: 500 })` | `Offload.truncate("toolResults", { previewTokens: 500 }).when({ blockThreshold: 2500 })`                    |
+| `new SlidingWindowConversationManager(...)`                           | No exact equivalent. Use `Offload.drop` or `Offload.truncate` with utilization and preservation conditions. |
+| `contextManager: "auto"`                                              | Unchanged                                                                                                   |
+
+</Tab>
+<Tab label="Rust">
+
+| Before                                       | After                                                            |
+| -------------------------------------------- | ---------------------------------------------------------------- |
+| `SummarizingConversationManager::new(...)`   | `Offload::summarize(OffloadTarget::All, ...)`                    |
+| `SlidingWindowConversationManager::new(...)` | No exact equivalent. Use `Offload::drop` or `Offload::truncate`. |
+| `ContextManagerStrategy::Auto`               | Unchanged                                                        |
 
 </Tab>
 </Tabs>
@@ -191,22 +248,24 @@ strategy API does not map one-to-one to every existing option.
 <Tabs>
 <Tab label="Python">
 
-No changes. The Python API is still `strands.experimental.context_manager`, and the names below are unchanged.
+No changes. The API remains in `strands.experimental.context_manager`, and the
+names below are unchanged.
 
 </Tab>
 <Tab label="TypeScript">
 
-The TypeScript API moved out of `@strands-agents/sdk/experimental`, and the stash was renamed to the archive.
+The API moved out of `@strands-agents/sdk/experimental`, and the stash was
+renamed to the archive.
 
-| Before | After |
-|--------|-------|
-| `from '@strands-agents/sdk/experimental'` | `from '@strands-agents/sdk/context-manager'` |
+| Before                                                       | After                                        |
+| ------------------------------------------------------------ | -------------------------------------------- |
+| `from '@strands-agents/sdk/experimental'`                    | `from '@strands-agents/sdk/context-manager'` |
 | `from '@strands-agents/sdk'` (`Offload`, `OffloadTarget`, …) | `from '@strands-agents/sdk/context-manager'` |
-| `StashConfig` | `ArchiveConfig` |
-| `{ stash: … }` | `{ archive: … }` |
-| `contextManager.stash` | `contextManager.archive` |
-| `contextManager.stashIsDurable` | `contextManager.archiveIsDurable` |
-| `ContextState.stash` | `ContextState.archive` |
+| `StashConfig`                                                | `ArchiveConfig`                              |
+| `{ stash: … }`                                               | `{ archive: … }`                             |
+| `contextManager.stash`                                       | `contextManager.archive`                     |
+| `contextManager.stashIsDurable`                              | `contextManager.archiveIsDurable`            |
+| `ContextState.stash`                                         | `ContextState.archive`                       |
 
 The old names still work this release, deprecated, and are removed in the next minor. Root-package imports are the exception — they are gone now, so move those first. `contextManager: "auto"` and `contextManager: "agentic"` are unchanged.
 

@@ -1,7 +1,6 @@
 ---
 title: Get started
 description: "Documentation for the Strands Agents SDK. Learn to build, deploy, and scale AI agents with tools, multi-agent patterns, and any model provider."
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/agent/agent.py
   - path: strands-ts/src/agent/agent.ts
@@ -40,14 +39,14 @@ The Strands Agents SDK empowers developers to quickly build, manage, evaluate an
 ## A library, not a platform
 
 Strands runs inside your own process. Creating an agent is constructing an object
-in Python, Node.js, or Rust: there is no hosted control plane, scheduler, or database to
-stand up first. Amazon Bedrock is the default model provider. Provider support
-varies by SDK, and Rust providers other than Amazon Bedrock require an explicit Cargo
-feature. Adding an agent to an existing web application is a dependency and a
-few lines of code, not new infrastructure.
+in your application: there is no hosted control plane, scheduler, or database to
+stand up first. Amazon Bedrock is the default model provider, and selecting
+another provider changes the model object rather than the agent loop. Adding an
+agent to an existing web application takes a dependency and a few lines of code,
+not new infrastructure.
 
-Here is the core of it: a request handler constructs an agent and calls it. The
-only service it reaches is the model provider.
+Here is the whole of it: one request handler constructs an agent and calls it.
+The only service it reaches is the model provider.
 
 <Tabs>
 <Tab label="Python">
@@ -87,15 +86,15 @@ Run it with `tsx server.ts`.
 --8<-- "user-guide/sdk/quickstart/overview.rs:request_handler"
 ```
 
-Call `chat()` from the request handler in your Rust web framework.
+Call `chat()` from the request handler in your web framework.
 </Tab>
 </Tabs>
 
 ## Use any model provider
 
-The model is one object you hand to the agent. Amazon Bedrock is the default.
-Passing another model leaves the rest of your agent code unchanged, although
-the dependency or Cargo feature you install depends on the provider and SDK.
+The model is one object you hand to the agent. Amazon Bedrock is the default,
+and passing another model leaves the rest of your agent code unchanged. Install
+the dependency or feature for the provider you select.
 
 <Tabs>
 <Tab label="Python">
@@ -179,7 +178,7 @@ print(agent("What can you help me build?"))
 </Tab>
 </Tabs>
 
-Ollama runs in the Python SDK only.
+Ollama is not available.
 </Tab>
 <Tab label="Rust">
 Amazon Bedrock is enabled by default. For Anthropic or OpenAI, select the
@@ -216,18 +215,20 @@ cargo add strands --no-default-features --features openai
 ```
 </Tab>
 <Tab label="Google">
-Google is not available in the Rust developer preview.
+Google is not available.
 </Tab>
 <Tab label="Ollama">
-Ollama is not available in the Rust developer preview.
+Ollama is not available.
 </Tab>
 </Tabs>
+
+For exact APIs, use the [API reference](../../../api/rust/).
+
 </Tab>
 </Tabs>
 
 See [model providers](../model-providers/) for provider installation,
-configuration, and language availability. For exact Rust APIs, use the
-[Rust API reference](../../../api/rust/).
+configuration, and language availability.
 
 ## Strands harness or the Strands Harness SDK?
 
@@ -240,79 +241,3 @@ Strands gives you two starting points, and you can move between them without a r
 | Start on Strands harness and drop down for more control later | [Compose with the Strands Harness SDK](../../harness/composing-with-sdk/) | Strands harness is built on the Strands Harness SDK, so you can change any piece of it without a rewrite. |
 
 Weighing Strands against other frameworks or a hand-written loop instead? See [choosing an agent foundation](../../migrate/choosing-an-agent-foundation/).
-
-## Language support
-
-Strands Agents SDK is available in Python, TypeScript, and a Rust developer
-preview.
-
-### Feature availability
-
-The table below compares feature availability across the SDKs.
-
-Feature guides include tabs for every documented SDK. The language selector
-distinguishes features that an SDK does not support from features whose examples
-are not documented yet. Use the [Rust quickstart](./rust/) and
-[Rust API reference](../../../api/rust/) for compile-checked Rust examples and
-exact APIs during the developer preview.
-
-| Category | Feature | Python | TypeScript | Rust preview |
-| --- | --- | :---: | :---: | :---: |
-| **Core** | [Agent creation][agent-loop] | Yes | Yes | Yes |
-|  | [Streaming responses][streaming] | Yes | Yes | Yes |
-|  | [Structured output][structured-output] | Yes | Yes | Yes |
-| **Model providers** | [Amazon Bedrock][bedrock] | Yes | Yes | Yes |
-|  | [OpenAI][openai] | Yes | Yes | Yes |
-|  | [OpenAI Responses API][openai-responses] | Yes | Yes | Yes |
-|  | [Anthropic][anthropic] | Yes | Yes | Yes |
-|  | [Google][google] | Yes | Yes | No |
-|  | [Ollama][ollama] | Yes | No | No |
-|  | [LiteLLM][litellm] | Yes | No | No |
-|  | [Custom providers][custom-providers] | Yes | Yes | Yes |
-|  | [Additional providers][providers] | 5+ | 1+ | 1+ |
-| **Tools** | [Custom tools][custom-tools] | Yes | Yes | Yes |
-|  | [MCP tools][mcp-tools] | Yes | Yes | Yes |
-|  | [Vended tools][vended-tools] | Yes | Yes | Yes |
-| **Conversation** | [Null manager][conversation] | Yes | Yes | Yes |
-|  | [Sliding window manager][conversation] | Yes | Yes | Yes |
-|  | [Summarizing manager][conversation] | Yes | Yes | Yes |
-| **Hooks** | [Lifecycle hooks][hooks] | Yes | Yes | Yes |
-|  | [Reusable hooks][hooks] | Yes | Yes | Yes |
-| **Multi-agent** | [Swarms][swarm] | Yes | Yes | No |
-|  | [Graphs][graph] | Yes | Yes | No |
-|  | [Workflows][workflow] | Yes | Yes | Yes |
-|  | [Agents as tools][agents-as-tools] | Yes | Yes | Yes |
-|  | [Agent-to-Agent (A2A)][a2a] | Yes | Yes | No |
-| **Session management** | [Storage managers][sessions] | Yes | Yes | Partial |
-| **Observability** | [OpenTelemetry][observability] | Yes | Yes | Yes |
-| **Steering** | [Agent steering][steering] | Yes | Yes | No |
-| **Voice** | [Bidirectional streaming][bidi] | Yes | No | No |
-
-Rust session management currently includes file and custom storage.
-
-[agent-loop]: ../agents/agent-loop/
-[streaming]: ../streaming/
-[structured-output]: ../agents/structured-output/
-[bedrock]: ../model-providers/amazon-bedrock/
-[openai]: ../model-providers/openai/
-[openai-responses]: ../model-providers/openai-responses/
-[anthropic]: ../model-providers/anthropic/
-[google]: ../model-providers/google/
-[ollama]: ../model-providers/ollama/
-[litellm]: ../model-providers/litellm/
-[custom-providers]: ../model-providers/custom_model_provider/
-[providers]: ../model-providers/
-[custom-tools]: ../tools/custom-tools/
-[mcp-tools]: ../tools/mcp-tools/
-[vended-tools]: ../tools/vended-tools/
-[conversation]: ../agents/conversation-management/
-[hooks]: ../agents/hooks/
-[swarm]: ../multi-agent/swarm/
-[graph]: ../multi-agent/graph/
-[workflow]: ../multi-agent/workflow/
-[agents-as-tools]: ../multi-agent/agents-as-tools/
-[a2a]: ../multi-agent/agent-to-agent/
-[sessions]: ../agents/session-management/
-[observability]: ../observability-evaluation/observability/
-[steering]: ../agents/interventions/steering/
-[bidi]: ../bidi/quickstart/

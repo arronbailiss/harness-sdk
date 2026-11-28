@@ -1,9 +1,6 @@
 ---
 title: Configuration reference
-description: >-
-  Every Strands harness option, with its Python, TypeScript, and Rust name,
-  default, and purpose.
-languages: [Python, TypeScript, Rust]
+description: "Every option the Strands harness factory accepts, with its default and purpose."
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-py/src/strands_harness/defaults.py
@@ -13,75 +10,162 @@ sidebar:
   label: "Configuration reference"
 ---
 
-This is the lookup layer for the Strands harness factory (`create_harness` in Python and
-Rust, `createHarness` in TypeScript). Every argument is optional. The three libraries
-expose the same concepts, spelled for each language. For practical examples, follow the
-links into the configure and tools guides.
+This is the lookup layer for the
+<Syntax py="create_harness" ts="createHarness" rs="create_harness" />
+factory. Every argument is optional. For practical examples, follow the links into the
+configure and tools guides.
 
 ## Options
 
-| Python | TypeScript | Rust | Default | Purpose |
-|---|---|---|---|---|
-| `model` | `model` | `.model` | Bedrock | Model string, router, or instance. |
-| `effort` | `effort` | `.effort` | auto | Reasoning effort. |
-| `instructions` | `instructions` | `.instructions` | none | Domain prompt block. |
-| `tools` | `tools` | `.tools` | none | Consumer tools. |
-| `plugins` | `plugins` | `.plugins` | none | Consumer SDK plugins. |
-| `mcp_servers` | `mcpServers` | `.mcp_servers` | none | MCP server source. |
-| `builtin_tools` | `builtinTools` | `.builtin_tools` | all | Harness tools. |
-| `web_fetch.model` | same | `WebFetchConfig::model` | provider | Fetch model. |
-| `caching` | `caching` | `.caching` | on | Prompt caching. |
-| `context_manager` | `contextManager` | `.context_manager` | auto | Context policy. |
-| `session.id` | same | `SessionConfig::id` | generated | Conversation id. |
-| `session.dir` | same | `SessionConfig::dir` | `./.agent/sessions` | Session storage. |
-| `skills` | `skills` | `.skills` | `./.agent/skills` | Agent Skills sources. |
-| `builtin_plugins` | `builtinPlugins` | `.builtin_plugins` | environment | Plugins. |
-| `memory` | `memory` | `.memory` | on | Long-term memory. |
-| `memory.dir` | same | `MemoryConfig::dir` | `./.agent/memory` | Memory storage. |
-| `memory.stores` | same | `MemoryConfig::stores` | none | Custom stores. |
-| `interventions` | same | `.interventions` | none | Tool-call gates. |
-| `background_tasks` | `backgroundTasks` | `.background_tasks` | agentic | Policy. |
+<Tabs>
+  <Tab label="Python">
+    | Option | Default | Purpose |
+    |---|---|---|
+    | `model` | `bedrock/global.anthropic.claude-opus-5-5` | A `provider/name` string, a bare Amazon Bedrock id, a model router, or a model instance. See [choose a model](../../configure/model/). |
+    | `effort` | `"auto"` | Reasoning effort. Ignored for a model instance or router. |
+    | `instructions` | none | A domain block appended after the harness contract. Ignored when a full system prompt is passed. |
+    | `tools` | none | Consumer tools added alongside the built-ins. See [add tools](../../configure/tools-and-instructions/). |
+    | `plugins` | none | Consumer SDK plugins added alongside the built-in plugins. |
+    | `mcp_servers` | none | MCP servers to connect: a JSON file path or a mapping. See [MCP servers](../../configure/mcp-servers/). |
+    | `builtin_tools` | `shell`, `read`, `write`, `edit`, `web_fetch`, `web_search`, `programmatic_tool_caller`, `subagent` | Built-in tools to enable, or `[]` for none. |
+    | `builtin_tools={"web_fetch": {"model": ...}}` | provider default | The summarizer model `web_fetch` runs on. See [web access](../../tools/web-access/). |
+    | `caching` | `"auto"` (on) | Prompt caching where the provider supports it; off disables what the harness configures. |
+    | `context_manager` | `"auto"` | `"auto"`, `"agentic"`, or off. Enables context management and offloading. |
+    | `session={"id": ...}` | generated id | Persists and resumes a conversation by id. |
+    | `session={"dir": ...}` | `./.agent/sessions` | Where session state and offloaded artifacts live. |
+    | `skills` | `./.agent/skills` when present | Directory or list scanned for Agent Skills; off disables loading. |
+    | `builtin_plugins` | `["environment"]` | Built-in feature plugins to enable (`todos` is opt-in), or `[]` for none. |
+    | `memory` | on | File-based long-term memory; off disables it. |
+    | `memory={"dir": ...}` | `./.agent/memory` | Where the default memory store writes files. |
+    | `memory={"stores": [...]}` | none | Replaces the memory store while keeping the harness policy. |
+    | `interventions` | none | Gates tool calls behind approval or a policy. See [interventions](../../configure/interventions/). |
+    | `background_tasks` | agentic `*`; `subagent` always | Background-task policy. See [background tasks](../../configure/background-tasks/). |
+  </Tab>
+  <Tab label="TypeScript">
+    | Option | Default | Purpose |
+    |---|---|---|
+    | `model` | `bedrock/global.anthropic.claude-opus-5-5` | A `provider/name` string, a bare Amazon Bedrock id, a model router, or a model instance. See [choose a model](../../configure/model/). |
+    | `effort` | `'auto'` | Reasoning effort. Ignored for a model instance or router. |
+    | `instructions` | none | A domain block appended after the harness contract. Ignored when a full system prompt is passed. |
+    | `tools` | none | Consumer tools added alongside the built-ins. See [add tools](../../configure/tools-and-instructions/). |
+    | `plugins` | none | Consumer SDK plugins added alongside the built-in plugins. |
+    | `mcpServers` | none | MCP servers to connect: a JSON file path or a mapping. See [MCP servers](../../configure/mcp-servers/). |
+    | `builtinTools` | `shell`, `read`, `write`, `edit`, `web_fetch`, `web_search`, `programmatic_tool_caller`, `subagent` | Built-in tools to enable, or `[]` for none. |
+    | `builtinTools: { web_fetch: { model } }` | provider default | The summarizer model `web_fetch` runs on. See [web access](../../tools/web-access/). |
+    | `caching` | `'auto'` (on) | Prompt caching where the provider supports it; off disables what the harness configures. |
+    | `contextManager` | `'auto'` | `'auto'`, `'agentic'`, or off. Enables context management and offloading. |
+    | `session: { id }` | generated id | Persists and resumes a conversation by id. |
+    | `session: { dir }` | `./.agent/sessions` | Where session state and offloaded artifacts live. |
+    | `skills` | `./.agent/skills` when present | Directory or list scanned for Agent Skills; off disables loading. |
+    | `builtinPlugins` | `['environment']` | Built-in feature plugins to enable (`todos` is opt-in), or `[]` for none. |
+    | `memory` | on | File-based long-term memory; off disables it. |
+    | `memory: { dir }` | `./.agent/memory` | Where the default memory store writes files. |
+    | `memory: { stores }` | none | Replaces the memory store while keeping the harness policy. |
+    | `interventions` | none | Gates tool calls behind approval or a policy. See [interventions](../../configure/interventions/). |
+    | `backgroundTasks` | agentic `*`; `subagent` always | Background-task policy. See [background tasks](../../configure/background-tasks/). |
+  </Tab>
+  <Tab label="Rust">
+    | Option | Default | Purpose |
+    |---|---|---|
+    | `.model(...)` | `bedrock/global.anthropic.claude-opus-5-5` | A `provider/name` string, a bare Amazon Bedrock id, a model router, or a model instance. See [choose a model](../../configure/model/). |
+    | `.effort(...)` | `Effort::Auto` | Reasoning effort. Ignored for a model instance or router. |
+    | `.instructions(...)` | none | A domain block appended after the harness contract. Ignored when a full system prompt is passed. |
+    | `.tools(...)` | none | Consumer tools added alongside the built-ins. See [add tools](../../configure/tools-and-instructions/). |
+    | `.plugins(...)` | none | Consumer SDK plugins added alongside the built-in plugins. |
+    | `.mcp_servers(...)` | none | MCP servers to connect: a JSON file path, mapping, or SDK source. See [MCP servers](../../configure/mcp-servers/). |
+    | `.builtin_tools(...)` | `Shell`, `Read`, `Write`, `Edit`, `WebFetch`, `WebSearch`, `ProgrammaticToolCaller`, `Subagent` | A list pins the enabled tools; `BuiltinToolsConfig` edits the defaults. |
+    | `BuiltinToolsConfig::web_fetch` | provider default | The summarizer model `web_fetch` runs on. See [web access](../../tools/web-access/). |
+    | `.caching(...)` | on | Prompt caching where the provider supports it; `false` disables what the harness configures. |
+    | `.context_manager(...)` | `ContextManagerStrategy::Auto` | Context-management strategy. |
+    | `.session(...)` | generated id | Persists a conversation under `./.agent/sessions`; `false` disables it. |
+    | `SessionConfig::dir(...)` | `./.agent/sessions` | Where session state and offloaded artifacts live. |
+    | `.skills(...)` | `./.agent/skills` when present | Sources scanned for Agent Skills; `false` disables loading. |
+    | `.builtin_plugins(...)` | `[BuiltinPluginName::Environment]` | Built-in feature plugins to enable, or `[]` for none. |
+    | `.memory(...)` | on | File-based long-term memory; `false` disables it. |
+    | `MemoryConfig::dir(...)` | `./.agent/memory` | Where the default memory store writes files. |
+    | `MemoryConfig::stores` | none | Replaces the memory store while keeping the harness policy. |
+    | `.interventions(...)` | none | Gates tool calls behind approval or a policy. See [interventions](../../configure/interventions/). |
+    | `.background_tasks(...)` | agentic `*`; `subagent` always | Background-task policy. See [background tasks](../../configure/background-tasks/). |
+  </Tab>
+</Tabs>
 
 ## Value notes
 
-- **`effort`** uses the string levels `"auto"`, `"off"`, `"minimal"`, `"low"`,
-  `"medium"`, `"high"`, `"xhigh"`, and `"max"` in Python and TypeScript. Rust
-  uses the matching `Effort` variants, such as `Effort::Auto` and
-  `Effort::High`. A level the resolved provider rejects fails at construction.
-- **`caching`** accepts `"auto"`/`True` to enable and `False`/`None` to disable
-  in Python, with the equivalent values in TypeScript. In Rust, omit the option
-  for the default or call `.caching(true)` / `.caching(false)`. Disabling it has
-  no effect where caching is automatic. Enabling it explicitly on a `Model`
-  instance is ignored with a warning.
-- **`context_manager`** accepts `"auto"`, `"agentic"`, and `False`/`None` in
-  Python, with the equivalent values in TypeScript. Rust uses
-  `ContextManagerStrategy::{Auto, Agentic, Disabled}`. Disabling context
-  management also disables context offloading.
-- **`memory`** accepts `True` to enable and `False`/`None` to disable in Python,
-  with the equivalent values in TypeScript. Rust uses `.memory(true)` /
-  `.memory(false)` or a `MemoryConfig`. An explicit SDK memory manager takes
-  precedence.
-- **`builtin_tools`** accepts a list of names or a per-tool configuration in
-  Python and TypeScript. Rust accepts `BuiltinToolName` values or a
-  `BuiltinToolsConfig`.
-- **`builtin_plugins`** accepts a list of names in Python and TypeScript. Rust
-  accepts `BuiltinPluginName` values. Rust's only harness built-in plugin is
-  `Environment`; use the SDK's `Todos` plugin for task tracking.
+<Tabs>
+  <Tab label="Python">
+    - `effort` accepts `"auto"`, `"off"`, and explicit provider levels. A level
+      the resolved provider rejects fails at construction.
+    - `caching` accepts `"auto"` or `True` to enable, and `False` or `None` to
+      disable. Automatic provider caching is unaffected.
+    - `context_manager` accepts `"auto"`, `"agentic"`, `False`, or `None`.
+      Disabling it also disables context offloading.
+    - `memory` accepts `True`, `False`, or `None`. An explicit `memory_manager`
+      takes precedence.
+    - `builtin_tools` and `builtin_plugins` accept lists of names. Unknown names
+      fail during construction and list the valid names.
+  </Tab>
+  <Tab label="TypeScript">
+    - `effort` accepts `'auto'`, `'off'`, and explicit provider levels. A level
+      the resolved provider rejects fails at construction.
+    - `caching` accepts `'auto'` or `true` to enable, and `false` or `null` to
+      disable. Automatic provider caching is unaffected.
+    - `contextManager` accepts `'auto'`, `'agentic'`, `false`, or `null`.
+      Disabling it also disables context offloading.
+    - `memory` accepts `true`, `false`, or `null`. An explicit `memoryManager`
+      takes precedence.
+    - `builtinTools` and `builtinPlugins` accept lists of names. Unknown names
+      fail during construction and list the valid names.
+  </Tab>
+  <Tab label="Rust">
+    - `Effort` provides `Auto`, `Off`, `Minimal`, `Low`, `Medium`, `High`,
+      `Xhigh`, and `Max`. A level the resolved provider rejects fails at
+      construction.
+    - Omitting `caching` enables it. An explicit request on a model instance or
+      router is ignored with a warning.
+    - `ContextManagerStrategy` provides `Auto`, `Agentic`, `Config`, `Instance`,
+      and `Disabled`. Disabling it also disables context offloading.
+    - `memory` accepts a boolean, `MemoryConfig`, or `MemoryManager`. An explicit
+      SDK memory manager takes precedence.
+    - `builtin_tools` accepts `BuiltinToolName` values or `BuiltinToolsConfig`.
+      `builtin_plugins` accepts `BuiltinPluginName` values.
+  </Tab>
+</Tabs>
 
 ## Passthrough to the Agent
 
-In Python, any keyword the factory does not name is forwarded to the underlying `Agent`
-constructor. TypeScript's `HarnessAgentOptions` extends the SDK's `AgentConfig` minus the
-fields the harness owns, while Rust exposes the remaining typed `AgentConfig` fields
-directly on `HarnessAgentOptions`. In every language, an explicit SDK field takes
-precedence over the harness default it replaces. For example, the SDK system prompt
-replaces `instructions`, and an SDK memory manager replaces `memory`. See
+<Tabs>
+  <Tab label="Python">
+    Any keyword the factory does not name is forwarded to the underlying `Agent`
+    constructor. An explicit value takes precedence over the corresponding harness
+    default.
+  </Tab>
+  <Tab label="TypeScript">
+    `HarnessAgentOptions` extends the SDK's `AgentConfig` minus fields the harness owns.
+    An explicit value takes precedence over the corresponding harness default.
+  </Tab>
+  <Tab label="Rust">
+    `HarnessAgentOptions` exposes the remaining typed `AgentConfig` fields directly.
+    An explicit value takes precedence over the corresponding harness default.
+  </Tab>
+</Tabs>
+
+For example, a supplied system prompt replaces `instructions`, and a supplied memory
+manager replaces `memory`. See
 [compose with the Strands Harness SDK](../../composing-with-sdk/).
 
 ## Exported building blocks
 
-Beyond the factory, Strands harness exports the pieces it composes:
-`HARNESS_CONTRACT`, `build_system_prompt` / `buildSystemPrompt`, and language-specific
-builders. Python also exports `resolve_memory` and `resolve_interventions`. These are
-documented in
-[compose with the Strands Harness SDK](../../composing-with-sdk/).
+<Tabs>
+  <Tab label="Python">
+    The package exports `HARNESS_CONTRACT`, `build_system_prompt`, `resolve_memory`,
+    and `resolve_interventions`.
+  </Tab>
+  <Tab label="TypeScript">
+    The package exports `HARNESS_CONTRACT` and `buildSystemPrompt`.
+  </Tab>
+  <Tab label="Rust">
+    The crate exports `HARNESS_CONTRACT` and `build_system_prompt`.
+  </Tab>
+</Tabs>
+
+See [compose with the Strands Harness SDK](../../composing-with-sdk/).

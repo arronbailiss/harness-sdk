@@ -1,7 +1,6 @@
 ---
 title: Stream event types
 description: "Reference for every event a Strands agent stream emits: lifecycle, model output, tool activity, and multi-agent coordination events, plus how to serialize them."
-languages: [Python, TypeScript, Rust]
 sidebar:
   label: "Event types"
 tags: [streaming]
@@ -11,7 +10,11 @@ sourceLinks:
   - path: strands-rs/strands/src/hooks/stream_events.rs
 ---
 
-Every way of consuming a Strands stream yields the same set of events: [async iterators](./async-iterators.md) and, in Python, [callback handlers](./callback-handlers.md). They differ in their execution model, not in what they emit. This page is the reference for every event type the stream produces: lifecycle signals, model output, tool activity, and multi-agent coordination, plus how to serialize events when forwarding them over the wire.
+Every way of consuming a Strands stream yields the same set of events. The
+consumers differ in their execution model, not in what they emit. This page is
+the reference for every event type the stream produces: lifecycle signals,
+model output, tool activity, and multi-agent coordination, plus how to
+serialize events when forwarding them over the wire.
 
 ## Event Types
 
@@ -31,7 +34,9 @@ Every way of consuming a Strands stream yields the same set of events: [async it
 </Tab>
 <Tab label="TypeScript">
 
-Each event emitted from the TypeScript agent is a class with a `type` attribute that has a unique value. When determining an event, you can use `instanceof` on the class, or an equality check on the `event.type` value. All events extend `HookableEvent`, making them both streamable and subscribable via hook callbacks.
+Each emitted event is a class with a unique `type` value. Identify an event with
+`instanceof` or by comparing `event.type`. All events extend `HookableEvent`, so
+they are both streamable and subscribable through hook callbacks.
 
 - **`BeforeInvocationEvent`**: Start of agent loop (before any iterations)
     - **`cancel`**: Set by hook callbacks to cancel the invocation (`boolean | string`)
@@ -52,7 +57,7 @@ Each event emitted from the TypeScript agent is a class with a `type` attribute 
 </Tab>
 <Tab label="Rust">
 
-Rust streams the `AgentStreamEvent` enum. Match its variants directly:
+The stream yields the `AgentStreamEvent` enum. Match its variants directly:
 
 - **`BeforeInvocation`** and **`AfterInvocation`**: Invocation boundaries
 - **`BeforeModelCall`** and **`AfterModelCall`**: Model-call boundaries
@@ -209,10 +214,9 @@ See [Graph streaming](../multi-agent/graph.md#streaming-events) and [Swarm strea
 </Tab>
 <Tab label="Rust">
 
-Graph and Swarm orchestrators are not available in the Rust SDK, so Rust does
-not emit their coordination events. An [agent used as a
-tool](../multi-agent/agents-as-tools.md) forwards its stream through the parent
-agent's `ToolStreamUpdate` events.
+Graph and Swarm orchestrators are not available, so their coordination events
+are not emitted. An [agent used as a tool](../multi-agent/agents-as-tools.md)
+forwards its stream through the parent agent's `ToolStreamUpdate` events.
 
 </Tab>
 </Tabs>
@@ -222,7 +226,9 @@ agent's `ToolStreamUpdate` events.
 <Tabs>
 <Tab label="Python">
 
-Python streaming events are plain dictionaries. The SDK does not include a built-in serialization filter, so you control which events and fields to forward from your processes and servers.
+Streaming events are plain dictionaries. The SDK does not include a built-in
+serialization filter, so you control which events and fields to forward from
+your processes and servers.
 
 When serving streamed responses (for example, over SSE or WebSockets), you can filter the yielded events to keep payloads compact:
 

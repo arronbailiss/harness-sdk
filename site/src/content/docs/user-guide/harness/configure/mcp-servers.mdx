@@ -3,7 +3,6 @@ title: Connect MCP servers
 description: >-
   Give Strands harness MCP tools from a JSON file or inline portable
   configuration. A failed server yields no tools instead of stopping construction.
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-ts/src/agent.ts
@@ -114,7 +113,13 @@ The Strands Harness SDK connects each server, discovers its tools, and manages i
 
 Each server defaults to continuing on error, so a server that fails to start yields no
 tools rather than taking construction down with it. Make a specific server's failure fatal
-by setting `"continueOnError": false` on it in the portable config.
+by setting
+<Syntax
+  py='"continue_on_error": false'
+  ts='"continueOnError": false'
+  rs='"continueOnError": false'
+/>
+on it in the config.
 
 If two servers, or a server and a local tool, would register the same tool name, set a
 server's `"prefix"` in the config so its tools are namespaced and cannot clash.

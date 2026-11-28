@@ -1,7 +1,6 @@
 ---
 title: Attach and invoke tools
 description: "Pass tools to a Strands agent at init or runtime, inspect what is loaded, and invoke them either through natural language or as direct method calls."
-languages: [Python, TypeScript, Rust]
 tags: [tool-authoring]
 sourceLinks:
   - path: strands-py/src/strands/tools/registry.py
@@ -67,13 +66,14 @@ agent = Agent(tools=["/path/to/my_tool.py"])
 </Tab>
 <Tab label="TypeScript">
 
-Loading tools from a file path is available in the Python SDK.
+Import or construct tools as compiled values. Tool source files are not loaded
+from a path at runtime.
 
 </Tab>
 <Tab label="Rust">
 
-Load Rust tools as compiled values. Loading tool source files at runtime is
-available in the Python SDK.
+Construct tools as compiled values. Tool source files are not loaded from a
+path at runtime.
 
 </Tab>
 </Tabs>
@@ -94,24 +94,26 @@ from strands import Agent
 
 agent = Agent(load_tools_from_directory=True)
 ```
+
+:::note[Tool loading implications]
+When automatic tool loading is enabled, every `.py` file in `./tools/` is
+executed by the agent. Ensure that only safe, trusted code can be written to
+that directory.
+:::
 </Tab>
 <Tab label="TypeScript">
 
-Automatic loading and reloading from a directory is available in the Python SDK.
+Tools are imported as part of the application. Directory watching and runtime
+source reloading are not built in.
 
 </Tab>
 <Tab label="Rust">
 
-Automatic loading and reloading from a directory is available in the Python SDK.
+Tools are compiled into the application. Directory watching and runtime source
+reloading are not built in.
 
 </Tab>
 </Tabs>
-
-
-
-:::note[Tool Loading Implications]
-When enabling automatic tool loading, any Python file placed in the `./tools/` directory will be executed by the agent. Under the shared responsibility model, it is your responsibility to ensure that only safe, trusted code is written to the tool loading directory, as the agent will automatically pick up and execute any tools found there.
-:::
 
 ## Accessing Tools
 

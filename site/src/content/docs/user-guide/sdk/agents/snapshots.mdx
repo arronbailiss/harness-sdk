@@ -1,7 +1,6 @@
 ---
 title: Snapshots
 description: "Capture and restore agent state at any point in time. Use snapshots for checkpointing, undo/redo, branching conversations, and custom persistence."
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/types/_snapshot.py
   - path: strands-ts/src/agent/snapshot.ts
@@ -50,6 +49,12 @@ The `"session"` preset captures `messages`, `state`, `conversation_manager_state
 The `"session"` preset captures `messages`, `state`, `systemPrompt`, `modelState`, and `interrupts`.
 </Tab>
 <Tab label="Rust">
+
+The Rust examples on this page use `serde_json` directly:
+
+```bash
+cargo add serde_json
+```
 
 ```rust
 --8<-- "user-guide/sdk/agents/snapshots.rs:take_snapshot"
@@ -111,8 +116,7 @@ Restoring only touches fields present in the snapshot. If you left a field out w
 A snapshot's `messages` are loaded into the agent as-is, including any tool-call
 content they carry. Load snapshots only from a source you control. A snapshot
 influenced by an untrusted party is untrusted input: its content reaches the
-model, and in the Python and Rust SDKs a trailing tool-call block runs a tool on
-the next invocation. See
+model and can include forged tool results or injected instructions. See
 [Trusted Message History](../safety-security/trusted-message-history.md).
 :::
 

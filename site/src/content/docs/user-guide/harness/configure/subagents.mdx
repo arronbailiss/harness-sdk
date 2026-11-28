@@ -1,7 +1,6 @@
 ---
 title: Delegate to subagents
 description: "Hand Strands harness your own specialist Agent instances as tools, and control the built-in generalist delegate that runs open-ended subtasks in isolation."
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-py/src/strands_harness/tools/subagent.py
@@ -20,10 +19,9 @@ and a built-in general-purpose delegate.
 
 ## Add your own specialist agents
 
-Pass `tools` your own specialist agents. Python and TypeScript wrap them with
-`as_tool()` / `asTool()`; Rust accepts the `Agent` directly. Each becomes a tool
-named after the agent's `name`, so give each a clear name and description that
-tells the model when to reach for it:
+Pass `tools` your own specialist agents. Each becomes a tool named after the agent's
+`name`, so give each a clear name and description that tells the model when to reach
+for it:
 
 <Tabs>
   <Tab label="Python">
@@ -82,9 +80,19 @@ run in both agents. Each plugin's
 parent and again for every delegation, so a plugin that keeps per-agent state must key it
 by agent instead of storing it on itself. A hook you add to the parent after creating it,
 with <Syntax py="agent.add_hook()" ts="agent.addHook()" rs="agent.add_hook()" />,
-does not run in the
-generalist. In Python, the generalist also runs hooks you pass to `create_harness` in
-`hooks`; the TypeScript `createHarness` has no `hooks` option.
+does not run in the generalist.
+
+<Tabs>
+  <Tab label="Python">
+    Hooks passed to the harness factory also run in the generalist.
+  </Tab>
+  <Tab label="TypeScript">
+    Add shared hooks through a plugin so the parent and generalist both register them.
+  </Tab>
+  <Tab label="Rust">
+    Add shared hooks through a plugin so the parent and generalist both register them.
+  </Tab>
+</Tabs>
 
 Reach for it when a subtask would otherwise flood the main context: searching many files,
 a multi-step change, or open-ended exploration where you only need the conclusion. Because
@@ -148,8 +156,8 @@ configuration to turn it off:
 </Tabs>
 
 :::note[Background execution]
-In all three SDKs the `generalist` runs in the background, so the main agent
-can keep working while it runs. See
+The `generalist` runs in the background, so the main agent can keep working while it
+runs. See
 [run work in the background](../background-tasks/).
 :::
 
@@ -181,15 +189,25 @@ the value to `0` to remove the `subagent` tool entirely:
   </Tab>
 </Tabs>
 
-:::caution[Breaking change]
-Earlier harness releases shipped their own copy of this tool. It now uses the SDK's: the
-`mcp_servers` / `mcpServers` parameter is gone, `AgentSpec` has no `task`, `context` or
-`last_messages` field, TypeScript's `Option` is `new Option(name, value, description)`, the depth
-budget is stored under `strands.subagent_depth`, child interrupt ids are namespaced by the
-subagent call (`v1:subagent:<toolUseId>:<id>` in Python, `subagent:<toolUseId>:<id>` in TypeScript),
-and a depth of `0` removes the tool rather than
-registering one that always refuses.
-:::
+<Tabs>
+  <Tab label="Python">
+    The current tool uses the SDK `subagent`; the old harness-only `mcp_servers`
+    option is gone. `AgentSpec` has no `task`, `context`, or `last_messages`
+    field, the depth budget is stored under `strands.subagent_depth`, child
+    interrupt ids use `v1:subagent:<toolUseId>:<id>`, and a depth of `0` removes
+    the tool.
+  </Tab>
+  <Tab label="TypeScript">
+    The current tool uses the SDK `subagent`; the old harness-only `mcpServers`
+    option is gone. `AgentSpec` has no `task`, `context`, or `last_messages`
+    field, `Option` uses `new Option(name, value, description)`, the depth budget
+    is stored under `strands.subagent_depth`, child interrupt ids use
+    `subagent:<toolUseId>:<id>`, and a depth of `0` removes the tool.
+  </Tab>
+  <Tab label="Rust">
+    The harness uses the SDK `subagent` tool directly. A depth of `0` removes it.
+  </Tab>
+</Tabs>
 
 For the full option list, see the
 [configuration reference](../../reference/configuration/).

@@ -1,9 +1,8 @@
 ---
 title: Strands harness versioning and support
 description: >-
-  How the Python, TypeScript, and Rust harness packages are versioned before
-  1.0, including breaking changes and SDK compatibility.
-languages: [Python, TypeScript, Rust]
+  How Strands harness packages are versioned before 1.0, including breaking
+  changes and SDK compatibility.
 sourceLinks:
   - path: harness-py/pyproject.toml
     language: Python
@@ -22,9 +21,23 @@ It ships opinionated defaults (tools, prompt, context management, sessions, memo
 shape as we learn what works. Keeping it at 0.x lets those defaults evolve without forcing major
 releases on SDK users who never touch the harness.
 
-This page covers `strands-harness` on PyPI and crates.io, plus
-`@strands-agents/harness` on npm. The
-[Strands CLI](https://github.com/strands-agents/harness-sdk/tree/main/strands-cli#versioning) follows the same rule.
+<Tabs>
+  <Tab label="Python">
+    This page covers `strands-harness` on PyPI. The
+    [Strands CLI](https://github.com/strands-agents/harness-sdk/tree/main/strands-cli#versioning)
+    follows the same rule.
+  </Tab>
+  <Tab label="TypeScript">
+    This page covers `@strands-agents/harness` on npm. The
+    [Strands CLI](https://github.com/strands-agents/harness-sdk/tree/main/strands-cli#versioning)
+    follows the same rule.
+  </Tab>
+  <Tab label="Rust">
+    This page covers `strands-harness` on crates.io. The
+    [Strands CLI](https://github.com/strands-agents/harness-sdk/tree/main/strands-cli#versioning)
+    follows the same rule.
+  </Tab>
+</Tabs>
 
 ## Version numbers
 
@@ -35,8 +48,8 @@ Versions are `0.MINOR.PATCH`.
 * **No major releases pre-1.0.** Reaching 1.0 is a separate decision made on customer signal, not on
   a date. At 1.0, Strands harness adopts the [SDK versioning policy](../sdk/versioning-and-support/).
 
-The Python, TypeScript, and Rust packages are versioned and released independently.
-Matching version numbers do not mean matching features.
+Each package is versioned and released independently. Matching version numbers across
+packages do not mean matching features.
 
 ## What counts as breaking
 
@@ -54,8 +67,18 @@ These are **not** breaking and may change in any release:
 * Fixing behavior to match what the documentation says, even though output changes
 * System prompt text, tool descriptions, and tuning that is not a documented default
 * Adding new built-in tools or plugins. Opting out is a configuration change, not a version change.
-* Anything under `@strands-agents/harness/internal`. It exists for the Strands CLI and is not a
-  versioned surface.
+<Tabs>
+  <Tab label="Python">
+    * Undocumented internal modules are not a versioned surface.
+  </Tab>
+  <Tab label="TypeScript">
+    * Anything under `@strands-agents/harness/internal`. It exists for the
+      Strands CLI and is not a versioned surface.
+  </Tab>
+  <Tab label="Rust">
+    * Undocumented internal modules are not a versioned surface.
+  </Tab>
+</Tabs>
 * Changes covered by the SDK's [pay-for-play exception](../sdk/versioning-and-support/#opt-in-breaking-changes)
 
 ## Relationship to the Strands Harness SDK
@@ -73,8 +96,29 @@ features.
 
 ## Staying informed
 
-* **Release notes**: [GitHub Releases](https://github.com/strands-agents/harness-sdk/releases),
-  tagged `harness-python/v*`, `harness-typescript/v*`, and `harness-rust/v*`.
-* **Pin to a minor** to avoid breaking changes: `strands-harness~=0.1.0` (pip),
-  `@strands-agents/harness@~0.1.0` (npm), or `strands-harness = "~0.1.0"`
-  (Cargo). Patch releases still add features and built-in tools.
+<Tabs>
+  <Tab label="Python">
+    * **Release notes**:
+      [GitHub Releases](https://github.com/strands-agents/harness-sdk/releases)
+      tagged `harness-python/v*`.
+    * **Pin to a minor** to avoid breaking changes:
+      `strands-harness~=0.1.0`. Patch releases still add features and built-in
+      tools.
+  </Tab>
+  <Tab label="TypeScript">
+    * **Release notes**:
+      [GitHub Releases](https://github.com/strands-agents/harness-sdk/releases)
+      tagged `harness-typescript/v*`.
+    * **Pin to a minor** to avoid breaking changes:
+      `@strands-agents/harness@~0.1.0`. Patch releases still add features and
+      built-in tools.
+  </Tab>
+  <Tab label="Rust">
+    * **Release notes**:
+      [GitHub Releases](https://github.com/strands-agents/harness-sdk/releases)
+      tagged `harness-rust/v*`.
+    * **Pin to a minor** to avoid breaking changes:
+      `strands-harness = "~0.1.0"`. Patch releases still add features and
+      built-in tools.
+  </Tab>
+</Tabs>

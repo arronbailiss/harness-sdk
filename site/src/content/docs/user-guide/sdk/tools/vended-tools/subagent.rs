@@ -27,7 +27,7 @@ mod custom {
     fn agent() -> strands::Result<Agent> {
         let researcher = Preset::builder()
             .instructions("Research topics thoroughly.")
-            .description("deep research")
+            .description("deep research on a topic")
             .build();
         let models = Choice::new([
             ChoiceOption::new("fast")

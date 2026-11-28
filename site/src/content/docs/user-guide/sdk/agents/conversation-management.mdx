@@ -1,7 +1,6 @@
 ---
 title: Conversation Management
 description: 'Keep long agent conversations within token limits using sliding window and summarizing conversation managers in the Strands Agents SDK.'
-languages: [Python, TypeScript, Rust]
 tags: [conversation-management, session-management, token-management]
 sourceLinks:
   - path: strands-py/src/strands/agent/conversation_manager/conversation_manager.py
@@ -79,6 +78,10 @@ agent = Agent(
 </Tab>
 <Tab label="Rust">
 
+`NullConversationManager` implements the
+[`ConversationManager`](https://docs.rs/strands/latest/strands/conversation_manager/trait.ConversationManager.html)
+trait without changing history.
+
 ```rust
 --8<-- "user-guide/sdk/agents/conversation-management.rs:null_manager"
 ```
@@ -88,8 +91,9 @@ agent = Agent(
 
 ### SlidingWindowConversationManager
 
-The `SlidingWindowConversationManager` maintains a fixed number of recent
-messages. It is the default when no
+The
+[`SlidingWindowConversationManager`](@api/python/strands.agent.conversation_manager.sliding_window_conversation_manager#SlidingWindowConversationManager)
+maintains a fixed number of recent messages. It is the default when no
 <Syntax py="conversation_manager" ts="conversationManager" rs="conversation_manager" />
 is specified. To keep the full history, pass `NullConversationManager`.
 
@@ -121,6 +125,10 @@ agent = Agent(
 </Tab>
 <Tab label="Rust">
 
+Configure
+[`SlidingWindowConversationManager`](https://docs.rs/strands/latest/strands/conversation_manager/struct.SlidingWindowConversationManager.html)
+to set the retained window and tool-result truncation behavior.
+
 ```rust
 --8<-- "user-guide/sdk/agents/conversation-management.rs:sliding_window"
 ```
@@ -147,24 +155,25 @@ Key features of the `SlidingWindowConversationManager`:
     - The tool result's original `status` and `error` fields are preserved.
 
     When disabled, full results are preserved but more historical messages may
-    be removed. In Python and TypeScript, the
-    [Context Offloader](../plugins/context-offloader) plugin provides a proactive
-    alternative that preserves full content externally.
-- **Per-Turn Management (Python)**: Optionally apply context management
-  proactively during agent loop execution, not just at the end.
+    be removed. The [Context Offloader](../plugins/context-offloader) plugin can
+    preserve full content externally when the selected SDK supports it.
 - **Message Pinning**: Protect specific messages from trimming during context reduction. See [Message Pinning](#message-pinning).
-- **Proactive Compression**: Configure proactive compression to reduce context
-  before a model call when projected input tokens exceed a threshold. See
+- **Proactive Compression**: Pass
+  <Syntax
+    py='proactive_compression={"compression_threshold": 0.7}'
+    ts="proactiveCompression: { compressionThreshold: 0.7 }"
+    rs="ProactiveCompression::Threshold(0.7)"
+  /> to reduce context before projected input exceeds a threshold. See
   [Proactive Context Compression](#proactive-context-compression).
 
 **Per-Turn Management**:
 
-In Python, `SlidingWindowConversationManager` applies context management only
-after the agent loop completes by default. The `per_turn` parameter can also
-manage context during long-running loops with many tool calls.
-
 <Tabs>
 <Tab label="Python">
+
+By default, `SlidingWindowConversationManager` applies context management only
+after the agent loop completes. The `per_turn` parameter can manage context
+during long-running loops with many tool calls:
 
 ```python
 from strands import Agent
@@ -184,35 +193,38 @@ agent = Agent(
     conversation_manager=conversation_manager
 )
 ```
+
+`per_turn` accepts:
+
+- `False` (default): manage context after the agent loop completes
+- `True`: manage context before every model call
+- An integer `N` greater than zero: manage context every `N` model calls
+
 </Tab>
 <Tab label="TypeScript">
 
-```ts
-// Not supported in TypeScript
-```
+Per-turn intervals are not configurable. The manager handles context-window
+overflow and optional proactive compression.
 </Tab>
 <Tab label="Rust">
 
-Per-turn intervals are not configurable in Rust. The sliding-window manager
-trims after every invocation and handles context-window overflow automatically.
+Per-turn intervals are not configurable. The sliding-window manager trims after
+every invocation and handles context-window overflow automatically.
 
 </Tab>
 </Tabs>
 
-In Python, the `per_turn` parameter accepts:
-
-- `False` (default): Only apply management after the agent loop completes
-- `True`: Apply management before every model call
-- An integer `N` (must be > 0): Apply management every N model calls
-
 ### SummarizingConversationManager
 
-The summarizing conversation manager is available in Python, TypeScript, and Rust.
-It summarizes older messages instead of discarding them, keeping the substance of
-earlier turns in context while staying within token limits.
+The summarizing conversation manager summarizes older messages instead of
+discarding them, keeping the substance of earlier turns in context while
+staying within token limits.
 
 <Tabs>
 <Tab label="Python">
+
+API:
+[`SummarizingConversationManager`](@api/python/strands.agent.conversation_manager.summarizing_conversation_manager#SummarizingConversationManager)
 
 Configuration parameters:
 
@@ -224,6 +236,9 @@ Configuration parameters:
 </Tab>
 <Tab label="TypeScript">
 
+API:
+[`SummarizingConversationManager`](@api/typescript/SummarizingConversationManager)
+
 Configuration parameters:
 
 - **`model`** (Model, optional): Override model to use for generating summaries. When not provided, uses `agent.auxModel`.
@@ -234,6 +249,9 @@ Configuration parameters:
 
 </Tab>
 <Tab label="Rust">
+
+API:
+[`SummarizingConversationManager`](https://docs.rs/strands/latest/strands/conversation_manager/struct.SummarizingConversationManager.html)
 
 Configuration fields:
 
@@ -403,7 +421,10 @@ agent = Agent(
 </Tab>
 <Tab label="TypeScript">
 
-Pass a custom `model` to `SummarizingConversationManager` to override the model used for summarization. This enables using a different model, such as a faster or more cost-effective one, without affecting the agent's primary model. Injecting a full `Agent` (with its own tools, hooks, or plugins) for summarization is not currently supported in TypeScript.
+Pass a custom `model` to `SummarizingConversationManager` to override the model
+used for summarization. This enables using a different model, such as a faster
+or more cost-effective one, without affecting the agent's primary model. A full
+`Agent` with its own tools, hooks, or plugins is not supported.
 
 ```typescript
 --8<-- "user-guide/sdk/agents/conversation-management_imports.ts:summarizing_conversation_manager_advanced_imports"
@@ -415,7 +436,7 @@ Pass a custom `model` to `SummarizingConversationManager` to override the model 
 <Tab label="Rust">
 
 Pass an `Arc<dyn Model>` through the `model` field of
-`SummarizingConversationManagerConfig`. Rust accepts a model override, not a
+`SummarizingConversationManagerConfig`. It accepts a model override, not a
 second agent.
 
 </Tab>
@@ -438,10 +459,10 @@ Messages are pinned by setting `metadata.custom.pinned = true` on the message ob
 
 ### Protecting Initial Messages with `pin_first`
 
-Both `SlidingWindowConversationManager` and `SummarizingConversationManager` accept
-`pin_first` (Python and Rust) or `pinFirst` (TypeScript) to permanently protect the
-first N messages from eviction. This is the simplest way to preserve system prompts
-or initial instructions across all context reductions.
+Both managers accept
+<Syntax py="pin_first" ts="pinFirst" rs="pin_first" /> to permanently protect
+the first N messages from eviction. This is the simplest way to preserve system
+prompts or initial instructions across all context reductions.
 
 <Tabs>
 <Tab label="Python">
@@ -575,7 +596,12 @@ Use `ProactiveCompression::Enabled` for the default threshold.
 Before each model call, the agent estimates the projected input token count and
 attaches it to `BeforeModelCallEvent`. When proactive compression is configured,
 the conversation manager compares this estimate with the model's context window
-limit and the configured compression threshold.
+limit:
+
+```text
+if projectedInputTokens / contextWindowLimit >= compressionThreshold:
+    reduce()
+```
 
 Each conversation manager uses the same reduction logic for proactive
 compression as reactive overflow recovery. Proactive compression is best effort:

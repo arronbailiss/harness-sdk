@@ -3,7 +3,6 @@ title: Production Lifecycle Controls
 description: >-
   Set turn and token limits, cancel running Strands agents, interpret stop
   reasons, and recover from tool or model failures in production workloads.
-languages: [Python, TypeScript, Rust]
 tags: [event-loop, error-handling]
 sourceLinks:
   - path: strands-py/src/strands/agent/agent.py
@@ -37,50 +36,56 @@ Each is optional.
 <Tabs>
   <Tab label="Python">
 
-  ```python
-  from strands import Agent
+```python
+from strands import Agent
 
-  agent = Agent()
+agent = Agent()
 
-  result = agent(
-      "Summarize this document",
-      limits={
-          "turns": 5,
-          "output_tokens": 2000,
-          "total_tokens": 10000,
-      },
-  )
+result = agent(
+    "Summarize this document",
+    limits={
+        "turns": 5,
+        "output_tokens": 2000,
+        "total_tokens": 10000,
+    },
+)
 
-  if result.stop_reason == "limit_turns":
-      print("Hit turn budget")
-  elif result.stop_reason == "limit_total_tokens":
-      print("Hit token budget")
-  ```
+if result.stop_reason == "limit_turns":
+    print("Hit turn budget")
+elif result.stop_reason == "limit_total_tokens":
+    print("Hit token budget")
+```
 
-  The same parameter works with `invoke_async` and `stream_async`. Each cap
-  must be a positive integer.
+The same parameter works with `invoke_async` and `stream_async`. Each cap
+must be a positive integer.
 
   </Tab>
   <Tab label="TypeScript">
 
-  ```typescript
-  --8<-- "user-guide/sdk/agents/lifecycle-controls_imports.ts:limits_basic_imports"
+```typescript
+--8<-- "user-guide/sdk/agents/lifecycle-controls_imports.ts:limits_basic_imports"
 
-  --8<-- "user-guide/sdk/agents/lifecycle-controls.ts:limits_basic"
-  ```
+--8<-- "user-guide/sdk/agents/lifecycle-controls.ts:limits_basic"
+```
 
-  The same option works with `stream`. Each cap must be a positive finite
-  number.
+The same option works with `stream`. Each cap must be a positive finite
+number.
 
   </Tab>
   <Tab label="Rust">
 
-  ```rust
-  --8<-- "user-guide/sdk/agents/lifecycle-controls.rs:limits"
-  ```
+The Rust examples on this page use Tokio's task and timer APIs:
 
-  Each limit must be a positive integer. The same options work with
-  `stream_with`.
+```bash
+cargo add tokio --features rt,time
+```
+
+```rust
+--8<-- "user-guide/sdk/agents/lifecycle-controls.rs:limits"
+```
+
+Each limit must be a positive integer. The same options work with
+`stream_with`.
 
   </Tab>
 </Tabs>
@@ -99,50 +104,28 @@ state, so you can retry with a higher budget.
 
 Most invocations return a result with a stop reason that tells your application
 what to do next. Read it from
-<Syntax
-  py="result.stop_reason"
-  ts="result.stopReason"
-  rs="result.stop_reason()"
-/>.
+
+<Syntax py="result.stop_reason" ts="result.stopReason" rs="result.stop_reason()" />.
 
 - <Syntax py="end_turn" ts="endTurn" rs="StopReason::EndTurn" /> or
-  <Syntax py="stop_sequence" ts="stopSequence" rs="StopReason::StopSequence" />:
-  return the completed result.
+  <Syntax py="stop_sequence" ts="stopSequence" rs="StopReason::StopSequence" />: return the completed result.
 - <Syntax py="limit_turns" ts="limitTurns" rs="StopReason::LimitTurns" />,
-  <Syntax
-    py="limit_total_tokens"
-    ts="limitTotalTokens"
-    rs="StopReason::LimitTotalTokens"
-  />,
-  <Syntax
-    py="limit_output_tokens"
-    ts="limitOutputTokens"
-    rs="StopReason::LimitOutputTokens"
-  />, or
+  <Syntax py="limit_total_tokens" ts="limitTotalTokens" rs="StopReason::LimitTotalTokens" />,
+  <Syntax py="limit_output_tokens" ts="limitOutputTokens" rs="StopReason::LimitOutputTokens" />, or
   <Syntax
     py="limit_structured_output_attempts"
     ts="limitStructuredOutputAttempts"
     rs="StopReason::LimitStructuredOutputAttempts"
-  />:
-  report budget exhaustion or reinvoke with a higher limit.
-- <Syntax py="cancelled" ts="cancelled" rs="StopReason::Cancelled" />: treat the
-  result as a caller- or application-initiated stop.
-  The incomplete assembled model message is omitted from the result and
-  history. Streamed deltas already delivered to your consumer remain visible.
-- <Syntax
-    py="content_filtered"
-    ts="contentFiltered"
-    rs="StopReason::ContentFiltered"
-  /> or
-  <Syntax
-    py="guardrail_intervened"
-    ts="guardrailIntervened"
-    rs="StopReason::GuardrailIntervened"
-  />: apply your
+  />
+  : report budget exhaustion or reinvoke with a higher limit.
+- <Syntax py="cancelled" ts="cancelled" rs="StopReason::Cancelled" />: treat the result as a caller- or
+  application-initiated stop. The incomplete assembled model message is omitted from the result and history. Streamed
+  deltas already delivered to your consumer remain visible.
+- <Syntax py="content_filtered" ts="contentFiltered" rs="StopReason::ContentFiltered" /> or
+  <Syntax py="guardrail_intervened" ts="guardrailIntervened" rs="StopReason::GuardrailIntervened" />: apply your
   application's policy rather than retrying blindly.
-- <Syntax py="interrupt" ts="interrupt" rs="StopReason::Interrupt" />: collect
-  the requested human input and resume the agent. See
-  [Interrupts](../interrupts.md).
+- <Syntax py="interrupt" ts="interrupt" rs="StopReason::Interrupt" />: collect the requested human input and resume the
+  agent. See [Interrupts](../interrupts.md).
 
 The limit reasons signal graceful budget exhaustion, not failure. Content
 filtering and guardrail intervention both terminate the loop and should be
@@ -154,74 +137,75 @@ To stop a call from outside the loop, on a client disconnect, a timeout, or a
 "Stop" button, cancel it. The agent checks for cancellation at fixed
 checkpoints and returns a result with a `cancelled` stop reason. Use a
 per-invocation signal when the stop belongs to one request. Use
-<Syntax
-  py="agent.cancel()"
-  ts="agent.cancel()"
-  rs="agent.cancel_handle().cancel()"
-/> when another component owns
-the running agent but not its signal.
+
+<Syntax py="agent.cancel()" ts="agent.cancel()" rs="agent.cancel_handle().cancel(CancelOptions::default())" /> when
+another component owns the running agent but not its signal.
 
 <Tabs>
   <Tab label="Python">
 
-  ```python
-  import threading
+```python
+import threading
 
-  from strands import Agent
+from strands import Agent
 
-  agent = Agent()
+agent = Agent()
 
-  cancel_signal = threading.Event()
-  deadline = threading.Timer(30.0, cancel_signal.set)
-  deadline.start()
+cancel_signal = threading.Event()
+deadline = threading.Timer(30.0, cancel_signal.set)
+deadline.start()
 
-  try:
-      result = agent(
-          "Analyze this large dataset",
-          cancel_signal=cancel_signal,
-      )
-  finally:
-      deadline.cancel()
-  ```
+try:
+    result = agent(
+        "Analyze this large dataset",
+        cancel_signal=cancel_signal,
+    )
+finally:
+    deadline.cancel()
+```
 
-  Pass the same event to a request-disconnect or "Stop" button handler when
-  cancellation is user-driven. The agent never sets or clears the caller-owned
-  event. `agent.cancel()` is thread-safe and idempotent, but only call it for a
-  known-running invocation. Calling it while the agent is idle cancels the next
-  invocation.
+Pass the same event to a request-disconnect or "Stop" button handler when
+cancellation is user-driven. The agent never sets or clears the caller-owned
+event. `agent.cancel()` is thread-safe and idempotent, but only call it for a
+known-running invocation. Calling it while the agent is idle cancels the next
+invocation.
 
   </Tab>
   <Tab label="TypeScript">
 
-  ```typescript
-  --8<-- "user-guide/sdk/agents/lifecycle-controls_imports.ts:cancel_timeout_imports"
+```typescript
+--8<-- "user-guide/sdk/agents/lifecycle-controls_imports.ts:cancel_timeout_imports"
 
-  --8<-- "user-guide/sdk/agents/lifecycle-controls.ts:cancel_timeout"
-  ```
+--8<-- "user-guide/sdk/agents/lifecycle-controls.ts:cancel_timeout"
+```
 
-  For a declarative deadline, pass an `AbortSignal` as the `cancelSignal`
-  option to `invoke` or `stream`. The agent composes it with its internal
-  controller, so `agent.cancel()` and the external signal each trigger
-  cancellation independently. Calling `agent.cancel()` while the agent is idle
-  is a no-op.
+For a declarative deadline, pass an `AbortSignal` as the `cancelSignal`
+option to `invoke` or `stream`. The agent composes it with its internal
+controller, so `agent.cancel()` and the external signal each trigger
+cancellation independently. Calling `agent.cancel()` while the agent is idle
+is a no-op.
 
-  ```typescript
-  --8<-- "user-guide/sdk/agents/lifecycle-controls_imports.ts:cancel_external_imports"
+```typescript
+--8<-- "user-guide/sdk/agents/lifecycle-controls_imports.ts:cancel_external_imports"
 
-  --8<-- "user-guide/sdk/agents/lifecycle-controls.ts:cancel_external"
-  ```
+--8<-- "user-guide/sdk/agents/lifecycle-controls.ts:cancel_external"
+```
 
   </Tab>
   <Tab label="Rust">
 
-  ```rust
-  --8<-- "user-guide/sdk/agents/lifecycle-controls.rs:cancel_timeout"
-  ```
+```rust
+--8<-- "user-guide/sdk/agents/lifecycle-controls.rs:cancel_timeout"
+```
 
-  Pass a caller-owned `CancelSignal` through `InvokeOptions`. To cancel the
-  current invocation through the agent, clone `agent.cancel_handle()` before
-  invoking and call `cancel()` from another task. Cancelling an idle agent
-  handle is a no-op.
+Pass a caller-owned
+[`CancelSignal`](https://docs.rs/strands/latest/strands/cancel/struct.CancelSignal.html)
+through
+[`InvokeOptions`](https://docs.rs/strands/latest/strands/agent/struct.InvokeOptions.html).
+To cancel the current invocation through the agent, clone
+`agent.cancel_handle()` before invoking and call `cancel()` with
+[`CancelOptions`](https://docs.rs/strands/latest/strands/cancel/struct.CancelOptions.html)
+from another task. Cancelling an idle agent handle is a no-op.
 
   </Tab>
 </Tabs>
@@ -236,40 +220,40 @@ steps or forward it to an API that accepts one.
 <Tabs>
   <Tab label="Python">
 
-  ```python
-  from strands import tool
-  from strands.types.tools import ToolContext
+```python
+from strands import tool
+from strands.types.tools import ToolContext
 
 
-  @tool(context=True)
-  def normalize_records(
-      records: list[str],
-      tool_context: ToolContext,
-  ) -> str:
-      """Normalize records while checking for cancellation between items."""
-      normalized = []
-      for record in records:
-          if tool_context.cancel_signal.is_set():
-              return f"cancelled after {len(normalized)} records"
-          normalized.append(record.strip().upper())
-      return "\n".join(normalized)
-  ```
+@tool(context=True)
+def normalize_records(
+    records: list[str],
+    tool_context: ToolContext,
+) -> str:
+    """Normalize records while checking for cancellation between items."""
+    normalized = []
+    for record in records:
+        if tool_context.cancel_signal.is_set():
+            return f"cancelled after {len(normalized)} records"
+        normalized.append(record.strip().upper())
+    return "\n".join(normalized)
+```
 
   </Tab>
   <Tab label="TypeScript">
 
-  ```typescript
-  --8<-- "user-guide/sdk/agents/lifecycle-controls_imports.ts:cancel_in_tool_imports"
+```typescript
+--8<-- "user-guide/sdk/agents/lifecycle-controls_imports.ts:cancel_in_tool_imports"
 
-  --8<-- "user-guide/sdk/agents/lifecycle-controls.ts:cancel_in_tool"
-  ```
+--8<-- "user-guide/sdk/agents/lifecycle-controls.ts:cancel_in_tool"
+```
 
   </Tab>
   <Tab label="Rust">
 
-  ```rust
-  --8<-- "user-guide/sdk/agents/lifecycle-controls.rs:cancel_in_tool"
-  ```
+```rust
+--8<-- "user-guide/sdk/agents/lifecycle-controls.rs:cancel_in_tool"
+```
 
   </Tab>
 </Tabs>
@@ -305,35 +289,31 @@ Two mechanisms give you more control:
 When a single model response exceeds the provider's per-call output cap, the
 loop cannot continue from a partial message. This is distinct from the graceful
 `limit_*` stop reasons: the loop raises
-<Syntax
-  py="MaxTokensReachedException"
-  ts="MaxTokensError"
-  rs="MaxTokensError"
-/> rather than
-returning a result.
+
+<Syntax py="MaxTokensReachedException" ts="MaxTokensError" rs="MaxTokensError" /> rather than returning a result.
 
 <Tabs>
   <Tab label="Python">
 
-  The SDK adds the recovered partial message to conversation history before
-  raising `MaxTokensReachedException`. Reduce the next request, raise the
-  provider's output cap, or split the task into smaller steps, then invoke the
-  same agent again to continue from that history.
+The SDK adds the recovered partial message to conversation history before
+raising `MaxTokensReachedException`. Reduce the next request, raise the
+provider's output cap, or split the task into smaller steps, then invoke the
+same agent again to continue from that history.
 
   </Tab>
   <Tab label="TypeScript">
 
-  The raised `MaxTokensError` exposes the incomplete message through
-  `partialMessage`, but the SDK does not add it to conversation history.
-  Inspect it for diagnostics, then reduce the input, raise the provider's output
-  cap, or start a smaller follow-up task.
+The raised `MaxTokensError` exposes the incomplete message through
+`partialMessage`, but the SDK does not add it to conversation history.
+Inspect it for diagnostics, then reduce the input, raise the provider's output
+cap, or start a smaller follow-up task.
 
   </Tab>
   <Tab label="Rust">
 
-  The returned `Error::MaxTokens` contains a `MaxTokensError` with the partial
-  assistant message in `partial_message`. Rust does not append that partial
-  message to conversation history.
+The returned `Error::MaxTokens` contains a `MaxTokensError` with the partial
+assistant message in `partial_message`. The agent does not append that
+partial message to conversation history.
 
   </Tab>
 </Tabs>
@@ -347,54 +327,53 @@ default the agent processes one invocation at a time and rejects overlap.
 <Tabs>
   <Tab label="Python">
 
-  Invoking an agent that is already running raises `ConcurrencyException`. The
-  `concurrent_invocation_mode` constructor parameter controls this: it takes a
-  `ConcurrentInvocationMode` of either `THROW` (the default) or
-  `UNSAFE_REENTRANT`.
+Invoking an agent that is already running raises `ConcurrencyException`. The
+`concurrent_invocation_mode` constructor parameter controls this: it takes a
+`ConcurrentInvocationMode` of either `THROW` (the default) or
+`UNSAFE_REENTRANT`.
 
-  ```python
-  from strands import Agent
-  from strands.types.exceptions import ConcurrencyException
+```python
+from strands import Agent
+from strands.types.exceptions import ConcurrencyException
 
-  agent = Agent()
+agent = Agent()
 
-  try:
-      result = agent("Summarize this report")
-  except ConcurrencyException:
-      # Another invocation is already running on this agent instance
-      ...
-  ```
+try:
+    result = agent("Summarize this report")
+except ConcurrencyException:
+    # Another invocation is already running on this agent instance
+    ...
+```
 
-  When a retry arrives for a request that is still in flight, deduplicate it
-  rather than erroring or doing the work twice. Pass
-  `idempotency_token` to any invocation method to identify the logical request. A
-  second call with the same token waits for the original and returns the same
-  `AgentResult`; a call with a different token still raises
-  `ConcurrencyException`.
+When a retry arrives for a request that is still in flight, deduplicate it
+rather than erroring or doing the work twice. Pass
+`idempotency_token` to any invocation method to identify the logical request. A
+second call with the same token waits for the original and returns the same
+`AgentResult`; a call with a different token still raises
+`ConcurrencyException`.
 
-  ```python
-  result = agent("Process order 1234", idempotency_token="order-1234")
-  ```
+```python
+result = agent("Process order 1234", idempotency_token="order-1234")
+```
 
-  `UNSAFE_REENTRANT` removes the single-invocation guard entirely, and nothing
-  then protects the history from concurrent mutation. To run independent work in
-  parallel, a separate agent per task is safer than sharing one.
+`UNSAFE_REENTRANT` removes the single-invocation guard entirely, and nothing
+then protects the history from concurrent mutation. To run independent work in
+parallel, a separate agent per task is safer than sharing one.
 
   </Tab>
   <Tab label="TypeScript">
 
-  Invoking an agent that is already running throws `ConcurrentInvocationError`.
-  This SDK does not offer a configurable concurrency mode or idempotency-token
-  deduplication of retries; both are available only in the Python SDK. To run
-  independent work in parallel, use a separate agent per task.
+Invoking an agent that is already running throws `ConcurrentInvocationError`.
+Use a separate agent per task for independent parallel work, and handle retry
+deduplication in the application.
 
   </Tab>
   <Tab label="Rust">
 
-  Rust requires a mutable borrow for `invoke()` and `stream()`, so the compiler
-  prevents overlapping calls on one agent value. Run independent work with a
-  separate agent per task. If an agent must move between tasks, protect it with
-  synchronization that serializes access rather than interleaving history.
+A mutable borrow is required for `invoke()` and `stream()`, so the compiler
+prevents overlapping calls on one agent value. Run independent work with a
+separate agent per task. If an agent must move between tasks, protect it with
+synchronization that serializes access rather than interleaving history.
 
   </Tab>
 </Tabs>
@@ -411,86 +390,86 @@ can branch on.
 <Tabs>
   <Tab label="Python">
 
-  ```python
-  import threading
-  from dataclasses import dataclass
-  from enum import Enum
+```python
+import threading
+from dataclasses import dataclass
+from enum import Enum
 
-  from strands import Agent
-  from strands.models import BedrockModel
+from strands import Agent
+from strands.models import BedrockModel
 
-  MODEL_ID = "global.anthropic.claude-sonnet-5"
-
-
-  class Outcome(str, Enum):
-      COMPLETED = "completed"
-      BUDGET_EXCEEDED = "budget_exceeded"
-      CANCELLED = "cancelled"
-      BLOCKED = "blocked"
-      STOPPED = "stopped"
+MODEL_ID = "global.anthropic.claude-sonnet-5"
 
 
-  @dataclass
-  class Reply:
-      outcome: Outcome
-      text: str | None
+class Outcome(str, Enum):
+    COMPLETED = "completed"
+    BUDGET_EXCEEDED = "budget_exceeded"
+    CANCELLED = "cancelled"
+    BLOCKED = "blocked"
+    STOPPED = "stopped"
 
 
-  def classify(stop_reason: str) -> Outcome:
-      if stop_reason in ("end_turn", "stop_sequence"):
-          return Outcome.COMPLETED
-      if stop_reason == "cancelled":
-          return Outcome.CANCELLED
-      if stop_reason in (
-          "limit_turns",
-          "limit_total_tokens",
-          "limit_output_tokens",
-          "limit_structured_output_attempts",
-      ):
-          return Outcome.BUDGET_EXCEEDED
-      if stop_reason in ("content_filtered", "guardrail_intervened"):
-          return Outcome.BLOCKED
-      return Outcome.STOPPED
+@dataclass
+class Reply:
+    outcome: Outcome
+    text: str | None
 
 
-  def handle_request(prompt: str, deadline_seconds: float = 20.0) -> Reply:
-      """Run one request on its own agent with bounded turns, tokens, and time."""
-      # A fresh agent per request keeps concurrent calls from sharing history
-      agent = Agent(model=BedrockModel(model_id=MODEL_ID))
+def classify(stop_reason: str) -> Outcome:
+    if stop_reason in ("end_turn", "stop_sequence"):
+        return Outcome.COMPLETED
+    if stop_reason == "cancelled":
+        return Outcome.CANCELLED
+    if stop_reason in (
+        "limit_turns",
+        "limit_total_tokens",
+        "limit_output_tokens",
+        "limit_structured_output_attempts",
+    ):
+        return Outcome.BUDGET_EXCEEDED
+    if stop_reason in ("content_filtered", "guardrail_intervened"):
+        return Outcome.BLOCKED
+    return Outcome.STOPPED
 
-      cancel_signal = threading.Event()
-      deadline = threading.Timer(deadline_seconds, cancel_signal.set)
-      deadline.start()
 
-      try:
-          result = agent(
-              prompt,
-              limits={"turns": 6, "total_tokens": 20_000},
-              cancel_signal=cancel_signal,
-          )
-      finally:
-          deadline.cancel()
+def handle_request(prompt: str, deadline_seconds: float = 20.0) -> Reply:
+    """Run one request on its own agent with bounded turns, tokens, and time."""
+    # A fresh agent per request keeps concurrent calls from sharing history
+    agent = Agent(model=BedrockModel(model_id=MODEL_ID))
 
-      outcome = classify(result.stop_reason)
-      text = str(result) if outcome == Outcome.COMPLETED else None
-      return Reply(outcome=outcome, text=text)
-  ```
+    cancel_signal = threading.Event()
+    deadline = threading.Timer(deadline_seconds, cancel_signal.set)
+    deadline.start()
+
+    try:
+        result = agent(
+            prompt,
+            limits={"turns": 6, "total_tokens": 20_000},
+            cancel_signal=cancel_signal,
+        )
+    finally:
+        deadline.cancel()
+
+    outcome = classify(result.stop_reason)
+    text = str(result) if outcome == Outcome.COMPLETED else None
+    return Reply(outcome=outcome, text=text)
+```
 
   </Tab>
   <Tab label="TypeScript">
 
-  ```typescript
-  --8<-- "user-guide/sdk/agents/lifecycle-controls_imports.ts:worked_example_imports"
+```typescript
+--8<-- "user-guide/sdk/agents/lifecycle-controls_imports.ts:worked_example_imports"
 
-  --8<-- "user-guide/sdk/agents/lifecycle-controls.ts:worked_example"
-  ```
+--8<-- "user-guide/sdk/agents/lifecycle-controls.ts:worked_example"
+```
 
   </Tab>
   <Tab label="Rust">
 
-  ```rust
-  --8<-- "user-guide/sdk/agents/lifecycle-controls.rs:worked_example"
-  ```
+```rust
+--8<-- "user-guide/sdk/agents/lifecycle-controls.rs:worked_example"
+```
 
   </Tab>
 </Tabs>

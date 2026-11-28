@@ -1,7 +1,6 @@
 ---
 title: Middleware
 description: "Intercept and transform model calls and tool execution with composable middleware that can retry, cache, short-circuit, reroute, and gate agent stages."
-languages: [Python, TypeScript, Rust]
 tags: [event-loop, tool-execution]
 sourceLinks:
   - path: strands-py/src/strands/middleware/stages.py
@@ -130,6 +129,13 @@ mutating it in place.
 
 </Tab>
 <Tab label="Rust">
+
+The Rust examples on this page use these direct dependencies:
+
+```bash
+cargo add futures serde_json
+cargo add tokio --features time
+```
 
 ```rust
 --8<-- "user-guide/sdk/agents/middleware.rs:register_input"

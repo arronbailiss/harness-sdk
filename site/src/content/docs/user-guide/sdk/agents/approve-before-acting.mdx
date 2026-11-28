@@ -3,7 +3,6 @@ title: Approve before your agent acts
 description: >-
   Let a model flag risky tool calls and pause the agent until a person approves them,
   while safe calls such as reads run on their own.
-languages: [Python, TypeScript, Rust]
 tags: [interventions, tool-execution]
 sourceLinks:
   - path: strands-py/src/strands/vended_interventions/hitl/hitl.py
@@ -111,12 +110,13 @@ option. Without a classifier, every tool call prompts.
 
 The classifier is a judgment, not a guarantee: it can rate a risky call safe. For a
 tool that must always ask, negate it with
+
 <Syntax
   py='allowed_tools=["!delete_files"]'
   ts="allowedTools: ['!delete_files']"
   rs='allowed_tools: vec!["!delete_files".into()]'
-/>. A
-negated tool always prompts and can't be trusted.
+/>
+. A negated tool always prompts and can't be trusted.
 
 For limits no one can approve past, such as tools only some users may call, add
 [Cedar Authorization](./interventions/cedar-authorization.md) before
@@ -169,8 +169,14 @@ agent("Delete the rotated logs in /var/log/app", invocation_state={"user_id": "b
 </Tab>
 <Tab label="Rust">
 
-Rust invocation state is typed, so the principal resolver reads a `UserId`
-value rather than a string key:
+Enable the `cedar` Cargo feature:
+
+```bash
+cargo add strands --features cedar
+```
+
+Invocation state is typed, so the principal resolver reads a `UserId` value
+rather than a string key:
 
 ```rust
 --8<-- "user-guide/sdk/agents/approve-before-acting.rs:cedar"

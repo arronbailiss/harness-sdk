@@ -1,7 +1,6 @@
 ---
 title: Cedar Authorization
 description: "Control which tools an agent can invoke using Cedar policies. Enforce identity-aware access control, role-based permissions, and rate limits at the tool-call boundary."
-languages: [Python, TypeScript, Rust]
 tags: [safety, interventions, tool-execution]
 sourceLinks:
   - path: strands-py/src/strands/vended_interventions/cedar/cedar_authorization.py
@@ -12,7 +11,7 @@ addedDate: 2026-06-15
 
 Cedar Authorization evaluates [Cedar](https://cedarpolicy.com) policies before each
 tool call, giving you declarative, identity-aware access control over agent behavior.
-It ships as a vended intervention handler in the Python, TypeScript, and Rust SDKs.
+It ships as a vended intervention handler.
 
 ## How it works
 
@@ -35,11 +34,15 @@ Permit specific tools and deny everything else:
 <Tabs>
 <Tab label="Python">
 
+Schema generation uses `cedar-for-agents`:
+
 ```python
 --8<-- "user-guide/sdk/agents/interventions/cedar-authorization.py:basic_example"
 ```
 </Tab>
 <Tab label="TypeScript">
+
+Schema generation uses `cedar-for-agents`:
 
 ```typescript
 --8<-- "user-guide/sdk/agents/interventions/cedar-authorization_imports.ts:basic_example_imports"
@@ -48,6 +51,11 @@ Permit specific tools and deny everything else:
 ```
 </Tab>
 <Tab label="Rust">
+
+Create
+[`CedarAuthorization`](https://docs.rs/strands/latest/strands/vended_interventions/cedar/struct.CedarAuthorization.html)
+with a
+[`CedarAuthorizationConfig`](https://docs.rs/strands/latest/strands/vended_interventions/cedar/struct.CedarAuthorizationConfig.html).
 
 ```rust
 --8<-- "user-guide/sdk/agents/interventions/cedar-authorization.rs:basic_example"
@@ -163,7 +171,8 @@ Pass your tool definitions to catch policy typos at construction time. The handl
 </Tab>
 <Tab label="Rust">
 
-The tool schema is a JSON value:
+The handler generates the validation schema directly from `ToolDefinition`
+values. The tool schema is a JSON value:
 
 ```bash
 cargo add serde_json
@@ -176,16 +185,16 @@ cargo add serde_json
 </Tab>
 </Tabs>
 
-Python and TypeScript integrate with the
-[`cedar-for-agents`](https://github.com/cedar-policy/cedar-for-agents) schema
-generators. Rust generates the validation schema directly from `ToolDefinition`
-values.
-
 ## Namespaced policies
 
 When using policy generators like [`cedar-agent-policy-builder`](https://github.com/cedar-policy/cedar-for-agents) that produce namespaced Cedar policies (e.g. `Agent::Action::"search"` instead of `Action::"search"`), set the `namespace` option to match:
 
 <Tabs>
+<Tab label="Python">
+
+The `namespace` option is not available.
+
+</Tab>
 <Tab label="TypeScript">
 
 ```typescript
@@ -211,10 +220,8 @@ When `namespace` is set:
 | **Resource** | `Resource::"agent"` | `Agent::Resource::"default"` |
 | **Default principal** | `User::"anonymous"` | `Agent::User::"anonymous"` |
 
-Schema generation also uses the configured namespace, so `tools` and `namespace` work together correctly.
-
-The `namespace` option is available in the TypeScript and Rust SDKs. Python
-support is planned.
+Schema generation also uses the configured namespace, so `tools` and
+`namespace` work together correctly.
 
 ## Environment gating
 

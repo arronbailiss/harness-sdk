@@ -3,7 +3,6 @@ title: Storage
 description: "Choose a storage backend and pass it to the Agent
   for automatic subsystem resolution, or to individual plugins
   for fine-grained control."
-languages: [Python, TypeScript, Rust]
 tags: [session-management]
 sourceLinks:
   - path: strands-py/src/strands/storage/storage.py
@@ -26,23 +25,42 @@ consumers like [Context Offloader](../plugins/context-offloader.mdx)
 and [Memory](../memory/overview.mdx) handle the rest. This is the
 single place persistence backends are documented.
 
-[Session Management](../agents/session-management.mdx) composes a
-Storage backend the same way in both SDKs: TypeScript's
-`SessionManager` and Python's recommended `SnapshotSessionManager`
-both persist snapshots through a Storage backend you pass them.
-Python's repository-based managers (`FileSessionManager`,
-`S3SessionManager`) are the exception: they configure storage
-directly rather than through a Storage backend, a difference the
-session management page documents.
+[Session Management](../agents/session-management.mdx) also composes a Storage
+backend. Its page documents how the selected SDK resolves storage and which
+compatibility managers configure persistence directly.
 
-Python and TypeScript ship three backends. Rust ships in-memory and local-file
-storage; use a custom `Storage` implementation for another durable backend.
+<Tabs>
+<Tab label="Python">
 
 | Backend | Where data lives | Best for |
 |---------|-----------------|----------|
 | `InMemoryStorage` | Process memory | Tests, short-lived agents |
 | `LocalFileStorage` | Local filesystem | Development, single-machine |
-| `S3Storage` | Amazon S3 | Production, multi-instance (Python, TypeScript) |
+| `S3Storage` | Amazon S3 | Production, multi-instance |
+
+</Tab>
+<Tab label="TypeScript">
+
+| Backend | Where data lives | Best for |
+|---------|-----------------|----------|
+| `InMemoryStorage` | Process memory | Tests, short-lived agents |
+| `LocalFileStorage` | Local filesystem | Development, single-machine |
+| `S3Storage` | Amazon S3 | Production, multi-instance |
+
+</Tab>
+<Tab label="Rust">
+
+| Backend | Where data lives | Best for |
+|---------|-----------------|----------|
+| [`InMemoryStorage`](https://docs.rs/strands/latest/strands/storage/struct.InMemoryStorage.html) | Process memory | Tests, short-lived agents |
+| [`LocalFileStorage`](https://docs.rs/strands/latest/strands/storage/struct.LocalFileStorage.html) | Local filesystem | Development, single-machine |
+
+Implement
+[`Storage`](https://docs.rs/strands/latest/strands/storage/trait.Storage.html)
+for another durable backend.
+
+</Tab>
+</Tabs>
 
 ## Agent-level storage
 
@@ -120,16 +138,31 @@ Storage resolves in this order for each subsystem:
 2. **Agent-level**: the agent's
    <Syntax py="storage" ts="storage" rs="storage" /> parameter
    (namespaced automatically)
-3. **Fallback**: `InMemoryStorage` for Context Offloader;
-   `LocalFileStorage` for Session Manager in Python, or an
-   error in TypeScript and Rust
+3. **Fallback**: `InMemoryStorage` for Context Offloader. Session storage uses
+   <Syntax
+     py="LocalFileStorage"
+     ts="an explicit-storage requirement"
+     rs="an explicit-storage requirement"
+   />.
 
-:::note
-Python `SessionManager` is deprecated, and does not use
-the provided `Storage` parameter. Use
-`SnapshotSessionManager` in Python or `SessionManager` in
-TypeScript and Rust to take advantage of agent-level storage.
-:::
+<Tabs>
+<Tab label="Python">
+
+`SessionManager` is deprecated and does not use the provided `Storage`
+parameter. Use `SnapshotSessionManager` for agent-level storage.
+
+</Tab>
+<Tab label="TypeScript">
+
+Use `SessionManager` with an explicit or agent-level backend.
+
+</Tab>
+<Tab label="Rust">
+
+Use `SessionManager` with an explicit or agent-level backend.
+
+</Tab>
+</Tabs>
 
 ## Built-in backends
 
@@ -169,9 +202,10 @@ arguments. Fast, zero-config, gone when the process exits.
 Each key becomes a file under a base directory. Writes are atomic
 (temp file + rename).
 
-- <Syntax py="base_dir" ts="baseDir" rs="base_dir" />: root directory. Defaults
-  to `"./.strands/"`.
-- `sandbox`: optional [Sandbox](../sandbox/index.mdx). Defaults to none.
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| <Syntax py="base_dir" ts="baseDir" rs="base_dir" /> | `"./.strands/"` | Root directory |
+| <Syntax py="sandbox" ts="sandbox" rs="sandbox" /> | `None` / `undefined` / `None` | Optional [Sandbox](../sandbox/index.mdx) |
 
 <Tabs>
 <Tab label="Python">
@@ -209,16 +243,18 @@ which returns a new instance routed through the sandbox.
 
 ### S3Storage
 
-Stores data as objects in an S3 bucket. The AWS SDK loads lazily,
-so applications that never construct an `S3Storage` pay nothing.
-
-- `bucket`: required S3 bucket name.
-- `prefix`: key prefix within the bucket. Defaults to `""`.
-- `region_name` / `region`: optional AWS region override.
-- `boto_session` / `s3Client`: optional preconfigured client.
-
 <Tabs>
 <Tab label="Python">
+
+Stores data as objects in an S3 bucket. The AWS SDK loads lazily, so
+applications that never construct an `S3Storage` pay nothing.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `bucket` | *(required)* | S3 bucket name |
+| `prefix` | `""` | Key prefix within the bucket |
+| `region_name` | `None` | AWS region override |
+| `boto_session` | `None` | Preconfigured client |
 
 ```python
 --8<-- "user-guide/sdk/storage/storage.py:s3"
@@ -226,6 +262,16 @@ so applications that never construct an `S3Storage` pay nothing.
 
 </Tab>
 <Tab label="TypeScript">
+
+Stores data as objects in an S3 bucket. The AWS SDK loads lazily, so
+applications that never construct an `S3Storage` pay nothing.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `bucket` | *(required)* | S3 bucket name |
+| `prefix` | `""` | Key prefix within the bucket |
+| `region` | `undefined` | AWS region override |
+| `s3Client` | `undefined` | Preconfigured client |
 
 ```typescript
 --8<-- "user-guide/sdk/storage/storage_imports.ts:s3_imports"
@@ -236,8 +282,8 @@ so applications that never construct an `S3Storage` pay nothing.
 </Tab>
 <Tab label="Rust">
 
-Rust does not ship an `S3Storage` backend. Implement `Storage` around your
-preferred S3 client, or use `LocalFileStorage` when local persistence fits.
+`S3Storage` is not available. Implement `Storage` around your preferred S3
+client, or use `LocalFileStorage` when local persistence fits.
 
 </Tab>
 </Tabs>

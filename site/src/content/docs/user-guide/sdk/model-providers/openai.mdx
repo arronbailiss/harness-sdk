@@ -1,7 +1,6 @@
 ---
 title: OpenAI
 description: 'Run Strands agents on OpenAI models or any OpenAI-compatible API. Install the provider, configure OpenAIModel, and enable vision and structured output.'
-languages: [Python, TypeScript, Rust]
 tags: [vision, structured-output]
 integrationType: model-provider
 sourceLinks:
@@ -79,6 +78,11 @@ print(response)
 ```
 </Tab>
 <Tab label="Rust">
+
+Use
+[`OpenAIModel`](https://docs.rs/strands/latest/strands/models/openai/struct.OpenAIModel.html)
+and select Chat Completions or Responses with
+[`OpenAIApi`](https://docs.rs/strands/latest/strands/models/openai/enum.OpenAIApi.html).
 
 ```rust
 --8<-- "user-guide/sdk/model-providers/openai.rs:basic_usage"
@@ -340,12 +344,14 @@ For schema patterns, error handling, and per-invocation overrides, see [Structur
 
 ### Custom client
 
-Python and TypeScript can pass a preconfigured OpenAI client to `OpenAIModel`;
-the application manages that client's lifecycle. Rust exposes provider
-configuration instead and builds its client internally.
+Configure the provider transport when the standard client options are not
+enough:
 
 <Tabs>
 <Tab label="Python">
+
+Pass a preconfigured OpenAI client to `OpenAIModel`. The application manages
+that client's lifecycle.
 
 ```python
 from strands import Agent
@@ -378,6 +384,9 @@ if __name__ == "__main__":
 ```
 </Tab>
 <Tab label="TypeScript">
+
+Pass a preconfigured OpenAI client to `OpenAIModel`. The application manages
+that client's lifecycle.
 
 ```typescript
 --8<-- "user-guide/sdk/model-providers/openai_imports.ts:custom_client_imports"

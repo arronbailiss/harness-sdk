@@ -1,7 +1,6 @@
 ---
 title: Load agent skills
 description: "Strands harness loads Agent Skills from a directory automatically: point skills at your SKILL.md folders, or disable skill loading entirely."
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-ts/src/agent.ts
@@ -98,9 +97,8 @@ full instructions the agent loads when it decides the skill applies.
 
 ## Turn skill loading off
 
-Set `skills` to `False`/`false` (or `None`/`null` in Python and TypeScript, or
-`off` on the CLI) to disable skill loading entirely, even if a skills directory
-is present:
+Disable the skills option to turn off skill loading entirely, even if a skills
+directory is present:
 
 <Tabs>
   <Tab label="Strands harness">

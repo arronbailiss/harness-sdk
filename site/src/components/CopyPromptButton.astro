@@ -27,19 +27,13 @@ const PROMPTS = {
 
 const { language } = Astro.props
 const prompt = PROMPTS[language]
-const promptSetup =
-  language === 'harness'
-    ? 'ask which path, language, and model provider you want'
-    : language === 'rust'
-      ? 'use Amazon Bedrock for the first agent'
-      : 'ask which model provider you want'
 ---
 
 <div class="copy-prompt not-content" data-copy-prompt data-language={language}>
   <div class="copy-prompt__text">
     <strong>Using a coding agent?</strong> Copy this prompt into Codex, Claude Code, Kiro,
-    or any coding assistant and it will walk you through this page, {promptSetup}, and
-    offer to set up the Strands MCP server.
+    or any coding assistant and it will walk you through this page, ask a few setup
+    questions, and offer to set up the Strands MCP server.
   </div>
   <button type="button" class="copy-prompt__btn" data-copy-prompt-btn aria-label="Copy the quickstart prompt for a coding agent">
     <span data-copy-prompt-label>Copy prompt</span>

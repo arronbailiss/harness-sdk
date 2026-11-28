@@ -1,7 +1,6 @@
 ---
 title: Create custom tools
 description: "Turn functions you write into tools your agent can call: define them with the @tool decorator or the tool() function, then control their inputs, results, and context."
-languages: [Python, TypeScript, Rust]
 tags: [tool-authoring]
 sourceLinks:
   - path: strands-py/src/strands/tools/decorator.py
@@ -18,17 +17,23 @@ Turn a function you write into a tool the agent can call. Strands gives you a fe
 <Tabs>
 <Tab label="Python">
 
-Python supports three approaches to defining tools:
+Choose among three approaches:
 
-* **Python functions with the [`@tool`](@api/python/strands.tools.decorator#tool) decorator**: Turn a regular function into a tool by adding a decorator. The decorator uses the function's docstring and type hints to generate the tool specification.
+* **Functions with the [`@tool`](@api/python/strands.tools.decorator#tool)
+  decorator**: Turn a regular function into a tool by adding a decorator. The
+  decorator uses the function's docstring and type hints to generate the tool
+  specification.
 
 * **Class-based tools with the [`@tool`](@api/python/strands.tools.decorator#tool) decorator**: Create tools within classes to maintain state and use object-oriented patterns.
 
-* **Python modules following a specific format**: Define tools by creating Python modules that contain a tool specification and a matching function. This approach gives you more control over the tool's definition and is useful for dependency-free implementations of tools.
+* **Modules following a specific format**: Define tools in modules that contain
+  a tool specification and a matching function. This approach gives you more
+  control over the tool's definition and is useful for dependency-free
+  implementations.
 </Tab>
 <Tab label="TypeScript">
 
-TypeScript supports two main approaches:
+Choose between two main approaches:
 
 * **tool() function with [Zod](https://zod.dev/) or JSON schemas**: Create tools using the `tool()` function with either Zod schemas for type-safe validated input, or plain JSON Schema objects for schema-only definitions without runtime validation.
 
@@ -36,14 +41,18 @@ TypeScript supports two main approaches:
 </Tab>
 <Tab label="Rust">
 
-Rust supports three approaches:
+Choose among three approaches:
 
-- **Functions marked with `#[tool]`**: The macro derives the input schema from
-  parameter types and creates a tool value.
+- **Functions marked with
+  [`#[tool]`](https://docs.rs/strands/latest/strands/attr.tool.html)**: The macro
+  derives the input schema from parameter types and creates a tool value.
 - **Methods marked with `#[tool]` inside a `#[tools]` implementation**: Group
   tools that share state.
-- **`FunctionTool` or the `Tool` trait**: Define runtime schemas and callbacks,
-  or implement the complete tool stream directly.
+- **`FunctionTool` or the
+  [`Tool`](https://docs.rs/strands/latest/strands/tools/trait.Tool.html) trait**:
+  Define runtime schemas and callbacks, or implement the complete tool stream
+  directly. Tool failures use
+  [`ToolError`](https://docs.rs/strands/latest/strands/tools/struct.ToolError.html).
 
 Add the dependencies used by the examples on this page:
 
@@ -356,7 +365,8 @@ invocation state through the SDK's tool context:
 <Tabs>
 <Tab label="Python">
 
-Set `context=True` in the decorator and include a `tool_context` parameter:
+Use [`ToolContext`](@api/python/strands.types.tools#ToolContext). Set
+`context=True` in the decorator and include a `tool_context` parameter:
 
 ```python
 from strands import tool, Agent, ToolContext
@@ -382,7 +392,8 @@ agent("What is the invocation state?", invocation_state={"custom_data": "You're 
 </Tab>
 <Tab label="TypeScript">
 
-The context is passed as an optional second parameter to the callback function:
+[`ToolContext`](@api/typescript/ToolContext) is passed as an optional second
+parameter to the callback function:
 
 ```typescript
 --8<-- "user-guide/sdk/tools/tools.ts:tool_context"
@@ -390,7 +401,9 @@ The context is passed as an optional second parameter to the callback function:
 </Tab>
 <Tab label="Rust">
 
-Mark a `ToolContext` parameter with `#[tool(context)]`:
+Mark a
+[`ToolContext`](https://docs.rs/strands/latest/strands/tools/struct.ToolContext.html)
+parameter with `#[tool(context)]`:
 
 ```rust
 --8<-- "user-guide/sdk/tools/custom-tools.rs:tool_context"
@@ -426,8 +439,8 @@ agent("What is your name?")
 </Tab>
 <Tab label="Rust">
 
-The Rust macro identifies the context parameter by its annotation, so you can
-choose any parameter name:
+The macro identifies the context parameter by its annotation, so you can choose
+any parameter name:
 
 ```rust
 --8<-- "user-guide/sdk/tools/custom-tools.rs:custom_context_name"
@@ -663,9 +676,10 @@ shared object:
 
 ## Module Based Tools
 
-An alternative approach is to define a tool as a Python module with a specific structure. This enables creating tools that don't depend on the SDK directly.
+An alternative approach is to define a tool as a module with a specific
+structure. This enables creating tools that don't depend on the SDK directly.
 
-A Python module tool requires two key components:
+A module tool requires two key components:
 
 1. A `TOOL_SPEC` variable that defines the tool's name, description, and input schema
 2. A function with the same name as specified in the tool spec that implements the tool's functionality
@@ -773,13 +787,13 @@ async def call_api(tool, **kwargs):
 </Tab>
 <Tab label="TypeScript">
 
-Module-based and path-loaded tools are available in the Python SDK. TypeScript
-tools are compiled values.
+Import or construct tools as compiled values. Tool source files and module paths
+are not loaded at runtime.
 </Tab>
 <Tab label="Rust">
 
-Module-based and path-loaded tools are available in the Python SDK. Rust tools
-are compiled values.
+Construct tools as compiled values. Tool source files and module paths are not
+loaded at runtime.
 </Tab>
 </Tabs>
 

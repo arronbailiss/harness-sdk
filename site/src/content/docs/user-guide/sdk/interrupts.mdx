@@ -2,7 +2,6 @@
 title: Interrupts
 tags: [event-loop, hooks, tool-execution, error-handling]
 description: "Pause AI agents mid-execution for human approval, input, or review. Build human-in-the-loop workflows with interrupt and resume patterns."
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/interrupt.py
   - path: strands-py/src/strands/types/interrupt.py
@@ -178,6 +177,12 @@ Both `BeforeToolCallEvent` and `BeforeToolsEvent` are interruptible. Interruptin
 ```
 </Tab>
 <Tab label="Rust">
+
+The Rust examples on this page use `serde_json` directly:
+
+```bash
+cargo add serde_json
+```
 
 Both `BeforeToolCallEvent` and `BeforeToolsEvent` expose `interrupt()`.
 The first scopes approval to one tool call; the second pauses the whole batch.
@@ -562,8 +567,23 @@ To collect additional information from a user during an MCP tool call, use elici
 
 ## Multi-Agent Systems
 
-Python and TypeScript support interrupts across swarm and graph orchestration
-with `BeforeNodeCallEvent`. Rust propagates interrupts through agents used as
-tools, but does not provide Graph or Swarm. See
-[Interrupts in multi-agent systems](./interrupts-multi-agent.md) for the
-Python and TypeScript examples.
+<Tabs>
+<Tab label="Python">
+
+Use `BeforeNodeCallEvent` to interrupt Graph or Swarm orchestration. See
+[Interrupts in multi-agent systems](./interrupts-multi-agent.md).
+
+</Tab>
+<Tab label="TypeScript">
+
+Use `BeforeNodeCallEvent` to interrupt Graph or Swarm orchestration. See
+[Interrupts in multi-agent systems](./interrupts-multi-agent.md).
+
+</Tab>
+<Tab label="Rust">
+
+Interrupts propagate through agents used as tools. Graph and Swarm are not
+available.
+
+</Tab>
+</Tabs>

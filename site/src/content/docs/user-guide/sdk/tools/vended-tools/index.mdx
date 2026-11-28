@@ -1,7 +1,6 @@
 ---
 title: Vended Tools
 description: "Pre-built tools included in the SDK for common agent tasks like file operations, shell commands, HTTP requests, and persistent notes."
-languages: [Python, TypeScript, Rust]
 tags: [tool-authoring]
 sourceLinks:
   - path: strands-py/src/strands/vended_tools/__init__.py
@@ -60,18 +59,18 @@ agent = Agent(tools=[shell, edit, http_request, notebook])
 
 | Tool | Description | Supported in |
 |------|-------------|--------------|
-| [Edit](edit.mdx) | Change text in place | All |
-| [File Editor](file-editor.mdx) *(deprecated)* | Edit files | All |
-| [Read](read.mdx) | Read text or media | All |
-| [Write](write.mdx) | Create or overwrite a file | All |
-| [HTTP Request](http-request.mdx) | Make HTTP requests | All |
-| [Notebook](notebook.mdx) | Manage persistent notebooks | All |
-| [Shell](shell.mdx) | Execute shell commands | All |
-| [MCP Router](mcp-router.mdx) | Connect to allowlisted MCP servers | All |
-| [Sleep](sleep.mdx) | Pause for a bounded duration | All |
-| [Handoff to User](handoff-to-user.mdx) | Pause for user input | All |
+| [Edit](edit.mdx) | Make in-place changes to a text file | All |
+| [File Editor](file-editor.mdx) *(deprecated)* | View, create, and edit files | All |
+| [Read](read.mdx) | Read a file as numbered text or a media block | All |
+| [Write](write.mdx) | Create or overwrite a text file with full content | All |
+| [HTTP Request](http-request.mdx) | Make HTTP requests to external APIs | All |
+| [Notebook](notebook.mdx) | Manage persistent text notebooks | All |
+| [Shell](shell.mdx) | Execute shell commands through the agent's sandbox | All |
+| [MCP Router](mcp-router.mdx) | Connect to developer-allowlisted MCP servers | All |
+| [Sleep](sleep.mdx) | Pause for a bounded, cancellable duration | All |
+| [Handoff to User](handoff-to-user.mdx) | Pause and surface a message to the user | All |
 | [Stop](stop.mdx) | Gracefully end the agent loop | All |
-| [Web Fetch](web-fetch.mdx) | Fetch and clean web content | All |
+| [Web Fetch](web-fetch.mdx) | Fetch a URL and return cleaned markdown | All |
 | [A2A Client](a2a-client.mdx) | Discover and send messages to remote A2A-protocol agents | Python, TypeScript (Node.js, browsers) |
 | [Python REPL](python-repl.mdx) | Run Python in a sandbox | All |
 | [Subagent](subagent.mdx) | Delegate to a child agent | All |
@@ -88,15 +87,12 @@ tools let the model configure child agents at runtime. Import policies from
   rs="strands::multiagent"
 />.
 
-Rust supports `subagent`. The `swarm` and `graph` tools are not available in
-Rust.
-
 - <Syntax py="Inherit()" ts="new Inherit()" rs="Inherit::new()" />:
-  inherit the parent's value.
+  the child inherits the parent's value; hidden from the model.
 - <Syntax py="Fixed(value)" ts="new Fixed(value)" rs="Fixed::new(value)" />:
-  pin the value.
+  pin the value; hidden from the model.
 - <Syntax py="Open()" ts="new Open()" rs="Open::new()" />:
-  let the model write a string.
+  let the model write a free-form string.
 - <Syntax
     py="Choice([...], multiple=True)"
     ts="new Choice([...], true)"
@@ -104,7 +100,8 @@ Rust.
   />: let the model pick one or more values.
 
 Use `Option` or `ChoiceOption` to map model-facing names to runtime values.
-When the model omits `agent_type`, the child uses
+Bundle axis defaults into a `Preset` selected through `agent_type`. When the
+model omits both `agent_type` and `instructions`, the child uses
 <Syntax py="default_preset" ts="defaultPreset" rs="default_preset" />,
 or the first preset.
 
@@ -151,6 +148,8 @@ agent("Have a subagent summarize the latest Python release notes, then run the t
 </Tab>
 <Tab label="Rust">
 
+`subagent` supports these policies. `swarm` and `graph` are not available.
+
 ```rust
 --8<-- "user-guide/sdk/tools/vended-tools/index.rs:multi_agent"
 ```
@@ -159,12 +158,15 @@ agent("Have a subagent summarize the latest Python release notes, then run the t
 </Tabs>
 
 Tools that accept axis policies use a default builder to turn resolved specs
-into child agents. Each child gets
+into child agents. By default, a child inherits the parent's tools, model, and
+interventions, so its tool calls pass through the same approval and
+authorization checks. It receives
 <Syntax
   py='context_manager="auto"'
   ts="contextManager: 'auto'"
   rs="ContextManagerStrategy::Auto"
-/> unless its model is stateful.
+/> unless its model is stateful, and it accesses the parent's long-term memory
+through inherited memory tools.
 
 The default builder does not pass the parent's [hooks](../../agents/hooks.mdx) or [plugins](../../plugins/index.mdx) to the child. A hook that logs or audits the parent's tool calls does not run for the child's. Tools that a plugin added to the parent are still inherited like any other tool, but they run in the child without the plugin's hooks. For a child that needs the hooks or plugins, use a custom builder.
 

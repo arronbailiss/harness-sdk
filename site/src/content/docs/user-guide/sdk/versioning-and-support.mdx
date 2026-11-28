@@ -3,7 +3,6 @@ title: Versioning and Support Policy
 description: 'How the Strands Harness SDK versions releases: semantic versioning guarantees, experimental feature policies, and deprecation timelines explained.'
 sidebar:
   label: "Versioning & Support"
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/__init__.py
   - path: strands-ts/src/index.ts
@@ -28,8 +27,10 @@ For SDKs at version 1.0 or later, existing code should continue to work without
 modification after a minor or patch upgrade. Breaking changes are reserved for
 major releases and are accompanied by migration guidance.
 
-The Rust SDK is a developer preview. Its public API may change in any `0.x`
-release, so pin the crate version you have tested until it reaches 1.0.
+The Rust SDK is a developer preview. Before 1.0, breaking changes land in a
+`0.MINOR.0` release. A `0.x.PATCH` release remains backward compatible within
+its minor line. Pin the minor version you have tested until the crate reaches
+1.0.
 
 ## Exceptions to Strict Versioning
 
@@ -103,7 +104,9 @@ Features are deprecated responsibly to provide adequate time for migration to ne
 
 1. **Introduce Alternative**: A new, improved way to accomplish the same goal is released
 2. **Deprecate Old Way**: The old feature emits deprecation warnings with clear migration guidance
-3. **Remove in Major Version**: In stable SDKs, the deprecated feature is removed in the next major version. Developer-preview APIs may be removed in a `0.x` release.
+3. **Remove in Major Version**: In stable SDKs, the deprecated feature is
+   removed in the next major version. Before Rust reaches 1.0, a removal lands
+   in a `0.MINOR.0` release, not a patch.
 
 ### Timeline Example
 

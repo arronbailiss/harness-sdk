@@ -2,8 +2,7 @@
 title: Persist sessions
 description: >-
   Give Strands harness a session id to persist and resume a conversation across
-  restarts, choose where session state lives, and understand each SDK's storage.
-languages: [Python, TypeScript, Rust]
+  restarts, choose where session state lives, and configure its storage.
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-ts/src/agent.ts
@@ -204,21 +203,30 @@ distills durable facts that the agent recalls across every conversation, with or
 session. Use a session to continue a specific task; rely on memory to carry knowledge
 between unrelated runs.
 
-## How the SDKs store sessions
+## How sessions are stored
 
-All three SDKs write session snapshots to local files, but through different classes. The
-Python SDK uses a `SnapshotSessionManager` backed by `LocalFileStorage`. The TypeScript
-SDK composes the shared `Storage` abstraction, using a `SessionManager` whose snapshot
-storage is a file storage under the session directory. Rust uses `SessionManager` with
-`LocalFileStorage`. In every case, the on-disk result is a local session store rooted at
-the session directory.
+Every implementation writes snapshots to a local session store rooted at the configured
+directory.
+
+<Tabs>
+  <Tab label="Python">
+    The harness uses `SnapshotSessionManager` with `LocalFileStorage`. The SDK also
+    ships an S3 backend.
+  </Tab>
+  <Tab label="TypeScript">
+    The harness uses `SessionManager` with file-backed snapshot storage. The SDK also
+    ships an S3 backend.
+  </Tab>
+  <Tab label="Rust">
+    The harness uses `SessionManager` with `LocalFileStorage`. Supply any `Storage`
+    implementation for another backend.
+  </Tab>
+</Tabs>
 
 To supply your own session manager, pass it through to the `Agent`; your explicit
-manager wins over the one Strands harness would build from `session`. Python and
-TypeScript ship an S3 backend; Rust accepts any implementation of `Storage`. Pass
-`storage` along with the manager too: without it, offloaded tool results are embedded in
-every snapshot the manager writes instead of being stored once. For the storage
-backends, see
+manager wins over the one Strands harness would build from `session`. Pass `storage`
+with it too. Without separate storage, offloaded tool results are embedded in every
+snapshot instead of being stored once. For the storage backends, see
 [storage](../../../sdk/storage/). For the full
 option list, see the
 [configuration reference](../../reference/configuration/).

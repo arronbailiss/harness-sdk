@@ -1,7 +1,6 @@
 ---
 title: Build a custom plugin
-description: "Write your own Strands plugin: attach it to an agent, register hooks and tools, manage state, and initialize asynchronously."
-languages: [Python, TypeScript, Rust]
+description: 'Write your own Strands plugin: attach it to an agent, register hooks and tools, manage state, and initialize asynchronously.'
 tags: [hooks, event-loop]
 sourceLinks:
   - path: strands-py/src/strands/plugins/plugin.py
@@ -13,10 +12,9 @@ import Diagram from '@components/Diagram.astro'
 
 A plugin bundles hooks and tools into one reusable object you attach to an
 agent. It works against `model`,
-<Syntax py="system_prompt" ts="systemPrompt" rs="system_prompt" />, `messages`,
-`tools`, and `hooks`. When the built-in plugins do not fit, build your own.
-See [Get Featured](/docs/integrations/get-featured) to share it with the
-community.
+
+<Syntax py="system_prompt" ts="systemPrompt" rs="system_prompt" />, `messages`, `tools`, and `hooks`. When the built-in
+plugins do not fit, build your own. See [Get Featured](/docs/integrations/get-featured) to share it with the community.
 
 ## Using Plugins
 
@@ -35,6 +33,7 @@ agent = Agent(
     plugins=[LLMSteeringHandler(system_prompt="Guide the agent...")]
 )
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -43,8 +42,15 @@ agent = Agent(
 
 --8<-- "user-guide/sdk/plugins/custom-plugins.ts:using_plugins"
 ```
+
 </Tab>
 <Tab label="Rust">
+
+The asynchronous initialization example uses Tokio's filesystem API:
+
+```bash
+cargo add tokio --features fs
+```
 
 ```rust
 --8<-- "user-guide/sdk/plugins/custom-plugins.rs:using_plugins"
@@ -97,6 +103,7 @@ class LoggingPlugin(Plugin):
 agent = Agent(plugins=[LoggingPlugin()])
 agent("Calculate 2 + 2 and print the result")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -105,6 +112,7 @@ agent("Calculate 2 + 2 and print the result")
 
 --8<-- "user-guide/sdk/plugins/custom-plugins.ts:basic_plugin"
 ```
+
 </Tab>
 <Tab label="Rust">
 
@@ -134,7 +142,8 @@ When you create a plugin and attach it to an agent, the following happens:
 2. **Hook Registration**: In `initAgent`, use `agent.addHook()` to register event callbacks manually
 3. **Tool Registration**: The `getTools()` method is called to get tools provided by the plugin
 
-**Note**: TypeScript does not use `@hook` or `@tool` decorators. Instead, tools are returned from `getTools()` and hooks are registered manually in `initAgent()`.
+**Note**: This API does not use `@hook` or `@tool` decorators. Instead,
+`getTools()` returns tools, and `initAgent()` registers hooks.
 
 </Tab>
 <Tab label="Rust">
@@ -177,18 +186,20 @@ class ModelMonitorPlugin(Plugin):
         """Handle multiple event types with a union."""
         print(f"Model event: {type(event).__name__}")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
 #### Manual Hook Registration
 
-TypeScript plugins register hooks manually in the `initAgent` method using `agent.addHook()`:
+Plugins register hooks manually in `initAgent` with `agent.addHook()`:
 
 ```typescript
 --8<-- "user-guide/sdk/plugins/custom-plugins_imports.ts:hook_decorator_alternative_imports"
 
 --8<-- "user-guide/sdk/plugins/custom-plugins.ts:hook_decorator_alternative"
 ```
+
 </Tab>
 <Tab label="Rust">
 
@@ -204,6 +215,7 @@ TypeScript plugins register hooks manually in the `initAgent` method using `agen
 ### Manual Hook and Tool Registration
 
 For more control, register hooks and tools in the
+
 <Syntax py="init_agent" ts="initAgent" rs="init_agent" /> method:
 
 <Tabs>
@@ -231,6 +243,7 @@ class ManualPlugin(Plugin):
     def verbose_log(self, event: BeforeToolCallEvent) -> None:
         print(f"[VERBOSE] {event.tool_use}")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -239,6 +252,7 @@ class ManualPlugin(Plugin):
 
 --8<-- "user-guide/sdk/plugins/custom-plugins.ts:manual_registration"
 ```
+
 </Tab>
 <Tab label="Rust">
 
@@ -281,6 +295,7 @@ agent = Agent(plugins=[MetricsPlugin()])
 agent("Do some work")
 print(f"Tool calls: {agent.state.get('metrics_call_count')}")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -289,6 +304,7 @@ print(f"Tool calls: {agent.state.get('metrics_call_count')}")
 
 --8<-- "user-guide/sdk/plugins/custom-plugins.ts:state_management"
 ```
+
 </Tab>
 <Tab label="Rust">
 
@@ -328,6 +344,7 @@ class AsyncConfigPlugin(Plugin):
     def use_config(self, event: BeforeToolCallEvent) -> None:
         print(f"Config: {self.config}")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -336,6 +353,7 @@ class AsyncConfigPlugin(Plugin):
 
 --8<-- "user-guide/sdk/plugins/custom-plugins.ts:async_initialization"
 ```
+
 </Tab>
 <Tab label="Rust">
 

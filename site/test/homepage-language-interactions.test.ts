@@ -222,7 +222,7 @@ describe('homepage language interactions', () => {
     ).toBe(true)
   })
 
-  it('resolves an unavailable preference when every toggle offers one language', () => {
+  it('preserves a preference even when controls mark the language unavailable', () => {
     const window = loadHomepage('Rust')
     const unavailableOptions = [
       ...window.document.querySelectorAll<HTMLButtonElement>(
@@ -239,8 +239,11 @@ describe('homepage language interactions', () => {
     const pythonOptions = [
       ...window.document.querySelectorAll<HTMLButtonElement>('language-toggle [data-lang="Python"]'),
     ]
-    expect(window.document.documentElement.dataset.sdkLanguage).toBe('python')
-    expect(pythonOptions.every((option) => option.getAttribute('aria-checked') === 'true')).toBe(true)
+    const rustOptions = [...window.document.querySelectorAll<HTMLButtonElement>('language-toggle [data-lang="Rust"]')]
+    expect(window.document.documentElement.dataset.sdkLanguage).toBe('rust')
+    expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe('Rust')
+    expect(rustOptions.every((option) => option.getAttribute('aria-checked') === 'true')).toBe(true)
+    expect(pythonOptions.every((option) => option.getAttribute('aria-checked') === 'false')).toBe(true)
   })
 
   it('returns to the default when another tab removes the stored preference', () => {
@@ -280,17 +283,23 @@ describe('homepage language interactions', () => {
     robotButton?.click()
 
     expect(useCases?.querySelector('.terminal__code:not([hidden])')).toBeNull()
-    expect(unavailable?.textContent).toBe('No TypeScript example is available yet.')
+    expect(unavailable?.dataset.languageAvailability).toBe('unsupported')
+    expect(unavailable?.textContent).toBe(
+      'The Strands Robots library is not available for this SDK. Choose Python to view this example.'
+    )
     expect(unavailable?.hidden).toBe(false)
-    expect(filename?.textContent).toBe('No TypeScript example')
+    expect(filename?.textContent).toBe('Not available')
     expect(copyButton?.disabled).toBe(true)
 
     changeLanguage(window, 'Rust')
 
     expect(useCases?.querySelector('.terminal__code:not([hidden])')).toBeNull()
-    expect(unavailable?.textContent).toBe('No Rust example is available yet.')
+    expect(unavailable?.dataset.languageAvailability).toBe('unsupported')
+    expect(unavailable?.textContent).toBe(
+      'The Strands Robots library is not available for this SDK. Choose Python to view this example.'
+    )
     expect(unavailable?.hidden).toBe(false)
-    expect(filename?.textContent).toBe('No Rust example')
+    expect(filename?.textContent).toBe('Not available')
     expect(copyButton?.disabled).toBe(true)
 
     changeLanguage(window, 'Python')
@@ -299,6 +308,7 @@ describe('homepage language interactions', () => {
     expect(pythonPanel?.dataset.useCaseCode).toBe('robots')
     expect(pythonPanel?.dataset.langCode).toBe('python')
     expect(pythonPanel?.textContent).toContain('strands_robots')
+    expect(unavailable?.dataset.languageAvailability).toBe('available')
     expect(unavailable?.hidden).toBe(true)
     expect(filename?.textContent).toBe('robot_agent.py')
     expect(copyButton?.disabled).toBe(false)

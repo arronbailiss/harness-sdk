@@ -16,7 +16,9 @@ the SDK, invoke the default Amazon Bedrock model, and use `#[tool]` to expose an
 async function to the agent loop.
 
 :::note[Developer preview]
-The Rust SDK is in developer preview. Its public API may change in any 0.x release.
+The Rust SDK is in developer preview. Before 1.0, breaking changes land in a
+`0.MINOR.0` release; `0.x.PATCH` releases remain compatible within their minor
+line.
 :::
 
 <CopyPromptButton language="rust" />
@@ -62,8 +64,10 @@ cargo run
 ```
 
 The default printer streams the model response to the terminal. Each invocation
-also returns an `AgentResult` with the final response, stop reason, and metrics.
-Call `shutdown()` before the process exits so the agent can finish cleanup.
+also returns an
+[`AgentResult`](https://docs.rs/strands/latest/strands/agent/struct.AgentResult.html)
+with the final response, stop reason, and metrics. Call `shutdown()` before the
+process exits so the agent can finish cleanup.
 
 ## Add a custom tool
 
@@ -93,7 +97,8 @@ cargo add strands --no-default-features --features anthropic
 ```
 
 Without the default `bedrock` feature, pass an explicit model to
-`Agent::builder()`. See the
+[`Agent::builder()`](https://docs.rs/strands/latest/strands/agent/struct.Agent.html).
+See the
 [Rust API reference](../../../api/rust/) for provider builders and feature flags.
 
 ## Next steps

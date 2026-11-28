@@ -1,7 +1,6 @@
 ---
 title: Tool result format
 description: "The structure a Strands tool returns to the agent: the ToolResult schema, its content types, and how plain return values are converted into it."
-languages: [Python, TypeScript, Rust]
 tags: [tool-authoring]
 sourceLinks:
   - path: strands-py/src/strands/types/tools.py
@@ -74,13 +73,44 @@ cargo add serde_json
 The `content` field is a list of content blocks. Each block carries one type of
 output:
 
+<Tabs>
+<Tab label="Python">
+
 - `text`: a string of text output
 - `json`: any JSON-serializable data structure
+- `image`: image content
+- `document`: document content
 
-All three SDKs accept `image` and `document` blocks. TypeScript and Rust also
-accept `video`. A single result can mix block types, for example a text summary
-alongside a JSON payload. Rust also supports tool-reference content for deferred
-tool loading.
+A result can mix block types, for example a text summary alongside a JSON
+payload.
+
+</Tab>
+<Tab label="TypeScript">
+
+- `text`: a string of text output
+- `json`: any JSON-serializable data structure
+- `image`: image content
+- `document`: document content
+- `video`: video content
+
+A result can mix block types, for example a text summary alongside a JSON
+payload.
+
+</Tab>
+<Tab label="Rust">
+
+- `text`: a string of text output
+- `json`: any JSON-serializable data structure
+- `image`: image content
+- `document`: document content
+- `video`: video content
+- tool-reference content for deferred tool loading
+
+A result can mix block types, for example a text summary alongside a JSON
+payload.
+
+</Tab>
+</Tabs>
 
 ## Response Examples
 

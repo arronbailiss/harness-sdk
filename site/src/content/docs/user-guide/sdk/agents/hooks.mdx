@@ -1,7 +1,6 @@
 ---
 title: Hooks
 description: "Intercept and customize agent behavior at every step. Hooks let you add logging, validation, guardrails, and custom logic to the agent loop."
-languages: [Python, TypeScript, Rust]
 tags: [hooks, event-loop, tool-execution]
 sourceLinks:
   - path: strands-py/src/strands/hooks/events.py
@@ -103,7 +102,7 @@ orchestrator.hooks.add_callback(BeforeNodeCallEvent, my_callback)
 </Tab>
 <Tab label="Rust">
 
-Graph and Swarm orchestration events are not available in Rust.
+Graph and Swarm orchestration events are not available.
 
 </Tab>
 </Tabs>
@@ -231,9 +230,30 @@ Invocation state carries configuration and context data through the agent or orc
 1. **Access custom objects**: database clients, connection pools, or other
    application objects
 2. **Read request context**: session IDs, user information, settings, or request-specific data
-3. **Share state across a multi-agent run**: in Python and TypeScript, access state
-   shared across all agents
+3. **Share state across a run**: access state from the components participating
+   in an invocation
 4. **Pass custom parameters**: any additional data the hook needs
+
+<Tabs>
+<Tab label="Python">
+
+For orchestrated runs, invocation state is shared across agents. See
+[Shared State Across Multi-Agent Patterns](../multi-agent/multi-agent-patterns.md#shared-state-across-multi-agent-patterns).
+
+</Tab>
+<Tab label="TypeScript">
+
+For orchestrated runs, invocation state is shared across agents. See
+[Shared State Across Multi-Agent Patterns](../multi-agent/multi-agent-patterns.md#shared-state-across-multi-agent-patterns).
+
+</Tab>
+<Tab label="Rust">
+
+Invocation state is shared by hooks and tools during one agent invocation.
+Graph and Swarm orchestration are not available.
+
+</Tab>
+</Tabs>
 
 <Tabs>
 <Tab label="Python">
@@ -287,7 +307,7 @@ result = agent(
 </Tab>
 <Tab label="Rust">
 
-Rust invocation state stores typed, cloneable values:
+Invocation state stores typed, cloneable values:
 
 ```rust
 --8<-- "user-guide/sdk/agents/hooks.rs:invocation_state"
@@ -313,7 +333,7 @@ Multi-agent hook events provide access to:
 </Tab>
 <Tab label="Rust">
 
-Graph, Swarm, and their multi-agent hook events are not available in Rust.
+Graph, Swarm, and their multi-agent hook events are not available.
 
 </Tab>
 </Tabs>
@@ -476,7 +496,7 @@ class ConditionalExecutionHook(HookProvider):
 </Tab>
 <Tab label="Rust">
 
-Conditional Graph and Swarm node hooks are not available in Rust.
+Conditional Graph and Swarm node hooks are not available.
 
 </Tab>
 </Tabs>
@@ -593,7 +613,7 @@ class UniversalMultiAgentHook(HookProvider):
 </Tab>
 <Tab label="Rust">
 
-Graph, Swarm, and their orchestrator hook events are not available in Rust.
+Graph, Swarm, and their orchestrator hook events are not available.
 
 </Tab>
 </Tabs>
@@ -641,8 +661,8 @@ orchestrator = Graph(
 </Tab>
 <Tab label="Rust">
 
-Single-agent hooks are available in Rust. Graph, Swarm, and their orchestrator
-hooks are not.
+Single-agent hooks are available. Graph, Swarm, and their orchestrator hooks
+are not.
 
 </Tab>
 </Tabs>
@@ -833,12 +853,12 @@ agent("Sleep once")
 ### Model Call Retry
 
 Use model-call hooks for custom retry criteria such as exceptions, response
-validation, or content quality. The Python and TypeScript examples add exponential
-backoff. The Rust example requests an immediate retry; use the agent's
-`retry_strategies` configuration when you need backoff:
+validation, or content quality:
 
 <Tabs>
 <Tab label="Python">
+
+This hook waits with exponential backoff before requesting another model call:
 
 ```python
 import asyncio
@@ -877,11 +897,16 @@ class RetryOnServiceUnavailable(HookProvider):
 </Tab>
 <Tab label="TypeScript">
 
+This hook waits with exponential backoff before requesting another model call:
+
 ```typescript
 --8<-- "user-guide/sdk/agents/hooks.ts:model_call_retry_class"
 ```
 </Tab>
 <Tab label="Rust">
+
+This hook requests an immediate retry. Configure the agent's
+`retry_strategies` when the retry should use backoff:
 
 ```rust
 --8<-- "user-guide/sdk/agents/hooks.rs:model_call_retry"
@@ -956,13 +981,11 @@ agent = Agent(
 </Tab>
 <Tab label="TypeScript">
 
-```ts
-// This feature is not yet available in TypeScript SDK
-```
+This hook pattern is not available.
 </Tab>
 <Tab label="Rust">
 
-Rust exposes the original error through `AfterToolCallEvent::error()`:
+Access the original error through `AfterToolCallEvent::error()`:
 
 ```rust
 --8<-- "user-guide/sdk/agents/hooks.rs:exception_handling"
@@ -1091,8 +1114,7 @@ The `resume` value accepts any valid `AgentInput`: a string, a list of content b
 :::
 
 The following example triggers one follow-up invocation to ask the model to
-summarize its work. Rust tracks the invocation count in hook-owned state because
-its `AfterInvocationEvent` does not carry the final result:
+summarize its work:
 
 <Tabs>
 <Tab label="Python">
@@ -1127,6 +1149,9 @@ result = agent("Look up the weather in Seattle")
 ```
 </Tab>
 <Tab label="Rust">
+
+`AfterInvocationEvent` does not carry the final result, so this hook tracks the
+invocation count in its own state:
 
 ```rust
 --8<-- "user-guide/sdk/agents/hooks.rs:resume_once"
@@ -1181,11 +1206,12 @@ result = agent("Draft a haiku about programming")
 
 The `resume` property integrates with the [interrupt](../../tools/index.md) system. When an agent invocation ends because of an interrupt, a hook can automatically handle the interrupt by resuming with interrupt responses. This avoids returning the interrupt to the caller.
 
-When the agent is in an interrupt state, resume with interrupt response objects,
-not a plain string.
+When the agent is in an interrupt state, resume with interrupt response objects.
 
 <Tabs>
 <Tab label="Python">
+
+Passing a plain string while an interrupt is active raises `TypeError`.
 
 ```python
 from strands import Agent, tool
@@ -1234,7 +1260,7 @@ result = agent("Send an email to alice@example.com saying hello")
 </Tab>
 <Tab label="Rust">
 
-Rust observes interrupt IDs through `InterruptEvent`, then supplies typed
+Observe interrupt IDs through `InterruptEvent`, then supply typed
 `InterruptResponse` values from `AfterInvocationEvent`:
 
 ```rust
@@ -1277,9 +1303,9 @@ For most use cases, [Plugins](../plugins/index.md) provide a more convenient way
 </Tab>
 <Tab label="TypeScript">
 
-:::note[TypeScript SDK]
-The TypeScript SDK does not export a `HookProvider` interface. Instead, use the [Plugin](../plugins/index.md) class to bundle multiple hooks together. The `Plugin` class provides `initAgent()` for registering hooks and `getTools()` for providing tools.
-:::
+Use the [Plugin](../plugins/index.md) class to bundle multiple hooks together.
+It provides `initAgent()` for registering hooks and `getTools()` for providing
+tools.
 
 ```typescript
 --8<-- "user-guide/sdk/plugins/index.ts:plugin_for_hooks"
@@ -1287,8 +1313,8 @@ The TypeScript SDK does not export a `HookProvider` interface. Instead, use the 
 </Tab>
 <Tab label="Rust">
 
-Rust does not export `HookProvider`. Implement `Hook<E>` for reusable hook types,
-then register each event implementation with `add_hook_impl`:
+Implement `Hook<E>` for reusable hook types, then register each event
+implementation with `add_hook_impl`:
 
 ```rust
 --8<-- "user-guide/sdk/agents/hooks.rs:reusable_hook"

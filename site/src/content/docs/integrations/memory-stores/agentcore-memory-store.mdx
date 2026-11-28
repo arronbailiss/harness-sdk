@@ -1,4 +1,5 @@
 ---
+unsupportedLanguages: Rust
 title: AgentCore Memory Store
 community: true
 description: Amazon Bedrock AgentCore Memory as a MemoryStore for long-term recall and server-side extraction
@@ -15,8 +16,8 @@ service:
   link: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html
 ---
 
-The AgentCore Memory Store, available in Python and TypeScript,
-implements the Strands [`MemoryStore`](../../user-guide/sdk/memory/managing-memory.md#custom-stores)
+The AgentCore Memory Store implements the Strands
+[`MemoryStore`](../../user-guide/sdk/memory/managing-memory.md#custom-stores)
 interface on top of Amazon Bedrock AgentCore Memory. Search maps to AgentCore's
 `RetrieveMemoryRecords`, and conversation turns are ingested for
 server-side memory extraction into long-term records. Attach it to an agent through a

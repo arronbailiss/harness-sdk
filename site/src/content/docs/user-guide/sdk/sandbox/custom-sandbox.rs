@@ -1,4 +1,4 @@
-#![allow(dead_code, deprecated)]
+#![allow(dead_code)]
 
 // --8<-- [start:posix_sandbox]
 use futures::stream;
@@ -31,33 +31,24 @@ mod vend_tools {
     // --8<-- [start:vend_tools]
     use std::sync::Arc;
 
-    use strands::sandbox::Sandbox;
-    use strands::vended_tools::file_editor::{
-        make_file_editor,
-        MakeFileEditorOptions,
-    };
+    use strands::vended_tools::edit::edit;
+    use strands::vended_tools::read::read;
     use strands::vended_tools::shell::{
         make_shell,
         MakeShellOptions,
     };
+    use strands::vended_tools::write::write;
     use strands::Tool;
 
-    fn tools(
-        sandbox: Arc<dyn Sandbox>,
-    ) -> strands::Result<Vec<Arc<dyn Tool>>> {
-        let shell = make_shell(
-            MakeShellOptions::builder()
-                .sandbox(Arc::clone(&sandbox))
-                .name("sandbox_shell")
-                .build(),
-        )?;
-        let editor = make_file_editor(
-            MakeFileEditorOptions::builder()
-                .sandbox(sandbox)
-                .name("sandbox_file_editor")
-                .build(),
-        );
-        Ok(vec![Arc::new(shell), Arc::new(editor)])
+    fn get_tools() -> Vec<Arc<dyn Tool>> {
+        let shell = make_shell(MakeShellOptions::default())
+            .expect("default shell options are valid");
+        vec![
+            Arc::new(shell),
+            Arc::new(read()),
+            Arc::new(write()),
+            Arc::new(edit()),
+        ]
     }
     // --8<-- [end:vend_tools]
 }

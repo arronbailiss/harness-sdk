@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { docsLanguagesSchema, docsLanguageSupportSchema, docsUnsupportedLanguagesSchema } from '../src/content.config'
-import { sdkLanguageAvailability } from '../src/config/languages'
+import { DEFAULT_DOC_LANGUAGES, sdkLanguageAvailability } from '../src/config/languages'
 
 describe('docsLanguagesSchema', () => {
   it('accepts a single language string', () => {
@@ -19,13 +19,20 @@ describe('docsLanguagesSchema', () => {
     expect(docsLanguagesSchema.safeParse(undefined).success).toBe(true)
   })
 
-  it('accepts explicit language subsets and all supported languages', () => {
+  it('accepts explicit language subsets', () => {
     expect(docsLanguagesSchema.safeParse(['python', 'typescript']).success).toBe(true)
-    expect(docsLanguagesSchema.safeParse(['python', 'typescript', 'rust']).success).toBe(true)
+  })
+
+  it('rejects a redundant list of every default language', () => {
+    const result = docsLanguagesSchema.safeParse(['python', 'typescript', 'rust'])
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0].message).toContain('omit languages')
+    }
   })
 
   it('accepts language names regardless of case', () => {
-    expect(docsLanguagesSchema.safeParse(['Python', 'TypeScript', 'Rust']).success).toBe(true)
+    expect(docsLanguagesSchema.safeParse(['Python', 'Rust']).success).toBe(true)
   })
 
   it('rejects unknown languages', () => {
@@ -51,13 +58,14 @@ describe('docsUnsupportedLanguagesSchema', () => {
   it('cannot overlap documented languages', () => {
     expect(
       docsLanguageSupportSchema.safeParse({
-        languages: ['Python', 'TypeScript', 'Rust'],
-        unsupportedLanguages: 'Rust',
+        languages: ['Python', 'TypeScript'],
+        unsupportedLanguages: 'TypeScript',
       }).success
     ).toBe(false)
   })
 
-  it('treats omitted languages as the Python and TypeScript default', () => {
+  it('uses all SDK languages by default and removes explicit unsupported languages', () => {
+    expect(DEFAULT_DOC_LANGUAGES).toEqual(['python', 'typescript', 'rust'])
     expect(
       docsLanguageSupportSchema.safeParse({
         unsupportedLanguages: 'Rust',
@@ -67,7 +75,7 @@ describe('docsUnsupportedLanguagesSchema', () => {
       docsLanguageSupportSchema.safeParse({
         unsupportedLanguages: 'Python',
       }).success
-    ).toBe(false)
+    ).toBe(true)
   })
 })
 
@@ -82,5 +90,9 @@ describe('sdkLanguageAvailability', () => {
 
   it('treats a counterpart route as available', () => {
     expect(sdkLanguageAvailability('rust', ['python'], [], true)).toBe('available')
+  })
+
+  it('keeps unsupported status even when a counterpart route exists', () => {
+    expect(sdkLanguageAvailability('rust', ['python'], ['rust'], true)).toBe('unsupported')
   })
 })

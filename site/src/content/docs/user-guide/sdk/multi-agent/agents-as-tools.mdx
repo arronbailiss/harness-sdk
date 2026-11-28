@@ -4,7 +4,6 @@ description: 'Wrap specialized Strands agents as callable tools so an orchestrat
 sidebar:
   label: "Agents as Tools"
 tags: [multi-agent, tool-authoring, tool-execution]
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/agent/_agent_as_tool.py
   - path: strands-py/src/strands/agent/_agent_delegation.py
@@ -411,11 +410,13 @@ corrupt the sub-agent's response. For example:
   the user unchanged
 - A retrieval agent returning structured data the caller consumes directly
 
-In that case, you can mark a tool agent as a delegate by passing `delegate: true` to
-<Syntax py=".as_tool()" ts=".asTool()" rs=".delegate(true)" />. When you do so,
-the orchestrator agent
-returns the delegate's response directly to the user, skipping the extra orchestrator
-model round-trip.
+In that case, enable delegation when you configure the agent tool:
+<Syntax
+  py=".as_tool(delegate=True)"
+  ts=".asTool({ delegate: true })"
+  rs=".as_tool().delegate(true)"
+/>. The orchestrator then returns the delegate's response directly to the user,
+skipping the extra orchestrator model round-trip.
 
 <Tabs>
 <Tab label="Python">
@@ -513,8 +514,8 @@ The [Agents as Tools](https://github.com/strands-agents/harness-sdk/tree/main/st
 </Tab>
 <Tab label="Rust">
 
-The compile-checked Rust snippets on this page show direct agent tools,
-customization, context preservation, custom wrappers, and delegation.
+The examples on this page show direct agent tools, customization, context
+preservation, custom wrappers, and delegation.
 
 </Tab>
 </Tabs>

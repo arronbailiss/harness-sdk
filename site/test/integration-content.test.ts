@@ -2,9 +2,22 @@ import { describe, expect, it } from 'vitest'
 import { getIntegrationEntries, getLanguageSupport } from '../src/util/integration-content'
 
 describe('getLanguageSupport', () => {
-  it('keeps unspecified and empty language fields on the Python/TypeScript defaults', () => {
-    expect(getLanguageSupport(undefined)).toEqual({ python: true, typescript: true, rust: false })
-    expect(getLanguageSupport([])).toEqual({ python: true, typescript: true, rust: false })
+  it('uses all SDK languages for unspecified and empty language fields', () => {
+    expect(getLanguageSupport(undefined)).toEqual({ python: true, typescript: true, rust: true })
+    expect(getLanguageSupport([])).toEqual({ python: true, typescript: true, rust: true })
+  })
+
+  it('removes unsupported languages from the defaults', () => {
+    expect(getLanguageSupport(undefined, 'Rust')).toEqual({
+      python: true,
+      typescript: true,
+      rust: false,
+    })
+    expect(getLanguageSupport(undefined, ['Python', 'TypeScript'])).toEqual({
+      python: false,
+      typescript: false,
+      rust: true,
+    })
   })
 
   it('recognizes explicit Rust support', () => {
@@ -39,5 +52,24 @@ describe('getIntegrationEntries', () => {
         description: undefined,
       },
     ])
+  })
+
+  it('excludes unsupported languages from entries with omitted languages', () => {
+    const docs = [
+      {
+        id: 'docs/integrations/tools/python-tool',
+        data: {
+          title: 'Python tool',
+          integrationType: 'tool',
+          unsupportedLanguages: ['TypeScript', 'Rust'],
+        },
+      },
+    ] as Parameters<typeof getIntegrationEntries>[0]
+
+    expect(getIntegrationEntries(docs, 'tool')[0]).toMatchObject({
+      pythonSupport: true,
+      typescriptSupport: false,
+      rustSupport: false,
+    })
   })
 })

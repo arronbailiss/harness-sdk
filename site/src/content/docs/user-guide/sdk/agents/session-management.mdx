@@ -1,7 +1,6 @@
 ---
 title: Persist state across sessions
 description: "Persist agent conversations across sessions. Save and restore chat history, tool state, and context for long-running AI workflows."
-languages: [Python, TypeScript, Rust]
 tags: [session-management, snapshots, state]
 sourceLinks:
   - path: strands-py/src/strands/session/session_manager.py
@@ -63,6 +62,12 @@ agent = Agent(session_manager=session_manager)
 # Use the agent - all messages and state are automatically persisted
 agent("Hello!")  # This conversation is persisted
 ```
+
+`SnapshotSessionManager` is the recommended manager for new single-agent sessions.
+`FileSessionManager` and `S3SessionManager` remain supported as the
+[compatibility path](#storage-backends) for Graph, Swarm, and existing
+repository-format sessions.
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -83,6 +88,11 @@ agent("Hello!")  # This conversation is persisted
 cargo add tokio --features macros,rt-multi-thread
 ```
 
+Attach a
+[`SessionManager`](https://docs.rs/strands/latest/strands/session/struct.SessionManager.html)
+backed by
+[`LocalFileStorage`](https://docs.rs/strands/latest/strands/storage/struct.LocalFileStorage.html):
+
 ```rust
 --8<-- "user-guide/sdk/agents/session-management.rs:basic_usage"
 ```
@@ -92,14 +102,6 @@ cargo add tokio --features macros,rt-multi-thread
 
 Strands persists the conversation and its state to the underlying storage backend.
 
-In Python, `SnapshotSessionManager` is the recommended manager for new
-single-agent sessions. `FileSessionManager` and `S3SessionManager` remain
-supported as the [compatibility path](#storage-backends) for Graph, Swarm, and
-existing repository-format sessions. TypeScript and Rust use `SessionManager`.
-
-`FileSessionManager` and `S3SessionManager` remain supported in Python, but use
-`SnapshotSessionManager` for new single-agent sessions.
-
 ### Multi-agent sessions
 
 Multi-agent systems (Graph/Swarm) can also use session management to persist their state.
@@ -108,7 +110,9 @@ Multi-agent systems (Graph/Swarm) can also use session management to persist the
 <Tab label="Python">
 
 :::caution
-Only the orchestrator should have a session manager. Agents inside a graph or swarm must not have their own session manager — Python raises a `ValueError` if you add an agent that has one to a Graph or Swarm.
+Only the orchestrator should have a session manager. Agents inside a graph or swarm
+must not have their own session manager. Adding one to a Graph or Swarm raises a
+`ValueError`.
 :::
 
 Pass an explicit storage backend to
@@ -164,8 +168,8 @@ Swarm works the same way:
 </Tab>
 <Tab label="Rust">
 
-Graph and Swarm are not available in the Rust SDK. Attach `SessionManager` to
-each single agent that needs persistent state.
+Graph and Swarm are not available. Attach `SessionManager` to each single agent
+that needs persistent state.
 
 </Tab>
 </Tabs>
@@ -180,10 +184,9 @@ When a session manager is attached, the value matches
 <Syntax py="session_id" ts="sessionId" rs="session_id()" /> on the manager.
 Without a session manager, the agent uses a generated, non-persisted identifier.
 
-Snapshot-based session managers accept any [Storage](../storage/index.mdx) backend, including
-`InMemoryStorage`, `LocalFileStorage`, `S3Storage`, and custom implementations. See
-[Storage](../storage/index.mdx) for backend configuration, tradeoffs, custom backends, and
-required S3 permissions.
+Snapshot-based session managers accept a [Storage](../storage/index.mdx) backend.
+See the storage guide for backend configuration, tradeoffs, and custom
+implementations.
 
 <Tabs>
 <Tab label="Python">
@@ -235,21 +238,16 @@ console.log(new Agent().sessionId) // e.g. "a1b2c3d4"
 
 ## Storage backends
 
-[Storage](../storage/index.mdx) is the single place persistence backends are documented. How session management reaches a backend depends on the manager:
-
-- **`SnapshotSessionManager` (Python) and `SessionManager` (TypeScript and Rust)**
-  compose the shared `Storage` abstraction. Manager-level storage takes
-  precedence over agent-level storage. Without either, Python falls back to
-  `LocalFileStorage("./.strands/")`; TypeScript and Rust fail during
-  initialization.
-- **`FileSessionManager` and `S3SessionManager` (Python, compatibility path)** configure storage directly with a storage directory or an S3 bucket. They do not take a `Storage` backend.
-
-The examples below show each form.
+[Storage](../storage/index.mdx) documents the persistence backends. The examples
+below show how each session manager receives one.
 
 <Tabs>
 <Tab label="Python">
 
-The recommended `SnapshotSessionManager` accepts any [Storage](../storage/index.mdx) backend, so you choose durability the same way the offloader and memory subsystems do:
+The recommended `SnapshotSessionManager` accepts any
+[Storage](../storage/index.mdx) backend. Manager-level storage takes precedence
+over agent-level storage. Without either, it uses
+`LocalFileStorage("./.strands/")`.
 
 ```python
 from strands import Agent
@@ -271,7 +269,9 @@ session_manager = SnapshotSessionManager(
 agent = Agent(session_manager=session_manager)
 ```
 
-The repository-based managers cover Graph, Swarm, and existing repository-format sessions. They configure storage directly rather than through a `Storage` backend:
+The repository-based managers cover Graph, Swarm, and existing repository-format
+sessions. They configure storage directly rather than through a `Storage`
+backend:
 
 | Session Manager | Persistence | Best for |
 |-----------------|-------------|----------|
@@ -308,13 +308,14 @@ over agent-level storage. If neither provides storage, initialization fails.
 <Tab label="Rust">
 
 Use `LocalFileStorage` for durable local sessions and `InMemoryStorage` for
-tests or short-lived processes:
+tests or short-lived processes. Manager-level storage takes precedence over
+agent-level storage. Initialization fails if neither provides storage:
 
 ```rust
 --8<-- "user-guide/sdk/agents/session-management.rs:storage_backends"
 ```
 
-The Rust SDK does not provide an S3 storage backend.
+The SDK does not provide an S3 storage backend.
 
 </Tab>
 </Tabs>
@@ -323,11 +324,10 @@ The Rust SDK does not provide an S3 storage backend.
 
 ### Snapshot-based session managers
 
-`SnapshotSessionManager` in Python and `SessionManager` in TypeScript and Rust
-persist a complete point-in-time snapshot. For single agents, they restore
-`snapshot_latest` during
-initialization and support immutable checkpoints. For graph and swarm, both restore the
-latest orchestrator snapshot before the first invocation.
+Snapshot-based session managers persist a complete point-in-time snapshot. For
+single agents, they restore `snapshot_latest` during initialization and support
+immutable checkpoints. Multi-agent managers restore the latest orchestrator
+snapshot before the first invocation.
 
 **Single Agent Events**
 
@@ -397,16 +397,10 @@ See [Basic Usage](#basic-usage) for configuration examples.
 </Tab>
 <Tab label="Rust">
 
-Graph and Swarm session events are not available in the Rust SDK.
+Graph and Swarm session events are not available.
 
 </Tab>
 </Tabs>
-
-### Repository-based session managers
-
-:::note[Python only]
-Repository-based session managers are available in the Python SDK only.
-:::
 
 ## Immutable snapshots
 
@@ -599,7 +593,8 @@ Multi-agent systems serialize their state as JSON objects containing:
 </Tab>
 <Tab label="TypeScript">
 
-The TypeScript SDK stores session state as a `Snapshot` object written to JSON. Each snapshot contains:
+The session manager stores state as a `Snapshot` object written to JSON. Each
+snapshot contains:
 
 - `data.messages`: The full conversation history
 - `data.state`: Agent key-value state
@@ -714,7 +709,8 @@ Both file and S3 backends use the same key structure:
 <Tabs>
 <Tab label="Python">
 
-`SnapshotSessionManager` layout (recommended for new single-agent sessions). The `Storage` backend prepends a `session/` namespace, so the layout is byte-identical to the TypeScript SDK:
+`SnapshotSessionManager` layout for new single-agent sessions. The `Storage`
+backend prepends a `session/` namespace:
 
 ```
 <root>/
@@ -745,6 +741,17 @@ Repository-based layout (`FileSessionManager`, `S3SessionManager`):
         └── multi_agent_<orchestrator_id>/
             └── multi_agent.json
 ```
+
+Using the same session ID and storage location does not migrate
+repository-based data to `SnapshotSessionManager`. Existing sessions can
+continue using their current manager, or applications can migrate the required
+state explicitly.
+
+`FileSessionManager` creates a new storage directory with mode `0o700`. It
+leaves existing permissions unchanged and, on POSIX systems, emits a
+`UserWarning` when the directory is accessible by group or others. It refuses
+to read or write a session file that is itself a symlink, but still follows
+symlinked directories.
 
 </Tab>
 <Tab label="TypeScript">
@@ -784,10 +791,6 @@ Repository-based layout (`FileSessionManager`, `S3SessionManager`):
 </Tab>
 </Tabs>
 
-Using the same session ID and storage location does not migrate repository-based Python
-data to `SnapshotSessionManager`. Existing sessions can continue using their current
-manager, or applications can migrate the required state explicitly.
-
 ## Sessions, agents, and concurrency
 
 Session management is designed around a single live writer per conversation:
@@ -826,4 +829,9 @@ When implementing session persistence in your applications, consider these best 
 - **Concurrent Access**: Built-in session managers provide no cross-process or
   distributed coordination. Use one live writer per conversation. See
   [Sessions, Agents, and Concurrency](#sessions-agents-and-concurrency).
-- **Secure Storage Directories**: The session storage directory is a trusted data store. Session state is trusted input, so do not load sessions from untrusted sources, such as session files inside a cloned repository. Restrict filesystem permissions so that only the agent process can read and write to it. The Python `FileSessionManager` creates a new storage directory with mode `0o700`; it leaves an existing directory's permissions unchanged and, on POSIX systems, emits a `UserWarning` if that directory is accessible by group or others. In shared or multi-tenant environments (shared volumes, containers), be aware that the SDK follows symlinks in the session storage directory. The one exception is the Python `FileSessionManager`, which refuses to read or write a session file that is itself a symlink; it still follows symlinked directories. If an attacker with write access to the storage directory creates a symlink (e.g., `message_0.json` pointing to an arbitrary file) and the SDK follows it, sensitive file contents could be loaded into the agent's conversation history.
+- **Secure Storage Directories**: Treat the session storage directory as a trusted
+  data store. Session state is trusted input, so do not load session files from
+  untrusted sources, such as a cloned repository. Restrict filesystem permissions
+  to the agent process. In shared or multi-tenant environments, do not allow
+  untrusted users to create files or symlinks in the directory. A malicious link
+  could load sensitive file contents into the conversation history.

@@ -33,6 +33,13 @@ pip install 'strands-agents[openai]'
 npm install @strands-agents/sdk openai
 ```
 </Tab>
+<Tab label="Rust">
+
+```bash
+cargo add strands --features openai
+cargo add tokio --features macros,rt-multi-thread
+```
+</Tab>
 </Tabs>
 
 ## Usage
@@ -73,16 +80,42 @@ print(response)
 --8<-- "integrations/model-providers/ovhcloud-ai-endpoints.ts:usage"
 ```
 </Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "integrations/model-providers/ovhcloud-ai-endpoints.rs:usage"
+```
+
+Set `OVHCLOUD_API_KEY`; the client requires a non-empty key.
+
+</Tab>
 </Tabs>
 
 ## Configuration
 
-Two client settings connect the provider to OVHcloud AI Endpoints:
+Two client settings connect the provider to OVHcloud AI Endpoints.
 
-* **API key**: from the [OVHcloud Manager](https://ovh.com/manager). Without a key,
-  requests use a rate-limited free tier; the Python provider accepts an empty key
-  string, while the TypeScript provider requires a non-empty key.
-* **Base URL**: `https://oai.endpoints.kepler.ai.cloud.ovh.net/v1`
+**API key:** Generate it in the [OVHcloud Manager](https://ovh.com/manager).
+
+<Tabs>
+<Tab label="Python">
+
+An empty key string selects the rate-limited free tier.
+
+</Tab>
+<Tab label="TypeScript">
+
+Set a non-empty key.
+
+</Tab>
+<Tab label="Rust">
+
+Set a non-empty key.
+
+</Tab>
+</Tabs>
+
+**Base URL:** `https://oai.endpoints.kepler.ai.cloud.ovh.net/v1`
 
 Model IDs come from the
 [AI Endpoints catalog](https://www.ovhcloud.com/en/public-cloud/ai-endpoints/catalog/),

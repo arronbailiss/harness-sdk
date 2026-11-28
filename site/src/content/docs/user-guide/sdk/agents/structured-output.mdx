@@ -3,7 +3,6 @@ title: Return structured output
 description: >-
   Return a typed, validated object from a Strands agent instead of text, so your code
   can act on the answer.
-languages: [Python, TypeScript, Rust]
 tags: [structured-output]
 sourceLinks:
   - path: strands-py/src/strands/agent/agent.py
@@ -17,16 +16,37 @@ act on the answer, text is hard to parse. Structured output returns an object in
 You describe the fields you need in a schema, and the agent returns an object with
 those fields, validated against the schema.
 
-A schema lists each field's name, type, and description. In Python, write it as a
-[Pydantic model](https://docs.pydantic.dev/latest/concepts/models/), which installs with
-`strands-agents`. In TypeScript, write it as a [Zod schema](https://zod.dev/) and
-install Zod with `npm install zod`. In Rust, derive `JsonSchema` and `Deserialize`:
+A schema lists each field's name, type, and description:
+
+<Tabs>
+<Tab label="Python">
+
+Write the schema as a
+[Pydantic model](https://docs.pydantic.dev/latest/concepts/models/). Pydantic
+installs with `strands-agents`.
+
+</Tab>
+<Tab label="TypeScript">
+
+Write the schema with [Zod](https://zod.dev/) and install it:
+
+```bash
+npm install zod
+```
+
+</Tab>
+<Tab label="Rust">
+
+Derive `JsonSchema` and `Deserialize`:
 
 ```bash
 cargo add schemars
 cargo add serde --features derive
 cargo add tokio --features macros,rt-multi-thread
 ```
+
+</Tab>
+</Tabs>
 
 ## Request structured output
 
@@ -104,25 +124,33 @@ defined. The model reads each field description, so describe what a field means,
 only its type.
 
 Pass the schema as
-<Syntax
-  py="structured_output_model"
-  ts="structuredOutputSchema"
-  rs="InvokeOptions::structured_output_schema"
-/>
+
+<Syntax py="structured_output_model" ts="structuredOutputSchema" rs="InvokeOptions::structured_output_schema" />
 and read the object from
-<Syntax
-  py="result.structured_output"
-  ts="result.structuredOutput"
-  rs="result.structured_output()"
-/>. Python and Rust return an instance of your type. In TypeScript, cast it to the
-`z.infer` type.
+<Syntax py="result.structured_output" ts="result.structuredOutput" rs="result.structured_output()" />.
+
+<Tabs>
+<Tab label="Python">
+
+The result is an instance of the Pydantic model.
+
+</Tab>
+<Tab label="TypeScript">
+
+Cast the result to the schema's `z.infer` type.
+
+</Tab>
+<Tab label="Rust">
+
+The method deserializes the result into your target type.
+
+</Tab>
+</Tabs>
 
 If the agent doesn't return an object, the call raises
-<Syntax
-  py="StructuredOutputException"
-  ts="StructuredOutputError"
-  rs="StructuredOutputError"
-/>. Handle it where your application can route the request to a fallback.
+
+<Syntax py="StructuredOutputException" ts="StructuredOutputError" rs="StructuredOutputError" />. Handle it where your
+application can route the request to a fallback.
 
 Invalid field values don't raise. Strands sends the validation errors back to the
 agent, and the agent corrects them.
@@ -262,11 +290,13 @@ The user is unable to log in and is not receiving password reset emails.
 ## Stream the response
 
 Pass the schema to a stream the same way. The object arrives once, on the final
-result. The Python and TypeScript examples also print text chunks as they arrive.
-The Rust example reads only the final `AgentResult` event:
+result:
 
 <Tabs>
 <Tab label="Python">
+
+This example prints text chunks as they arrive, then reads the object from the
+final result:
 
 ```python
 import asyncio
@@ -296,8 +326,18 @@ async def main():
 asyncio.run(main())
 ```
 
+Typical output:
+
+```text
+I'd be happy to help draft a reply apologizing for a delayed refund!
+Subject: Apology for Your Delayed Refund
+```
+
 </Tab>
 <Tab label="TypeScript">
+
+This example prints text chunks as they arrive, then reads the object from the
+final result:
 
 ```typescript
 --8<-- "user-guide/sdk/agents/structured-output_imports.ts:streaming_imports"
@@ -305,10 +345,18 @@ asyncio.run(main())
 --8<-- "user-guide/sdk/agents/structured-output.ts:streaming"
 ```
 
+Typical output:
+
+```text
+I'd be happy to help draft a reply apologizing for a delayed refund!
+Subject: Apology for Your Delayed Refund
+```
+
 </Tab>
 <Tab label="Rust">
 
-The stream extension trait comes from `futures`:
+This example reads the completed object from the final `AgentResult` event. The
+stream extension trait comes from `futures`:
 
 ```bash
 cargo add futures
@@ -318,22 +366,15 @@ cargo add futures
 --8<-- "user-guide/sdk/agents/structured-output.rs:streaming"
 ```
 
-</Tab>
-</Tabs>
+Typical output:
 
-Typical output for Python and TypeScript:
-
-```
-I'd be happy to help draft a reply apologizing for a delayed refund!
-Subject: Apology for Your Delayed Refund
-```
-
-The Rust example prints the completed object:
-
-```
+```text
 Subject: Apology for Your Delayed Refund
 We're sorry your refund was delayed and appreciate your patience.
 ```
+
+</Tab>
+</Tabs>
 
 ## Next steps
 

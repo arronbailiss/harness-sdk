@@ -1,4 +1,5 @@
 ---
+unsupportedLanguages: Rust
 project:
   pypi: https://pypi.org/project/strands-github-storage/
   npm: https://www.npmjs.com/package/strands-github-storage
@@ -17,7 +18,9 @@ sidebar:
 
 [strands-github-storage](https://github.com/maisieyanz/strands-github-storage) is a `Storage` backend that persists each entry as a file in a GitHub repository, at the entry's key path on a branch. Because the store *is* a git repository, its contents are browsable in the GitHub UI, diffable per change, and versioned in history.
 
-It implements the SDK's four-method `Storage` interface (`write`, `read`, `delete`, `list`), so it plugs in anywhere a `Storage` is accepted — session managers, context offloading, and file-backed memory stores. Available for both the Python and TypeScript SDKs.
+It implements the SDK's four-method `Storage` interface (`write`, `read`,
+`delete`, `list`), so it plugs in anywhere a `Storage` is accepted: session
+managers, context offloading, and file-backed memory stores.
 
 ## Installation
 

@@ -1,7 +1,6 @@
 ---
 title: Strategy Presets
-description: "Named strategy presets that expand to preconfigured Offload strategies for common context management patterns."
-languages: [Python, TypeScript, Rust]
+description: 'Named strategy presets that expand to preconfigured Offload strategies for common context management patterns.'
 tags: [conversation-management, token-management]
 sourceLinks:
   - path: strands-py/src/strands/_context_manager/presets.py
@@ -10,40 +9,54 @@ sourceLinks:
 addedDate: 2026-09-14
 ---
 
-:::caution[Experimental in Python]
-In Python, the `ContextManager` strategy API is still exported from
-`strands.experimental.context_manager` and may change in future versions. The
-TypeScript API is stable.
-:::
+Named strategy presets are shorthand for preconfigured `Offload` strategies.
 
-Named strategy presets are shorthand for preconfigured `Offload` strategies. Python
-and TypeScript accept a preset name string in the strategies array. Rust accepts a
-`StrategyPresetName` variant.
+<Tabs>
+<Tab label="Python">
 
-Preset expansions are internal defaults and may change between releases as tuning improves. The preset *name* is the stable contract. Use raw `Offload.*` strategies when you need a pinned configuration.
+The `ContextManager` strategy API is exported from
+`strands.experimental.context_manager` and may change in future versions.
+
+Pass preset names as strings in the `strategies` array.
+
+</Tab>
+<Tab label="TypeScript">
+
+The strategy API is stable. Pass preset names as strings in the `strategies`
+array.
+
+</Tab>
+<Tab label="Rust">
+
+Pass `StrategyPresetName` variants in the `strategies` array.
+
+</Tab>
+</Tabs>
+
+Preset expansions are internal defaults and may change between releases as tuning improves. The preset _name_ is the stable contract. Use raw `Offload.*` strategies when you need a pinned configuration.
 
 ## Available presets
 
 <Tabs>
 <Tab label="Python">
 
-| Preset | Name | Description |
-|--------|------|-------------|
-| Proactive summarization | `"proactive_summarization"` | Summarizes the oldest 30% of messages when the context window reaches 70% capacity. |
-| Large tool offloading | `"large_tool_offloading"` | Truncates individual tool results over 2,500 tokens to a 1,000-token preview, eagerly on message arrival. |
-| Overflow protection | `"overflow_protection"` | Truncates the oldest messages when the context window is full, keeping the 4 most recent. |
-| Stale tool cleanup | `"stale_tool_cleanup"` | Drops tool results more than 5 messages old. |
+| Preset                  | Name                        | Description                                                                                               |
+| ----------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Proactive summarization | `"proactive_summarization"` | Summarizes the oldest 30% of messages when the context window reaches 70% capacity.                       |
+| Large tool offloading   | `"large_tool_offloading"`   | Truncates individual tool results over 2,500 tokens to a 1,000-token preview, eagerly on message arrival. |
+| Overflow protection     | `"overflow_protection"`     | Truncates the oldest messages when the context window is full, keeping the 4 most recent.                 |
+| Stale tool cleanup      | `"stale_tool_cleanup"`      | Drops tool results more than 5 messages old.                                                              |
 
 </Tab>
 <Tab label="TypeScript">
 
-| Preset | Name | Description |
-|--------|------|-------------|
-| Proactive summarization | `"proactiveSummarization"` | Summarizes the oldest 30% of messages when the context window reaches 70% capacity. |
-| Large tool offloading | `"largeToolOffloading"` | Truncates individual tool results over 2,500 tokens to a 1,000-token preview, eagerly on message arrival. |
-| Overflow protection | `"overflowProtection"` | Drops the oldest messages when the context window is full, keeping the 4 most recent. |
-| Stale tool cleanup | `"staleToolCleanup"` | Drops tool results more than 5 messages old. |
-| Deferred tool loading | `"deferredToolLoading"` | Defers tool schemas. |
+| Preset                  | Name                       | Description                                                                                               |
+| ----------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Proactive summarization | `"proactiveSummarization"` | Summarizes the oldest 30% of messages when the context window reaches 70% capacity.                       |
+| Large tool offloading   | `"largeToolOffloading"`    | Truncates individual tool results over 2,500 tokens to a 1,000-token preview, eagerly on message arrival. |
+| Overflow protection     | `"overflowProtection"`     | Drops the oldest messages when the context window is full, keeping the 4 most recent.                     |
+| Stale tool cleanup      | `"staleToolCleanup"`       | Drops tool results more than 5 messages old.                                                              |
+| Deferred tool loading   | `"deferredToolLoading"`    | Defers tool schemas.                                                                                      |
 
 </Tab>
 <Tab label="Rust">
@@ -69,6 +82,7 @@ On Claude models that preserve thinking, large tool offloading keeps thinking bl
 ## Using presets
 
 Pass preset names in the
+
 <Syntax py="strategies" ts="strategies" rs="ContextManagerConfig::strategies" />
 array:
 
@@ -87,6 +101,7 @@ agent = Agent(
     },
 )
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -95,12 +110,14 @@ agent = Agent(
 
 --8<-- "user-guide/sdk/context-management/presets.ts:using_presets"
 ```
+
 </Tab>
 <Tab label="Rust">
 
 ```rust
 --8<-- "user-guide/sdk/context-management/presets.rs:using_presets"
 ```
+
 </Tab>
 </Tabs>
 
@@ -127,6 +144,7 @@ agent = Agent(
     },
 )
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -135,12 +153,14 @@ agent = Agent(
 
 --8<-- "user-guide/sdk/context-management/presets.ts:mixing"
 ```
+
 </Tab>
 <Tab label="Rust">
 
 ```rust
 --8<-- "user-guide/sdk/context-management/presets.rs:mixing"
 ```
+
 </Tab>
 </Tabs>
 

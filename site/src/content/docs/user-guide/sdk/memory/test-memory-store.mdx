@@ -2,7 +2,6 @@
 title: Test Memory Store
 description: "A zero-infrastructure memory store backed by a local JSON file: no cloud account, lexical recall, and memories that survive across sessions."
 tags: [memory]
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/vended_memory_stores/test_memory_store/store.py
   - path: strands-ts/src/vended-memory-stores/test-memory-store/store.ts
@@ -42,6 +41,12 @@ agent = Agent(memory_manager=MemoryManager(stores=[store]))
 ```
 </Tab>
 <Tab label="Rust">
+
+The Rust examples on this page use `serde_json` directly:
+
+```bash
+cargo add serde_json
+```
 
 ```rust
 --8<-- "user-guide/sdk/memory/test-memory-store.rs:basic"

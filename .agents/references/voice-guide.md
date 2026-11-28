@@ -212,6 +212,11 @@ See `terminology.md` in this directory for the canonical term for each concept. 
 
 Keep snippets focused on one concept per block. Use real tool names and realistic values from the actual SDK.
 
+For Rust, list every direct crate and optional Cargo feature the rendered
+example uses in the selected Rust tab. A site-owned aggregate crate may compile
+with dependencies the reader does not have, so it does not replace explicit
+prerequisites.
+
 For code verification procedures, see `code-verification.md` in this directory.
 
 #### Documenting non-deterministic behavior
@@ -308,11 +313,26 @@ Replace "you could use X or Y" with "use X. Y works too, but X handles [common c
 
 ### Multi-language documentation (Python + TypeScript + Rust)
 
-Strands ships Python and TypeScript SDKs, plus a Rust SDK in developer preview. Existing pages default to Python and TypeScript; add Rust only when that page's Rust content has been verified. This creates specific challenges.
+Strands ships Python, TypeScript, and Rust SDKs. Treat all three as the default
+for documentation work. A change to a shared SDK concept should cover all three
+unless the source proves that the feature is unavailable or the page explicitly
+records a documentation gap.
 
-**When to show multiple languages:** Concept pages (tutorials, how-to, explanation) should show each verified implementation in tabs. Reference pages are per-language: Python and TypeScript references are generated separately, while the Rust reference landing page links to docs.rs.
+**When to show multiple languages:** Concept pages (tutorials, how-to,
+explanation) should show each implementation in synchronized tabs. Reference
+pages are per-language. Python and TypeScript references are generated in the
+site; Rust guide pages link public symbols directly to docs.rs until an embedded
+Rust reference is designed separately.
 
-**When to show fewer languages:** If a feature exists in only a subset of SDKs, document only those implementations and set the `languages` frontmatter. Don't show empty tabs or placeholder code. Omitted `languages` means the default Python and TypeScript coverage; Rust coverage must be explicit while it is in developer preview.
+**When to show fewer languages:** If a feature exists in only a subset of SDKs,
+use `unsupportedLanguages` for the unavailable SDKs. Use an explicit
+`languages` subset only when the feature may exist but that page has not been
+documented for every SDK. Omitted `languages` means Python, TypeScript, and Rust.
+
+Keep the reader's selected language stable. Opening a page must never silently
+switch the global language. When the selected SDK does not implement a feature
+or the page is not documented for it yet, show a concise explanation for that
+selected SDK. Do not display internal verification status to readers.
 
 **API parity is a goal, not a guarantee.** The SDKs may have different parameter names, import paths, feature flags, or API surfaces for the same concept. Never translate an example mechanically. Verify each language independently against its own SDK source and compile every Rust example with the documented Cargo features.
 
@@ -325,6 +345,18 @@ Strands ships Python and TypeScript SDKs, plus a Rust SDK in developer preview. 
 **Prose between tabs should be language-neutral — or use `<Syntax>`.** When shared prose needs to reference a language-specific identifier, use the `<Syntax>` component rather than spelling out both variants manually. This adapts to the reader's language selection and keeps prose clean. For introductory sentences before tabs, you can also write language-neutral prose ("Configure a retry strategy:") and let the code speak for itself.
 
 **Never name the language inside its own tab.** The reader selected the tab; they know which language they're reading. State facts directly without prefixing the language name. The tab itself provides that context.
+
+**Never explain one SDK through another SDK's differences.** A reader on Rust
+does not need a comparison with Python or TypeScript. Put language-specific
+requirements, defaults, caveats, and setup inside the corresponding tab, using
+the same conceptual heading and paragraph position in every tab.
+
+**Preserve correct existing content.** Adding or updating one language is
+additive work, not permission to shorten, restyle, or delete accurate content
+for another language. Keep descriptions, API links, defaults, tables, and
+explanations unchanged unless the task requires a correction. Preserve
+model-visible prompts, tool descriptions, and names across SDKs when they
+describe the same example.
 
 #### Where divergence content lives in the page structure
 

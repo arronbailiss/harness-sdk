@@ -1,7 +1,6 @@
 ---
 title: Checkpoints vs long-term memory
 description: "Do you need session checkpoints, long-term memory, or both? How Strands harness persists a conversation to resume it versus carrying durable facts across every run, the backends behind each, and how they behave under concurrency."
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-ts/src/agent.ts
@@ -70,12 +69,25 @@ State is written under `./.agent/sessions`. Override it with
   rs="SessionConfig::builder().dir(...)"
 />.
 Offloaded tool results from context management are kept there too, so a long task
-survives restarts intact. Under the hood the Python SDK uses a `SnapshotSessionManager`
-backed by `LocalFileStorage`; the TypeScript and Rust SDKs use a `SessionManager` over
-file storage. All three restore the latest checkpoint during construction. To use a
-different backend, pass your own session manager through to the agent. Your explicit
-manager wins over the one Strands harness builds from `session`. Python and TypeScript
-ship S3 storage; Rust accepts a custom `Storage` implementation.
+survives restarts intact. To use a different backend, pass your own session manager
+through to the agent. Your explicit manager wins over the one Strands harness builds
+from `session`.
+
+<Tabs>
+  <Tab label="Python">
+    The harness uses a `SnapshotSessionManager` backed by `LocalFileStorage` and
+    restores the latest checkpoint during construction. The SDK also ships S3 storage.
+  </Tab>
+  <Tab label="TypeScript">
+    The harness uses a `SessionManager` over file storage and restores the latest
+    checkpoint during construction. The SDK also ships S3 storage.
+  </Tab>
+  <Tab label="Rust">
+    The harness uses a `SessionManager` over file storage and restores the latest
+    checkpoint during construction. Supply another `Storage` implementation for a
+    different backend.
+  </Tab>
+</Tabs>
 
 For the full option set see [persist sessions](../sessions/).
 The Strands Harness SDK-level [session management](../../../sdk/agents/session-management/)
@@ -94,7 +106,25 @@ Because memory persistence is plain files, independent of any session, it is the
 tool for preferences, project facts, and decisions that should outlive a single task.
 For a stateless run, use
 <Syntax py="memory=False" ts="memory: false" rs=".memory(false)" />.
-To move or replace storage, pass the language's memory configuration. See
+
+To move the file store or replace it with custom stores:
+
+<Tabs>
+  <Tab label="Python">
+    Use `memory={"dir": ...}` to move the default file store, or
+    `memory={"stores": [...]}` to replace it.
+  </Tab>
+  <Tab label="TypeScript">
+    Use `memory: { dir }` to move the default file store, or
+    `memory: { stores }` to replace it.
+  </Tab>
+  <Tab label="Rust">
+    Use `MemoryConfig::builder().dir(...).build()` to move the default file
+    store. To replace it, construct `MemoryConfig` with the `stores` field set.
+  </Tab>
+</Tabs>
+
+See
 [give long-term memory](../memory/) and
 the Strands Harness SDK's [memory overview](../../../sdk/memory/overview/).
 
@@ -106,29 +136,32 @@ specific task; rely on memory to carry knowledge between unrelated runs.
 
 ## Backends: what ships, and what doesn't
 
-Both sessions and memory sit on the Strands Harness SDK's `Storage` abstraction. Every
+Both sessions and memory sit on the Strands Harness SDK's `Storage` abstraction. Each
 SDK ships:
 
 - `LocalFileStorage`: the default, with atomic writes (temp file + rename).
 - `InMemoryStorage`: process memory for tests and short-lived agents.
 
-Python and TypeScript also ship `S3Storage` for production and multi-instance
-deployments. Rust does not ship an S3 backend yet. A custom Rust backend implements four
-async methods (`write`, `read`, `delete`, `list`), so you can put sessions or memory on
-any store you operate.
+A custom backend implements `write`, `read`, `delete`, and `list`, so sessions
+or memory can use any store you operate.
 
-Some backends people expect are **not** first-party yet, and the docs are honest about
-it:
-
-- **SQLite and PostgreSQL**: no first-party session manager or storage backend. A
-  Postgres-backed store is straightforward to write against the `Storage` or
-  `MemoryStore` interface, but you own it.
-- **Redis / Valkey**: available only through the community
-  [`strands-valkey-session-manager`](../../../../integrations/session-managers/strands-valkey-session-manager/)
-  (Python), not a first-party package.
-- **Amazon Bedrock AgentCore Memory**: a third-party session manager,
-  [`AgentCoreMemorySessionManager`](../../../../integrations/session-managers/agentcore-memory/),
-  when you want managed short- and long-term memory.
+<Tabs>
+  <Tab label="Python">
+    `S3Storage` supports production and multi-instance deployments. SQLite and
+    PostgreSQL do not have first-party backends. Community integrations include
+    [`strands-valkey-session-manager`](../../../../integrations/session-managers/strands-valkey-session-manager/)
+    and
+    [`AgentCoreMemorySessionManager`](../../../../integrations/session-managers/agentcore-memory/).
+  </Tab>
+  <Tab label="TypeScript">
+    `S3Storage` supports production and multi-instance deployments. SQLite,
+    PostgreSQL, Redis, and Valkey do not have first-party backends.
+  </Tab>
+  <Tab label="Rust">
+    An S3 backend is not included. Supply a custom backend for remote or shared
+    storage.
+  </Tab>
+</Tabs>
 
 ## Concurrency, isolation, and deletion
 
@@ -149,10 +182,24 @@ supports a scoped store per tenant rather than one shared store. The session dir
 is a trusted data store: restrict filesystem permissions to the agent process, and note
 the Strands Harness SDK does not block symlinks inside it.
 
-**Deletion.** Deleting a session removes every object under its storage prefix. With the
-Python and TypeScript S3 backend, that requires `s3:DeleteObject`. Memory is plain files
-under the memory directory, so removing a tenant's memory is deleting its directory or
+**Deletion.** Deleting a session removes its stored objects. Memory is plain files under
+the memory directory, so removing a tenant's memory means deleting its directory or
 store.
+
+<Tabs>
+  <Tab label="Python">
+    File-backed deletion removes the session directory. S3-backed deletion removes every
+    object under the session prefix and requires `s3:DeleteObject`.
+  </Tab>
+  <Tab label="TypeScript">
+    File-backed deletion removes the session directory. S3-backed deletion removes every
+    object under the session prefix and requires `s3:DeleteObject`.
+  </Tab>
+  <Tab label="Rust">
+    File-backed deletion removes every object under the session storage prefix. A custom
+    backend defines how that prefix is deleted.
+  </Tab>
+</Tabs>
 
 ## Where to go next
 

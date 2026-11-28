@@ -431,18 +431,19 @@ describe('generated sample guide pages', () => {
 })
 
 describe('sample catalog language interactions', () => {
-  it('uses the selector effective language when the stored preference is unavailable', () => {
+  it('keeps an unavailable stored language selected and explains the empty state', () => {
     const window = loadCatalogFixture('Rust')
     const cards = [...window.document.querySelectorAll<HTMLElement>('[data-sample-language]')]
     const sections = [...window.document.querySelectorAll<HTMLElement>('[data-sample-category]')]
 
-    expect(window.document.documentElement.dataset.sdkLanguage).toBe('typescript')
-    expect(cards.find((card) => card.dataset.sampleLanguage === 'typescript')?.hidden).toBe(false)
+    expect(window.document.documentElement.dataset.sdkLanguage).toBe('rust')
+    expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe('Rust')
+    expect(cards.find((card) => card.dataset.sampleLanguage === 'typescript')?.hidden).toBe(true)
     expect(cards.find((card) => card.dataset.sampleLanguage === 'python')?.hidden).toBe(true)
-    expect(sections.find((section) => section.dataset.sampleCategory === 'learn')?.hidden).toBe(false)
+    expect(sections.find((section) => section.dataset.sampleCategory === 'learn')?.hidden).toBe(true)
     expect(sections.find((section) => section.dataset.sampleCategory === 'build')?.hidden).toBe(true)
     expect(window.document.querySelector('[data-sample-catalog-status]')?.textContent).toBe(
-      'Showing TypeScript examples, organized by what you want to learn or build.'
+      'No Rust examples are available yet.'
     )
 
     window.document.querySelector<HTMLButtonElement>('[data-lang="Python"]')?.click()
@@ -480,7 +481,7 @@ describe('sample catalog language interactions', () => {
 })
 
 describe('sample guide language preference', () => {
-  it('renders the route language without persisting it until the selector is used', ({ skip }) => {
+  it('preserves the stored language until the selector is used', ({ skip }) => {
     const guide = guides.find((entry) => entry.data.language === 'typescript')
     if (!guide) skip('requires a TypeScript sample guide')
 
@@ -490,8 +491,8 @@ describe('sample guide language preference', () => {
     ]
 
     expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe('Python')
-    expect(window.document.documentElement.dataset.sdkLanguage).toBe('typescript')
-    expect(typeScriptOptions.every((option) => option.getAttribute('aria-checked') === 'true')).toBe(true)
+    expect(window.document.documentElement.dataset.sdkLanguage).toBe('python')
+    expect(typeScriptOptions.every((option) => option.getAttribute('aria-checked') === 'false')).toBe(true)
 
     typeScriptOptions[0]?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
 

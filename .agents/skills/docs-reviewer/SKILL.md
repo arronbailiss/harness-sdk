@@ -32,12 +32,23 @@ Reference `../../references/voice-guide.md` for the full layer definitions. Chec
 
 ### 2. Multi-Language Correctness
 
-For pages with `<Tabs>` for Python and TypeScript:
+For pages with multi-language SDK content:
 
 - Prose between tabs is language-neutral. Flag prose inside a `<Tab>` that names the language of that tab (e.g., "Python requires..." inside the Python tab). The reader chose the tab; they know.
 - Flag language-specific identifiers spelled out manually in shared prose — these should use the `<Syntax>` component to adapt to the reader's language selection.
 - Headings describe the concept, not the API. Flag headings containing language-specific parameter names or syntax (e.g. `preserve_context=False`, `preserveContext: false`). The table of contents should read the same regardless of language.
 - Callout boxes (`:::note`, `:::caution`, etc.) meet the bar defined in `mdx-authoring.md`. Most facts belong as inline prose.
+- Treat Python, TypeScript, and Rust as the default language set. Flag shared
+  pages that omit a supported SDK without source evidence.
+- Flag prose that compares SDKs or explains another SDK's internals to the
+  current reader. Language-specific prose belongs in synchronized tabs with the
+  same conceptual structure.
+- Flag navigation that silently changes the global language, unsupported-state
+  messages shown to other languages, and reader-facing "verified
+  documentation" status.
+- Compare the draft with its base version. Adding a language must not delete or
+  rewrite accurate existing descriptions, defaults, API links, tables, prompts,
+  or tool descriptions without a separate reason.
 
 ### 3. Terminology Consistency
 
@@ -57,6 +68,12 @@ Site build conventions (reference `../../references/mdx-authoring.md`):
 - TypeScript code uses `--8<--` snippet includes from sibling `.ts` files, never inlined in MDX. Flag raw TypeScript inside a code fence.
 - Each TypeScript fence includes both an imports snippet and a body snippet. A body-only include missing its imports is incomplete.
 - Python may be inlined.
+- Rust uses sibling `.rs` snippet regions. Each rendered block includes its
+  required imports and documents every direct Cargo dependency and optional
+  feature. It may build on helpers shown earlier on the page or use a hidden
+  wrapper solely for async or fallible compilation context, but not on setup
+  hidden from the reader. The complete sibling source file must compile, and a
+  standalone block must compile with only the page's documented dependency set.
 - Diagrams are `<Diagram>` SVGs or ` ```mermaid ` fences, never ASCII art or box-drawing characters. For `<Diagram>` SVGs, run the review checklist in `../../references/diagrams.md`: accent on at most two elements, no hard-coded colors, a complete `alt`, and checked in both themes.
 
 ### 5. Human+AI Readability

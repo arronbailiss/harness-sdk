@@ -53,6 +53,15 @@ Specific checks:
 - Are any documented features deprecated or removed?
 - Are internal cross-reference links working?
 - **Snippet file conventions:** TypeScript code must live in sibling `.ts` snippet files (included via `--8<--`), never inlined in MDX. Each TypeScript fence should include both an imports snippet (`_imports.ts`) and a body snippet so the rendered block is self-contained. Verify that each `--8<-- "path:region"` directive references a real file with a matching `[start:region]`/`[end:region]` pair. Flag inlined TypeScript or missing imports includes as structural issues.
+- **Rust snippet conventions:** Rust code lives in sibling `.rs` files. Verify
+  each rendered block includes its required `use` declarations, compiles with
+  only the direct dependencies and Cargo features documented in the Rust tab,
+  and does not depend on setup that is neither rendered earlier on the page nor
+  explained. Do not treat the aggregate `rust-snippets` crate's dependency
+  superset as proof. A hidden wrapper used only to give a focused fragment an
+  async or fallible compilation context is allowed.
+- **Change preservation:** Compare with the base page. Flag accurate existing
+  content removed or rewritten without a reason tied to the documentation task.
 
 ### Step 4: AI-readability check
 
@@ -61,6 +70,10 @@ Specific checks:
 - Is inline code properly formatted with backticks?
 - Is terminology consistent with the terminology lock?
 - Are language-specific identifiers in shared prose using the `<Syntax>` component rather than being spelled out manually with language labels?
+- Does the page preserve the reader's selected language, render unavailable
+  states only for that language, and avoid reader-facing verification status?
+- Does each language see the same conceptual structure without prose comparing
+  it to another SDK?
 
 ### Step 5: Competitive comparison (optional)
 

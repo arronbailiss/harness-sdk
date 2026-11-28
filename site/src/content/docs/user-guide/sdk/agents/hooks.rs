@@ -218,7 +218,7 @@ mod composability {
 mod fixed_tool_arguments {
     // --8<-- [start:fixed_tool_arguments]
     use strands::hooks::BeforeToolCallEvent;
-    use strands::{Agent, JsonObject, JsonValue};
+    use strands::{Agent, JsonObject};
 
     struct ConstantToolArguments {
         tool_name: String,
@@ -243,6 +243,8 @@ mod fixed_tool_arguments {
 
     // --8<-- [start:fixed_tool_arguments_usage]
     fn agent() -> strands::Result<Agent> {
+        use strands::{Agent, JsonObject, JsonValue};
+
         let agent = Agent::builder().printer(false).build()?;
         let mut values = JsonObject::new();
         values.insert("precision".into(), JsonValue::from(1));
@@ -294,7 +296,8 @@ mod limit_tool_counts {
                 drop(counts);
                 if exceeded {
                     event.set_cancel(format!(
-                        "Tool '{name}' exceeded its call limit",
+                        "Tool '{name}' has been invoked too many times and is \
+                         now being throttled. DO NOT CALL THIS TOOL ANYMORE",
                     ));
                 }
             });
@@ -304,6 +307,11 @@ mod limit_tool_counts {
 
     // --8<-- [start:limit_tool_counts_usage]
     fn agent() -> strands::Result<Agent> {
+        use std::collections::HashMap;
+        use std::sync::Arc;
+
+        use strands::Agent;
+
         let agent = Agent::builder().printer(false).build()?;
         LimitToolCounts {
             maximums: HashMap::from([("sleep".into(), 3)]),
@@ -338,6 +346,8 @@ mod model_call_retry {
 
     // --8<-- [start:model_call_retry_usage]
     fn agent() -> strands::Result<Agent> {
+        use strands::Agent;
+
         let agent = Agent::builder().printer(false).build()?;
         RetryOnModelError { max_retries: 3 }.register(&agent);
         Ok(agent)
@@ -408,6 +418,10 @@ mod tool_call_retry {
 
     // --8<-- [start:tool_call_retry_usage]
     fn agent() -> strands::Result<Agent> {
+        use std::sync::Arc;
+
+        use strands::Agent;
+
         let agent = Agent::builder().printer(false).build()?;
         RetryOnToolError {
             max_retries: 1,

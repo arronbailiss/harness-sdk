@@ -2,7 +2,7 @@
 title: A2A Server Configuration
 description: 'Reference for configuring a Strands A2A server: constructor options, custom task stores and request-handler components, and path-based mounting for load-balanced deployments.'
 sidebar:
-  label: "A2A server configuration"
+  label: 'A2A server configuration'
 unsupportedLanguages: Rust
 tags: [multi-agent]
 sourceLinks:
@@ -41,7 +41,7 @@ Provide exactly one of `agent_factory` or `agent`, recommend `agent_factory`.
 </Tab>
 <Tab label="TypeScript">
 
-The TypeScript SDK provides two server classes:
+The SDK provides two server classes:
 
 - **`A2AServer`**: Base class that manages the agent card and request handler. Use this when integrating with your own HTTP framework.
 - **`A2AExpressServer`**: Express based server with `serve()` and `createMiddleware()` methods.
@@ -177,7 +177,7 @@ Custom implementations must follow these interfaces:
 </Tab>
 <Tab label="TypeScript">
 
-The TypeScript `A2AExpressServer` supports a custom `taskStore` for persisting task state:
+`A2AExpressServer` supports a custom `taskStore` for persisting task state:
 
 ```typescript
 import { Agent } from '@strands-agents/sdk'

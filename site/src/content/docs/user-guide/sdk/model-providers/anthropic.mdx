@@ -1,7 +1,6 @@
 ---
 title: Anthropic
 description: 'Run Strands agents on Claude models through the Anthropic API. Install the provider, configure AnthropicModel, and enable structured output and caching.'
-languages: [Python, TypeScript, Rust]
 tags: [structured-output, caching]
 integrationType: model-provider
 sourceLinks:
@@ -77,6 +76,10 @@ print(response)
 </Tab>
 <Tab label="Rust">
 
+Use
+[`AnthropicModel`](https://docs.rs/strands/latest/strands/models/anthropic/struct.AnthropicModel.html)
+to call the Messages API directly.
+
 ```rust
 --8<-- "user-guide/sdk/model-providers/anthropic.rs:basic_usage"
 ```
@@ -101,8 +104,9 @@ The `clientConfig` configures the underlying Anthropic client. You can also pass
 </Tab>
 <Tab label="Rust">
 
-`AnthropicClientConfig` configures the base URL, default headers, retries, and
-timeout. `ANTHROPIC_BASE_URL` and `ANTHROPIC_CUSTOM_HEADERS` provide defaults.
+[`AnthropicClientConfig`](https://docs.rs/strands/latest/strands/models/anthropic/struct.AnthropicClientConfig.html)
+configures the base URL, default headers, retries, and timeout.
+`ANTHROPIC_BASE_URL` and `ANTHROPIC_CUSTOM_HEADERS` provide defaults.
 
 </Tab>
 </Tabs>
@@ -140,12 +144,14 @@ The `model_config` configures the underlying model selected for inference. The s
 |-----------|-------------|---------|
 | `model_id` | Model identifier | `"claude-sonnet-4-6"` |
 | `max_tokens` | Maximum output tokens | `1024` |
-| `temperature` | Sampling temperature | `0.7` |
-| `top_p` | Nucleus sampling ratio | `0.9` |
 | `stop_sequences` | Sequences that stop generation | `vec!["END".into()]` |
 | `params` | Additional JSON request fields | `json!({"metadata": {}})` |
 | `anthropic_tools` | Anthropic server-side tools | `vec![json!({...})]` |
 | `cache_config` | Prompt caching settings | `CacheConfig::default()` |
+
+The default API version rejects `temperature`, `top_p`, and `top_k`. Pin
+`anthropic-version: 2023-06-01` only when the selected model still supports
+sampling parameters.
 
 </Tab>
 </Tabs>
@@ -188,7 +194,7 @@ constructing the model.
 </Tab>
 <Tab label="TypeScript">
 
-`@strands-agents/sdk` works with any `@anthropic-ai/sdk` release from 0.109.1 up to, but not including, 2.0. In TypeScript the new API version arrives with the SDK's 1.0 release (in Python it's 2.0): `@anthropic-ai/sdk` 1.x sends `2026-10-21` by default ([migration guide](https://platform.claude.com/docs/en/api/migration-2026-10-21)), which changes behavior that reaches `AnthropicModel`:
+`@strands-agents/sdk` works with any `@anthropic-ai/sdk` release from 0.109.1 up to, but not including, 2.0. The new API version arrives with the SDK's 1.0 release: `@anthropic-ai/sdk` 1.x sends `2026-10-21` by default ([migration guide](https://platform.claude.com/docs/en/api/migration-2026-10-21)), which changes behavior that reaches `AnthropicModel`:
 
 - **Sampling parameters.** API version `2026-10-21` rejects `temperature`, `top_p`, and `top_k`, so when one is set (`temperature`, `topP`, or in `params`) the provider throws before sending the request. Remove them, or pin the API version with `clientConfig: { defaultHeaders: { 'anthropic-version': '2023-06-01' } }` or `ANTHROPIC_CUSTOM_HEADERS='anthropic-version: 2023-06-01'`. The pin only helps on models that still honor sampling parameters (Claude 4.6 and earlier); Claude 4.7 and later accept only the defaults.
 - **Documents in assistant messages.** API version `2026-10-21` rejects a `document` block placed directly in an assistant message, so the provider drops those blocks and logs a warning. Put documents in user messages.
@@ -197,10 +203,11 @@ constructing the model.
 </Tab>
 <Tab label="Rust">
 
-The Rust provider includes its own HTTP transport and does not depend on the
-Anthropic Python or TypeScript SDK. Pin the API version through the
-`anthropic-version` default header when a model still supports the older
-sampling behavior.
+The provider sends API version `2026-10-21` by default and rejects
+`temperature`, `top_p`, and `top_k` before sending the request. Remove them, or
+pin `anthropic-version: 2023-06-01` through
+`AnthropicClientConfig::default_headers` when the selected model still supports
+the older sampling behavior.
 
 </Tab>
 </Tabs>
@@ -234,12 +241,29 @@ model instance is discarded. Requests before the first rejection are sent unchan
 - **Your `block_binding` wins.** If the thinking configuration already contains
   `block_binding`, the provider sends it as written and does not retry. Set it yourself
   to choose the behavior up front or to keep the error.
-- **Existing betas are kept.** The beta is added to the betas the model already sends,
-  from <Syntax py="extra_headers" ts="betas" rs="betas" /> or, when that is not
-  set, from the `anthropic-beta` default header of the client. In Python and
-  TypeScript, a preconfigured client does not expose its default headers. Set
-  betas explicitly with
-  <Syntax py="extra_headers" ts="betas" rs="betas" />.
+- **Existing betas are kept.** The binding-control beta is merged with the
+  provider's configured beta values:
+
+  <Tabs>
+  <Tab label="Python">
+
+  Set betas explicitly with `extra_headers`. A preconfigured client does not
+  expose its default headers to the provider.
+
+  </Tab>
+  <Tab label="TypeScript">
+
+  Set betas explicitly with `betas`. A preconfigured client does not expose its
+  default headers to the provider.
+
+  </Tab>
+  <Tab label="Rust">
+
+  The provider reads `betas`, or the `anthropic-beta` default header from
+  `AnthropicClientConfig` when `betas` is not set.
+
+  </Tab>
+  </Tabs>
 - **Dropping has a cost.** Claude loses the reasoning in the dropped blocks, the prompt
   cache restarts at the edited message, and responses can use more output tokens.
 - **Some models require adaptive thinking.** Claude Sonnet 5.5 and Claude Haiku 5.5
@@ -254,12 +278,14 @@ for when it does.
 
 ### Custom Client
 
-Python and TypeScript can pass a preconfigured Anthropic client to
-`AnthropicModel`; the application manages that client's lifecycle. Rust exposes
-provider configuration instead and builds its client internally.
+Configure the provider transport when the standard client options are not
+enough:
 
 <Tabs>
 <Tab label="Python">
+
+Pass a preconfigured Anthropic client to `AnthropicModel`. The application
+manages that client's lifecycle.
 
 Use this for clients `client_args` can't build, such as Claude on Amazon Bedrock:
 
@@ -282,6 +308,9 @@ print(response)
 For the `bedrock-mantle` client and the differences from the Anthropic API, see [Claude through the Anthropic Messages API](./amazon-bedrock#claude-through-the-anthropic-messages-api) on the Amazon Bedrock page.
 </Tab>
 <Tab label="TypeScript">
+
+Pass a preconfigured Anthropic client to `AnthropicModel`. The application
+manages that client's lifecycle.
 
 ```typescript
 --8<-- "user-guide/sdk/model-providers/anthropic_imports.ts:custom_client_imports"

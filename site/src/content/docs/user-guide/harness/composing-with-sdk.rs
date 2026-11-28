@@ -3,12 +3,15 @@
 async fn compose() -> strands::Result<()> {
     // --8<-- [start:compose]
     use strands::context_manager::ContextManagerStrategy;
+    use strands::vended_interventions::hitl::HumanInTheLoop;
+    use strands::vended_plugins::todos::Todos;
     use strands_harness::{HarnessAgentOptions, create_harness};
 
     let _agent = create_harness(
         HarnessAgentOptions::builder()
             .context_manager(ContextManagerStrategy::Agentic)
-            .interventions("ask")
+            .plugins([Todos::default()])
+            .interventions(HumanInTheLoop::default())
             .build(),
     )
     .await?;
@@ -18,12 +21,17 @@ async fn compose() -> strands::Result<()> {
 
 async fn modify() -> strands::Result<()> {
     // --8<-- [start:modify]
+    use strands::SystemPrompt;
     use strands_harness::{HarnessAgentOptions, create_harness};
 
     let mut agent = create_harness(HarnessAgentOptions::default()).await?;
-    agent.set_system_prompt(Some(
-        "Always cite file paths as file:line.".into(),
-    ));
+    let prompt = match agent.system_prompt() {
+        Some(SystemPrompt::Text(text)) => text.as_str(),
+        _ => "",
+    };
+    agent.set_system_prompt(Some(format!(
+        "{prompt}\n\nAlways cite file paths as file:line."
+    ).into()));
     // --8<-- [end:modify]
     Ok(())
 }

@@ -1,7 +1,6 @@
 ---
 title: State Management
 description: 'Maintain state in Strands agents across turns and sessions: conversation history, key-value agent state, and per-request invocation state.'
-languages: [Python, TypeScript, Rust]
 sidebar:
   label: "State"
 tags: [state, snapshots, session-management]
@@ -51,6 +50,12 @@ print(agent.messages)  # Shows all messages exchanged so far
 ```
 </Tab>
 <Tab label="Rust">
+
+The Rust examples on this page use `serde_json` directly:
+
+```bash
+cargo add serde_json
+```
 
 ```rust
 --8<-- "user-guide/sdk/agents/state.rs:conversation_history"
@@ -390,8 +395,8 @@ result = agent("Who am I?", invocation_state={"request_id": "r-42", "user_id": "
 </Tab>
 <Tab label="Rust">
 
-Rust invocation state is a typed map. Store one cloneable, thread-safe value per
-type and read it from hooks or tools:
+Invocation state is a typed map. Store one cloneable, thread-safe value per type
+and read it from hooks or tools:
 
 ```rust
 --8<-- "user-guide/sdk/agents/state.rs:invocation_state"
@@ -412,10 +417,26 @@ Invocation state
   option you pass to the invocation and is empty when omitted
 - Persists through the recursive agent loop cycles within a single invocation
 - Is shared by reference across all hook events and tools, so mutations are visible to later hooks and tools in the same invocation
-- Surfaces on the result: TypeScript returns `result.invocationState`, Python
-  returns its `request_state` slot as `result.state`, and Rust returns
-  `result.invocation_state()`
 - Is **not** included in the agent's model context
+
+<Tabs>
+<Tab label="Python">
+
+If invocation state contains a `request_state` entry, that entry surfaces as
+`result.state`.
+
+</Tab>
+<Tab label="TypeScript">
+
+The full invocation state surfaces as `result.invocationState`.
+
+</Tab>
+<Tab label="Rust">
+
+The full invocation state is available from `result.invocation_state()`.
+
+</Tab>
+</Tabs>
 
 ## Persisting State Across Sessions
 

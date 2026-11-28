@@ -55,7 +55,6 @@ function switchHref(lang: LanguageSlug): string | undefined {
   return target ? pathWithBase(target) : undefined
 }
 
-// On single-language docs pages, disable the unavailable side.
 // `starlightRoute` is a getter that throws off non-Starlight pages — try/catch required.
 let routeData
 try {
@@ -69,19 +68,10 @@ const pageLanguages = routeData?.languages
 const unsupportedLanguages = routeData?.unsupportedLanguages
   ? normalizeSdkLanguages(routeData.unsupportedLanguages)
   : []
-const pathLanguage = currentPath
-  .split('/')
-  .find((segment): segment is LanguageSlug => (SDK_LANGUAGES as readonly string[]).includes(segment))
-const pageLanguage = (
-  sampleGuideLanguage ??
-  (pageLanguages?.length === 1 ? pageLanguages[0] : undefined) ??
-  pathLanguage
-) as LanguageSlug | undefined
-const pageLanguageLabel = pageLanguage ? SDK_LANGUAGE_LABELS[pageLanguage] : undefined
 const resolvedLanguages = pageLanguages?.length
   ? pageLanguages
   : routeData
-    ? [...DEFAULT_DOC_LANGUAGES]
+    ? DEFAULT_DOC_LANGUAGES.filter((language) => !unsupportedLanguages.includes(language))
     : [...SDK_LANGUAGES]
 const sampleLanguageAvailable = (language: LanguageSlug) =>
   currentSampleGuide?.data.language === language ||
@@ -99,9 +89,9 @@ const languageAvailability = (language: LanguageSlug, switchTarget: string | und
   )
 }
 const unavailableLanguageText = {
-  undocumented: 'Documentation is not available yet',
-  unsupported: 'This feature is not supported',
-  unavailable: 'No sample is available',
+  undocumented: 'This page does not have documentation in this language yet',
+  unsupported: 'This SDK does not implement this feature',
+  unavailable: 'No sample is available for this language yet',
 } as const
 const languageOptions = [
   { slug: 'typescript', label: SDK_LANGUAGE_LABELS.typescript, icon: typescriptIcon },
@@ -119,7 +109,7 @@ const languageOptions = [
     languageOptions.map(({ slug, label, icon }) => {
       const target = switchHref(slug)
       const availability = languageAvailability(slug, target)
-      const disabled = availability !== 'available'
+      const disabled = currentSampleGuide !== undefined && availability !== 'available'
       const unavailableText =
         availability === 'available' ? undefined : unavailableLanguageText[availability]
       return (
@@ -228,7 +218,6 @@ const languageOptions = [
   define:vars={{
     STORAGE_KEY: LANGUAGE_STORAGE_KEY,
     DEFAULT_LANG: DEFAULT_LANGUAGE_LABEL,
-    PAGE_LANGUAGE: pageLanguageLabel,
     LANGUAGE_LABELS: SDK_LANGUAGE_LABEL_LIST,
   }}
 >
@@ -269,24 +258,13 @@ const languageOptions = [
       });
     }
 
-    /** Language-specific routes win; other pages resolve to an available language. */
+    /** A page never overrides the reader's stored language preference. */
     function effectiveLanguage(lang) {
-      if (PAGE_LANGUAGE) return PAGE_LANGUAGE;
-      var enabled = Array.prototype.filter.call(
-        document.querySelectorAll('language-toggle .lang-option'),
-        function (btn) { return !btn.disabled; }
-      );
-      // No toggle rendered on this page: the preference stands.
-      if (enabled.length === 0) return lang;
-      var match = enabled.some(function (btn) { return btn.dataset.lang === lang; });
-      return match ? lang : enabled[0].dataset.lang;
+      return lang;
     }
 
     function updateToggle(lang) {
-      // Exactly one radio is always checked: `lang` is already the effective
-      // language, so it always names an enabled button when one exists.
       document.querySelectorAll('language-toggle .lang-option').forEach(function (btn) {
-        if (btn.disabled) return;
         btn.setAttribute('aria-checked', btn.dataset.lang === lang ? 'true' : 'false');
       });
     }
@@ -319,7 +297,7 @@ const languageOptions = [
       applying = false;
     }
 
-    var current = PAGE_LANGUAGE || getPreference();
+    var current = getPreference();
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function () { applyLanguage(current, false, false); });
     } else {

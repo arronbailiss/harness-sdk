@@ -22,9 +22,13 @@ mod triage {
     }
 
     #[derive(Debug, Deserialize, JsonSchema)]
+    /// Routing decision for one customer support message.
     struct TicketTriage {
+        /// The team that should handle the message.
         category: Category,
+        /// High when the customer is blocked or losing money.
         priority: Priority,
+        /// One sentence describing the problem.
         summary: String,
     }
 
@@ -33,7 +37,7 @@ mod triage {
         let mut agent = Agent::builder().printer(false).build()?;
         let result = agent
             .invoke_with(
-                "I was charged twice this month and need one charge refunded.",
+                "I was charged twice this month and need one of the charges refunded.",
                 InvokeOptions::default().structured_output_schema::<TicketTriage>(),
             )
             .await?;

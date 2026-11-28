@@ -1,7 +1,6 @@
 ---
 title: Skills
 description: 'Give Strands agents on-demand access to specialized instructions with the AgentSkills plugin. Progressive disclosure keeps the system prompt lean.'
-languages: [Python, TypeScript, Rust]
 tags: [token-management, prompt-authoring]
 sourceLinks:
   - path: strands-py/src/strands/vended_plugins/skills/agent_skills.py
@@ -105,6 +104,9 @@ agent = Agent(plugins=[plugin])
 </Tab>
 <Tab label="Rust">
 
+Configure skill sources with
+[`AgentSkills`](https://docs.rs/strands/latest/strands/vended_plugins/skills/struct.AgentSkills.html).
+
 ```rust
 --8<-- "user-guide/sdk/plugins/skills.rs:usage"
 ```
@@ -148,7 +150,8 @@ For filesystem-based skills, the vended `bash` and `fileEditor` tools are the ea
 </Tab>
 <Tab label="Rust">
 
-For filesystem skills, use the vended `file_editor` and `shell` tools:
+For filesystem skills, use the focused `read`, `write`, and `edit` tools with
+the vended `shell` tool:
 
 ```rust
 --8<-- "user-guide/sdk/plugins/skills.rs:tools"
@@ -347,7 +350,7 @@ The `AgentSkills` constructor accepts the following parameters.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `skills` | `Vec<SkillSource>` | Required | Skill instances, paths, or HTTPS URLs. |
+| `skills` | `Vec<SkillSource>` | `[]` | Skill instances, paths, or HTTPS URLs. |
 | `state_key` | `String` | `"agent_skills"` | App-state key for plugin state. |
 | `max_resource_files` | `usize` | `20` | Maximum listed resource files. |
 | `strict` | `bool` | `false` | Return errors for validation issues. |

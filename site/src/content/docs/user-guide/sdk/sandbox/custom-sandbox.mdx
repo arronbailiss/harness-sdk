@@ -1,7 +1,6 @@
 ---
 title: Building a Custom Sandbox
-description: "Target an execution environment the built-in sandboxes do not cover: extend PosixShellSandbox or implement the Sandbox interface directly."
-languages: [Python, TypeScript, Rust]
+description: 'Target an execution environment the built-in sandboxes do not cover: extend PosixShellSandbox or implement the Sandbox interface directly.'
 tags: [sandbox, tool-execution]
 addedDate: 2026-06-17
 sourceLinks:
@@ -16,6 +15,7 @@ Looking for something beyond the built-in implementations? Build a custom sandbo
 ## Extending PosixShellSandbox
 
 `PosixShellSandbox` reduces the implementation burden to one method. Implement
+
 <Syntax py="execute_streaming" ts="executeStreaming" rs="execute_streaming" />
 to run a shell command through your backend and stream its output:
 
@@ -44,6 +44,12 @@ Both `DockerSandbox` and `SshSandbox` extend `PosixShellSandbox`.
 </Tab>
 <Tab label="Rust">
 
+The Rust example uses the `futures` crate:
+
+```bash
+cargo add futures
+```
+
 ```rust
 --8<-- "user-guide/sdk/sandbox/custom-sandbox.rs:posix_sandbox"
 ```
@@ -53,12 +59,11 @@ Both `DockerSandbox` and `SshSandbox` extend `PosixShellSandbox`.
 
 ## Vending tools from a custom sandbox
 
-To give your sandbox `sandbox_shell` and `sandbox_file_editor`, override
-<Syntax py="get_tools()" ts="getTools()" rs="get_tools()" /> and return tools
-bound to it:
-
 <Tabs>
 <Tab label="TypeScript">
+
+Override `getTools()` to vend `sandbox_shell` and `sandbox_file_editor` from
+your custom sandbox:
 
 ```typescript
 --8<-- "user-guide/sdk/sandbox/index_imports.ts:vend_tools_imports"
@@ -69,12 +74,19 @@ bound to it:
 </Tab>
 <Tab label="Python">
 
+Override `get_tools()` to vend `sandbox_shell` and `sandbox_file_editor` from
+your custom sandbox:
+
 ```python
 --8<-- "user-guide/sdk/sandbox/index.py:vend_tools"
 ```
 
 </Tab>
 <Tab label="Rust">
+
+The base implementations vend no tools. Return the focused tools you want the
+agent to receive from your sandbox's `get_tools()` method. This helper builds
+`shell`, `read`, `write`, and `edit`; each resolves the calling agent's sandbox:
 
 ```rust
 --8<-- "user-guide/sdk/sandbox/custom-sandbox.rs:vend_tools"
@@ -86,12 +98,10 @@ bound to it:
 ## Extend the base interface directly
 
 For environments with native API access, implement `Sandbox` directly:
+
 <Syntax py="execute_streaming" ts="executeStreaming" rs="execute_streaming" />,
-<Syntax
-  py="execute_code_streaming"
-  ts="executeCodeStreaming"
-  rs="execute_code_streaming"
-/>, <Syntax py="read_file" ts="readFile" rs="read_file" />,
+<Syntax py="execute_code_streaming" ts="executeCodeStreaming" rs="execute_code_streaming" />,
+<Syntax py="read_file" ts="readFile" rs="read_file" />,
 <Syntax py="write_file" ts="writeFile" rs="write_file" />,
 <Syntax py="remove_file" ts="removeFile" rs="remove_file" />, and
 <Syntax py="list_files" ts="listFiles" rs="list_files" />.
@@ -108,4 +118,4 @@ A container running as root with the host filesystem mounted is not a boundary, 
 
 - [Sandbox Overview](./index.mdx): what a sandbox is, the tools it vends, and plugin compatibility
 - [Available Sandboxes](./available-sandboxes.mdx): the built-in Docker and SSH backends
-- [Vended Tools](../tools/vended-tools/index.mdx): the `sandbox_shell` and `sandbox_file_editor` tool factories
+- [Vended Tools](../tools/vended-tools/index.mdx): ready-made shell and file tools

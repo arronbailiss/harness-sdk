@@ -1,7 +1,6 @@
 ---
 title: Give long-term memory
 description: "Strands harness keeps long-term memory on by default: distilled facts recalled across sessions. Move the store, swap the backend, or turn memory off."
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/memory.py
   - path: harness-ts/src/memory.ts
@@ -59,9 +58,8 @@ Configure the memory directory to store the files somewhere other than
 
 To customize where facts are stored, pass your own memory store (or several). Strands
 harness still owns the manager, so its policy holds: injection on, `search_memory` on,
-and no write tool. Python and TypeScript below use external-store placeholders; the Rust
-example configures a separate SDK file store. Other Rust backends can implement
-`MemoryStore` and be passed the same way:
+and no write tool. Each example supplies a store through the SDK's `MemoryStore`
+interface:
 
 <Tabs>
   <Tab label="Python">
@@ -93,8 +91,7 @@ SDK memory manager to the `Agent`; it owns its stores, and Strands harness steps
 
 ## Turn memory off
 
-Set `memory` to `False`/`false` (or `None`/`null` in Python and TypeScript) to
-disable memory entirely:
+Disable the memory option to turn memory off entirely:
 
 <Tabs>
   <Tab label="Python">

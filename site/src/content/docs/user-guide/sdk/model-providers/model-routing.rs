@@ -95,7 +95,8 @@ mod classify {
             ClassifierStrategyOptions::builder()
                 .routing_policy(
                     "Choose the lowest-latency candidate that \
-                     satisfies every request requirement.",
+                     satisfies every request requirement. \
+                     Use candidate metadata as evidence.",
                 )
                 .build(),
         )?;

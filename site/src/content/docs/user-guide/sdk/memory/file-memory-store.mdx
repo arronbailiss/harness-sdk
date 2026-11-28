@@ -4,7 +4,6 @@ description: "Persist agent memories as markdown files on any
   Storage backend (local, S3, or custom): one file per topic,
   pluggable search, and topic-aware extraction."
 tags: [memory]
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/vended_memory_stores/file_memory_store/store.py
   - path: strands-ts/src/vended-memory-stores/file-memory-store/store.ts
@@ -294,9 +293,8 @@ each search, so existing files are searchable:
 </Tab>
 <Tab label="Rust">
 
-Rust uses `KeywordSearchStrategy` by default. Implement the `SearchStrategy`
-trait and attach it to a custom `Storage` backend to supply another ranking
-strategy.
+`KeywordSearchStrategy` is the default. Implement the `SearchStrategy` trait and
+attach it to a custom `Storage` backend to supply another ranking strategy.
 </Tab>
 </Tabs>
 

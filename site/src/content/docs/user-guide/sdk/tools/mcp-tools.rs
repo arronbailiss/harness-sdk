@@ -1,10 +1,3 @@
-fn documentation_server() -> strands::mcp::McpTransport {
-    strands::mcp::McpTransport::stdio(strands::mcp::StdioServerParameters::new(
-        "uvx",
-        ["awslabs.aws-documentation-mcp-server@latest"],
-    ))
-}
-
 mod quickstart {
     // --8<-- [start:quickstart]
     use strands::mcp::{McpClient, McpTransport, StdioServerParameters};
@@ -120,6 +113,7 @@ mod elicitation {
     use strands::mcp::rmcp::model::{ElicitResult, ElicitationAction};
     use strands::mcp::{
         ElicitationCallback, McpClient, McpClientConfig, McpClientOptions,
+        McpTransport, StdioServerParameters,
     };
 
     fn client() -> strands::Result<McpClient> {
@@ -128,8 +122,12 @@ mod elicitation {
                 Ok(ElicitResult::new(ElicitationAction::Accept)
                     .with_content(serde_json::json!({"username": "myname"})))
             });
+        let transport = McpTransport::stdio(StdioServerParameters::new(
+            "uvx",
+            ["awslabs.aws-documentation-mcp-server@latest"],
+        ));
         McpClient::new(McpClientConfig {
-            transport: Some(super::documentation_server()),
+            transport: Some(transport),
             options: McpClientOptions {
                 elicitation_callback: Some(callback),
                 ..McpClientOptions::default()
@@ -144,7 +142,7 @@ mod progress {
     // --8<-- [start:progress]
     use strands::mcp::{
         McpClient, McpClientConfig, McpClientOptions, McpProgress,
-        McpProgressCallback,
+        McpProgressCallback, McpTransport, StdioServerParameters,
     };
 
     fn client() -> strands::Result<McpClient> {
@@ -156,8 +154,12 @@ mod progress {
                 update.message.unwrap_or_default(),
             );
         });
+        let transport = McpTransport::stdio(StdioServerParameters::new(
+            "uvx",
+            ["awslabs.aws-documentation-mcp-server@latest"],
+        ));
         McpClient::new(McpClientConfig {
-            transport: Some(super::documentation_server()),
+            transport: Some(transport),
             options: McpClientOptions {
                 progress_callback: Some(callback),
                 ..McpClientOptions::default()

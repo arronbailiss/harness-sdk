@@ -2,7 +2,6 @@
 title: Control what your agent remembers
 description: "Configure a Strands memory manager: recall through a tool, automatic prompt injection, extraction from the conversation, programmatic reads and writes, and custom stores."
 tags: [memory]
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/memory/memory_manager.py
   - path: strands-py/src/strands/memory/types.py
@@ -60,6 +59,12 @@ agent = Agent(
 ```
 </Tab>
 <Tab label="Rust">
+
+The Rust examples on this page use `serde_json` directly:
+
+```bash
+cargo add serde_json
+```
 
 ```rust
 --8<-- "user-guide/sdk/memory/managing-memory.rs:turn_on_writes"

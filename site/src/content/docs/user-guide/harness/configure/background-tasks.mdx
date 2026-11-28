@@ -1,9 +1,6 @@
 ---
 title: Run work in the background
-description: >-
-  Run the generalist and compatible tools in the background while the agent
-  keeps working, then tune, limit, or disable the background-task policy.
-languages: [Python, TypeScript, Rust]
+description: "Strands harness runs the generalist in the background and lets the model run other tools there too. Tune or disable that with the background-task option."
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-ts/src/agent.ts
@@ -94,9 +91,8 @@ returns that turn's result, and the cancelled task results are delivered on the 
 
 ## The CLI
 
-The Strands harness CLI runs on the TypeScript library, so the `generalist` runs in the background
-there too. The CLI does not expose a flag to change the background-tasks policy; use the
-library when you need to tune it.
+The `generalist` also runs in the background in the CLI. The CLI does not expose a flag
+to change the background-tasks policy; use the library when you need to tune it.
 
 For the full option list, see the
 [configuration reference](../../reference/configuration/).

@@ -58,21 +58,23 @@ export interface IntegrationEntry {
 }
 
 /**
- * Determines language support based on the `languages` frontmatter field.
+ * Determines language support from the docs language metadata.
  *
  * Convention:
- * - No `languages` field = both Python and TypeScript supported
+ * - No `languages` field = all SDK languages except `unsupportedLanguages`
  * - `languages: 'Python'` = Python only
  * - `languages: 'TypeScript'` = TypeScript only
  * - `languages: 'Rust'` = Rust only
  * - `languages: ['Python', 'TypeScript', 'Rust']` = all three supported
  */
-export function getLanguageSupport(languages: string | string[] | undefined): LanguageSupport {
-  // Preserve the historical docs convention: an omitted/empty field means
-  // the default languages only. Rust must always be declared explicitly.
+export function getLanguageSupport(
+  languages: string | string[] | undefined,
+  unsupportedLanguages?: string | string[]
+): LanguageSupport {
+  const unsupported = normalizeSdkLanguages(unsupportedLanguages ?? [])
   const normalized =
     !languages || (Array.isArray(languages) && languages.length === 0)
-      ? [...DEFAULT_DOC_LANGUAGES]
+      ? DEFAULT_DOC_LANGUAGES.filter((language) => !unsupported.includes(language))
       : normalizeSdkLanguages(languages)
   return {
     python: normalized.includes('python'),
@@ -101,7 +103,7 @@ export function getIntegrationEntries(
       return true
     })
     .map((doc) => {
-      const { python, typescript, rust } = getLanguageSupport(doc.data.languages)
+      const { python, typescript, rust } = getLanguageSupport(doc.data.languages, doc.data.unsupportedLanguages)
 
       // Get sidebar label if available
       const sidebarLabel = (doc.data.sidebar as { label?: string } | undefined)?.label

@@ -1,7 +1,6 @@
 ---
 title: Metrics
 description: 'Track agent performance metrics in Strands: token usage, latency, tool call counts, and event loop cycles, all available through AgentResult.'
-languages: [Python, TypeScript, Rust]
 tags: [observability]
 sourceLinks:
   - path: strands-py/src/strands/telemetry/metrics.py
@@ -55,7 +54,8 @@ The `metrics` attribute of `AgentResult` (an instance of [`EventLoopMetrics`](@a
 </Tab>
 <Tab label="TypeScript">
 
-The TypeScript SDK automatically tracks key metrics during agent execution through the `AgentMetrics` class:
+The SDK automatically tracks key metrics during agent execution through the
+`AgentMetrics` class:
 
 - **Token usage**: Input tokens, output tokens, total tokens consumed, and cache metrics
 - **Performance metrics**: Latency and execution time measurements
@@ -72,7 +72,7 @@ The `metrics` property on `AgentResult` is an instance of `AgentMetrics` that ho
 </Tab>
 <Tab label="Rust">
 
-Rust records token usage, model latency, loop cycles, and per-tool metrics in
+The SDK records token usage, model latency, loop cycles, and per-tool metrics in
 `AgentMetrics`. Read the optional snapshot from `AgentResult::metrics()`:
 
 ```rust
@@ -360,7 +360,7 @@ Traces are separate from `AgentMetrics` and are accessed via `result.traces`. `A
 </Tab>
 <Tab label="Rust">
 
-Rust records the same in-memory hierarchy in `AgentTrace` values. Access them
+The SDK records the same in-memory hierarchy in `AgentTrace` values. Access them
 through `AgentResult::traces()`:
 
 ```rust

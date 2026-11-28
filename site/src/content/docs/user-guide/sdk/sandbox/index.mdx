@@ -1,7 +1,6 @@
 ---
 title: Sandbox
-description: "Configure where an agent runs shell commands, executes code, and accesses a filesystem. Swap between Docker, SSH, or custom environments."
-languages: [Python, TypeScript, Rust]
+description: 'Configure where an agent runs shell commands, executes code, and accesses a filesystem. Swap between Docker, SSH, or custom environments.'
 tags: [sandbox, tool-execution]
 addedDate: 2026-06-17
 sourceLinks:
@@ -9,7 +8,7 @@ sourceLinks:
   - path: strands-ts/src/sandbox/base.ts
   - path: strands-rs/strands/src/sandbox/base.rs
 sidebar:
-  label: "Overview"
+  label: 'Overview'
 ---
 
 import Diagram from '@components/Diagram.astro'
@@ -20,7 +19,7 @@ A `Sandbox` gives the agent an execution environment for these operations while 
 
 ## How sandboxes work
 
-There are two ways to think about sandboxed agents: running the entire agent *inside* a sandbox (a deployment concern, not an SDK feature), or giving the agent a sandbox *to use* for execution while the agent itself stays in your trusted infrastructure.
+There are two ways to think about sandboxed agents: running the entire agent _inside_ a sandbox (a deployment concern, not an SDK feature), or giving the agent a sandbox _to use_ for execution while the agent itself stays in your trusted infrastructure.
 
 Strands implements the second pattern. The agent process runs on your host and handles model calls, tools, hooks, and state. The sandbox is a pluggable backend that receives only execution operations via a standard interface.
 
@@ -31,21 +30,40 @@ Strands implements the second pattern. The agent process runs on your host and h
 
 All Sandbox implementations share the same abstract interface:
 
-- <Syntax py="execute_streaming" ts="executeStreaming" rs="execute_streaming" />:
-  run a shell command and stream output.
-- <Syntax
-    py="execute_code_streaming"
-    ts="executeCodeStreaming"
-    rs="execute_code_streaming"
-  />: run code through an interpreter and stream output.
+- <Syntax py="execute_streaming" ts="executeStreaming" rs="execute_streaming" />: run a shell command and stream output.
+- <Syntax py="execute_code_streaming" ts="executeCodeStreaming" rs="execute_code_streaming" />: run code through an
+  interpreter and stream output.
 - <Syntax py="read_file" ts="readFile" rs="read_file" />: read bytes.
 - <Syntax py="write_file" ts="writeFile" rs="write_file" />: write bytes.
 - <Syntax py="remove_file" ts="removeFile" rs="remove_file" />: delete a file.
 - <Syntax py="list_files" ts="listFiles" rs="list_files" />: list a directory.
 
-The execution methods accept `timeout`, `cwd`, `env`, and
-<Syntax py="cancel_signal" ts="signal" rs="signal" />. Cancellation uses
-<Syntax py="threading.Event" ts="AbortSignal" rs="CancelSignal" />.
+The execution methods accept timeout, working-directory, environment, and
+cancellation options:
+
+<Tabs>
+<Tab label="Python">
+
+`timeout` is measured in seconds and raises `SandboxTimeoutError` when it
+elapses. `cancel_signal` accepts a `threading.Event` and raises
+`SandboxAbortError` when the event is set.
+
+</Tab>
+<Tab label="TypeScript">
+
+`timeout` is measured in seconds and throws `SandboxTimeoutError` when it
+elapses. `signal` accepts an `AbortSignal` and throws `SandboxAbortError` when
+the signal fires.
+
+</Tab>
+<Tab label="Rust">
+
+`ExecuteOptions::timeout` accepts a `Duration` and returns
+`SandboxTimeoutError` when it elapses. `ExecuteOptions::signal` accepts a
+`CancelSignal` and returns `SandboxAbortError` when the signal fires.
+
+</Tab>
+</Tabs>
 
 ## Getting started
 
@@ -60,6 +78,13 @@ Pass a sandbox to an agent through the `sandbox` parameter, and the agent's comm
 --8<-- "user-guide/sdk/sandbox/index.ts:basic_usage"
 ```
 
+Pass `sandbox: false` to opt out explicitly and keep that intent stable if the
+default changes:
+
+```typescript
+const agent = new Agent({ sandbox: false })
+```
+
 </Tab>
 <Tab label="Python">
 
@@ -70,8 +95,8 @@ Pass a sandbox to an agent through the `sandbox` parameter, and the agent's comm
 </Tab>
 <Tab label="Rust">
 
-Rust exposes `Sandbox` for custom backends. This example explicitly selects the
-host environment, which provides no isolation:
+`Sandbox` supports custom backends. This example explicitly selects the host
+environment, which provides no isolation:
 
 ```rust
 --8<-- "user-guide/sdk/sandbox/index.rs:basic_usage"
@@ -81,15 +106,10 @@ host environment, which provides no isolation:
 </Tabs>
 
 :::caution[The default is not a sandbox]
-Omitting the `sandbox` parameter runs the agent's command and file tools directly on the host with the full permissions of the agent process. Treat this as convenience for trusted, local development only. For untrusted input or production runs, pass an explicit sandbox.
+The default backend runs sandbox operations directly on the host with the full
+permissions of the agent process. Treat it as convenience for trusted, local
+development only. For untrusted input or production runs, pass an explicit sandbox.
 :::
-
-In TypeScript, pass `sandbox: false` to opt out explicitly and keep that intent stable if the default changes:
-
-```typescript
-// Explicit opt-out: no sandbox, run on host
-const agent = new Agent({ sandbox: false })
-```
 
 See [Available Sandboxes](./available-sandboxes.mdx) for Docker and SSH configuration options, programmatic access, and streaming output.
 
@@ -97,15 +117,29 @@ See [Available Sandboxes](./available-sandboxes.mdx) for Docker and SSH configur
 
 ### Default tools
 
-When a sandbox is configured, the agent automatically registers two tools so the model can operate in the sandboxed environment without additional setup:
+<Tabs>
+<Tab label="Python">
+
+When a sandbox is configured, the agent automatically registers two tools so
+the model can operate in the sandboxed environment without additional setup:
 
 - **`sandbox_shell`** — Executes shell commands and returns output (stdout), error (stderr), and exit_code (non-zero means the command failed). Each call runs in a fresh shell; state such as variables and the working directory does not persist across calls.
 - **`sandbox_file_editor`** — Views, creates, and edits files using absolute paths. Supports view (with line ranges), create, string replace, and insert operations.
 
 If a tool with the same name is already registered on the agent, the sandbox-vended version is skipped. This lets you override a vended tool with a stricter variant:
 
-<Tabs>
+```python
+--8<-- "user-guide/sdk/sandbox/index.py:tool_override"
+```
+
+Custom implementations can override `get_tools()` to vend their own tools.
+
+</Tab>
 <Tab label="TypeScript">
+
+When a sandbox is configured, the agent automatically registers
+`sandbox_shell` and `sandbox_file_editor`. Register a tool with either name
+before sandbox initialization to replace the vended version:
 
 ```typescript
 --8<-- "user-guide/sdk/sandbox/index_imports.ts:tool_override_imports"
@@ -113,17 +147,14 @@ If a tool with the same name is already registered on the agent, the sandbox-ven
 --8<-- "user-guide/sdk/sandbox/index.ts:tool_override"
 ```
 
-</Tab>
-<Tab label="Python">
-
-```python
---8<-- "user-guide/sdk/sandbox/index.py:tool_override"
-```
+Custom implementations can override `getTools()` to vend their own tools.
 
 </Tab>
 <Tab label="Rust">
 
-Register a tool with the same name before sandbox initialization:
+The base `Sandbox` and `PosixShellSandbox` implementations vend no tools.
+Register the focused `shell`, `read`, `write`, and `edit` tools explicitly, or
+override `get_tools()` in a custom sandbox to vend your own set:
 
 ```rust
 --8<-- "user-guide/sdk/sandbox/index.rs:tool_override"
@@ -131,9 +162,6 @@ Register a tool with the same name before sandbox initialization:
 
 </Tab>
 </Tabs>
-
-Custom sandbox implementations can override
-<Syntax py="get_tools()" ts="getTools()" rs="get_tools()" /> to vend tools.
 
 ### Custom tools
 
@@ -165,7 +193,8 @@ You can add your own tools alongside the auto-vended ones by creating a tool tha
 </Tab>
 </Tabs>
 
-Your custom tools coexist with the auto-vended ones. The sandbox routes all execution to the same environment regardless of which tool initiated it.
+Your custom tools use the same configured sandbox as the other sandbox-routed
+tools.
 
 ## Using plugins with sandboxes
 

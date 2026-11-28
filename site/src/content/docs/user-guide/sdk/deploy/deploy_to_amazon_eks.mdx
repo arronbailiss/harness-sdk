@@ -1,8 +1,12 @@
 ---
 title: Deploying Strands Agents SDK Agents to Amazon EKS
 description: 'Deploy Strands agents to Amazon EKS Auto Mode: containerize a FastAPI agent and run it on managed Kubernetes with high availability.'
+sourceLinks:
+  - path: strands-py/src/strands/agent/agent.py
+  - path: strands-ts/src/agent/agent.ts
+  - path: strands-rs/strands/src/agent/agent.rs
 sidebar:
-  label: "Amazon EKS"
+  label: 'Amazon EKS'
 tags: [deployment, aws]
 ---
 
@@ -12,9 +16,14 @@ This guide uses [Amazon EKS Auto Mode](https://aws.amazon.com/eks/auto-mode), wh
 
 This guide discusses EKS integration at a high level. For a complete example project deploying to EKS, see the [`deploy_to_eks` sample project on GitHub][project_code].
 
-## Creating Your Agent in Python
+## Creating your agent
 
-The core of your EKS deployment is a containerized FastAPI application that hosts your Strands Agents SDK agent. This Python application initializes your agent and processes incoming HTTP requests.
+<Tabs>
+<Tab label="Python">
+
+The core of your EKS deployment is a containerized FastAPI application that
+hosts your Strands Agents SDK agent. It initializes your agent and processes
+incoming HTTP requests.
 
 The FastAPI application follows these steps:
 
@@ -58,7 +67,7 @@ class PromptRequest(BaseModel):
 async def get_weather(request: PromptRequest):
     """Endpoint to get weather information."""
     prompt = request.prompt
-    
+
     if not prompt:
         raise HTTPException(status_code=400, detail="No prompt provided")
 
@@ -74,11 +83,39 @@ async def get_weather(request: PromptRequest):
         raise HTTPException(status_code=500, detail=str(e))
 ```
 
+</Tab>
+<Tab label="TypeScript">
+
+Expose invocation and health routes from the Node.js framework you use:
+
+```typescript
+--8<-- "user-guide/sdk/deploy/deploy_imports.ts:deploy_ready_agent_imports"
+
+--8<-- "user-guide/sdk/deploy/deploy.ts:deploy_ready_agent"
+```
+
+</Tab>
+<Tab label="Rust">
+
+Expose invocation and health handlers from Axum, Actix Web, or another
+asynchronous framework:
+
+```rust
+--8<-- "user-guide/sdk/deploy/index.rs:deploy_ready_agent"
+```
+
+</Tab>
+</Tabs>
+
 ### Streaming responses
 
 Stream the response to send content to the client as the agent produces it, rather than waiting for the full answer. This matters most for long responses, where the wait to first token is otherwise noticeable.
 
-Python web-servers commonly implement streaming through the use of iterators, and the Strands Agents SDK facilitates response streaming via the `stream_async(prompt)` function:
+<Tabs>
+<Tab label="Python">
+
+Web servers commonly implement streaming with iterators. The Strands Agents SDK
+provides response streaming through `stream_async(prompt)`:
 
 ```python
 async def run_weather_agent_and_stream_response(prompt: str):
@@ -120,9 +157,35 @@ async def get_weather_streaming(request: PromptRequest):
 
 The implementation above employs a [custom tool](../tools/custom-tools.md#creating-custom-tools) to mark the boundary between information gathering and summary generation phases. This approach ensures that only the final, user-facing content is streamed to the client, maintaining consistency with the non-streaming endpoint while providing the benefits of incremental response delivery.
 
+</Tab>
+<Tab label="TypeScript">
+
+Create the agent stream inside the request handler and pipe text deltas into the
+framework response:
+
+```typescript
+--8<-- "user-guide/sdk/streaming/async-iterators.ts:express_example"
+```
+
+</Tab>
+<Tab label="Rust">
+
+Create the agent stream inside the request handler and adapt its text deltas to
+your framework's streaming body:
+
+```rust
+--8<-- "user-guide/sdk/streaming/async-iterators.rs:server_stream"
+```
+
+</Tab>
+</Tabs>
+
 ## Containerization
 
 To deploy your agent to EKS, you need to containerize it using Podman or Docker. The Dockerfile defines how your application is packaged and run. The example below installs the dependencies and application code and configures the FastAPI server to run via Uvicorn ([Dockerfile][dockerfile]):
+
+<Tabs>
+<Tab label="Python">
 
 ```dockerfile
 FROM public.ecr.aws/docker/library/python:3.12-slim
@@ -153,15 +216,63 @@ EXPOSE 8000
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
 ```
 
+</Tab>
+<Tab label="TypeScript">
+
+Build the application before copying its production output into a smaller
+runtime image:
+
+```dockerfile
+FROM public.ecr.aws/docker/library/node:22-slim AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM public.ecr.aws/docker/library/node:22-slim
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build /app/package*.json ./
+RUN npm ci --omit=dev
+COPY --from=build /app/dist ./dist
+USER node
+EXPOSE 8000
+CMD ["node", "dist/server.js"]
+```
+
+</Tab>
+<Tab label="Rust">
+
+Build a release binary, then copy only that binary into the runtime image:
+
+```dockerfile
+FROM public.ecr.aws/docker/library/rust:1.96-bookworm AS build
+WORKDIR /app
+COPY Cargo.toml Cargo.lock ./
+COPY src ./src
+RUN cargo build --locked --release
+
+FROM public.ecr.aws/docker/library/debian:bookworm-slim
+RUN useradd --create-home appuser
+COPY --from=build /app/target/release/agent-service /usr/local/bin/agent-service
+USER appuser
+EXPOSE 8000
+CMD ["agent-service"]
+```
+
+</Tab>
+</Tabs>
+
 ## Infrastructure
 
-To deploy our containerized agent to EKS, we will first need to provision an EKS Auto Mode cluster, define IAM role and policies, associate them with a Kubernetes Service Account and package & deploy our Agent using Helm.   
+To deploy our containerized agent to EKS, we will first need to provision an EKS Auto Mode cluster, define IAM role and policies, associate them with a Kubernetes Service Account and package & deploy our Agent using Helm.
 Helm packages and deploys application to Kubernetes and EKS, Helm enables deployment to different environments, define version control, updates, and consistent deployments across EKS clusters.
 
 Follow the full example [`deploy_to_eks` sample project on GitHub][project_code]:
 
 1. Using eksctl creates an EKS Auto Mode cluster and a VPC
-2. Builds and pushes the Docker image from your Dockerfile to Amazon Elastic Container Registry (ECR). 
+2. Builds and pushes the Docker image from your Dockerfile to Amazon Elastic Container Registry (ECR).
 3. Configure agent access to AWS services such as Amazon Bedrock by using Amazon EKS Pod Identity.
 4. Deploy the `strands-agents-weather` agent helm package to EKS
 5. Sets up an Application Load Balancer using Kubernetes Ingress and EKS Auto Mode network capabilities.
@@ -182,6 +293,7 @@ kubectl port-forward service/strands-agents-weather 8080:80 &
 ```
 
 Call the weather service
+
 ```bash
 curl -X POST \
   http://localhost:8080/weather \
@@ -190,6 +302,7 @@ curl -X POST \
 ```
 
 Call the weather streaming endpoint
+
 ```bash
 curl -X POST \
   http://localhost:8080/weather-streaming \
@@ -199,9 +312,9 @@ curl -X POST \
 
 ## Summary
 
-The above steps covered:
+The steps above covered:
 
-- Creating a FastAPI application that hosts your Strands Agents SDK agent
+- Creating an HTTP application that hosts your Strands Agents SDK agent
 - Containerizing your application with Podman or Docker
 - Creating the infrastructure to deploy to EKS Auto Mode
 - Deploying the agent and infrastructure to EKS Auto Mode
@@ -218,7 +331,8 @@ Possible follow-up tasks would be to:
 
 ## Complete Example
 
-For the complete example code, including all files and configurations, see the  [`deploy_to_eks` sample project on GitHub][project_code]
+For a complete Python example, including all files and configurations, see the
+[`deploy_to_eks` sample project on GitHub][project_code].
 
 ## Related Resources
 

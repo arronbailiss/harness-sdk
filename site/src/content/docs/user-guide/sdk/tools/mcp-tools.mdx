@@ -1,9 +1,8 @@
 ---
 title: Connect your agent to MCP tools
-description: "Connect AI agents to any MCP server for tool access. Strands agents integrate and invoke MCP tools without custom integration code."
-languages: [Python, TypeScript, Rust]
+description: 'Connect AI agents to any MCP server for tool access. Strands agents integrate and invoke MCP tools without custom integration code.'
 sidebar:
-  label: "Model Context Protocol (MCP)"
+  label: 'Model Context Protocol (MCP)'
 tags: [tool-authoring, mcp]
 sourceLinks:
   - path: strands-py/src/strands/tools/mcp/mcp_client.py
@@ -44,12 +43,14 @@ mcp_client = MCPClient(lambda: stdio_client(
 agent = Agent(tools=[mcp_client])
 agent("What is AWS Lambda?")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
 ```typescript
 --8<-- "user-guide/sdk/tools/mcp-tools.ts:quick_start"
 ```
+
 </Tab>
 <Tab label="Rust">
 
@@ -64,6 +65,7 @@ cargo add tokio --features macros,rt-multi-thread
 ```rust
 --8<-- "user-guide/sdk/tools/mcp-tools.rs:quickstart"
 ```
+
 </Tab>
 </Tabs>
 
@@ -103,6 +105,7 @@ with mcp_client:
     agent = Agent(tools=tools)
     agent("What is AWS Lambda?")  # Must be within context
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -119,15 +122,20 @@ Tools can also be listed explicitly if needed:
 ```typescript
 --8<-- "user-guide/sdk/tools/mcp-tools.ts:explicit_tools"
 ```
+
 </Tab>
 <Tab label="Rust">
 
-Pass the client directly to the agent for managed initialization and shutdown, or
-list its tools first when you need to inspect them:
+Pass
+[`McpClient`](https://docs.rs/strands/latest/strands/mcp/struct.McpClient.html)
+directly to the agent for managed initialization and shutdown. Configure it with
+[`McpServerConfig`](https://docs.rs/strands/latest/strands/mcp/struct.McpServerConfig.html),
+or list its tools first when you need to inspect them:
 
 ```rust
 --8<-- "user-guide/sdk/tools/mcp-tools.rs:integration_approaches"
 ```
+
 </Tab>
 </Tabs>
 
@@ -201,6 +209,7 @@ clients = MCPClient.load_servers(
 
 agent = Agent(tools=clients)
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -222,12 +231,14 @@ keep credentials out of the configuration:
 
 Set `prefixWithServerName` when servers expose tools with overlapping names.
 A server-level `prefix` overrides the generated prefix, and `prefix: ''` disables it.
+
 </Tab>
 <Tab label="Rust">
 
 ```rust
 --8<-- "user-guide/sdk/tools/mcp-tools.rs:multiple_servers"
 ```
+
 </Tab>
 </Tabs>
 
@@ -236,7 +247,8 @@ A server-level `prefix` overrides the generated prefix, and `prefix: ''` disable
 <Tabs>
 <Tab label="Python">
 
-Python's `MCPClient` supports tool filtering and name prefixing to manage tools from multiple servers.
+`MCPClient` supports tool filtering and name prefixing to manage tools from
+multiple servers.
 
 **Tool Filtering**
 
@@ -312,10 +324,12 @@ remote_client = MCPClient(url="https://example.com/mcp", auto_reconnect=True)
 ```
 
 If the server is still restarting and refuses the connection, the client retries it with exponential backoff (0.5s, 1s, 2s) before giving up on that call; the whole rebuild shares one `startup_timeout` budget, so an attempt that waits the server out is not followed by another. The retry re-sends the tool call, so a call that already reached the server may run twice. Leave this off for servers whose tools are not safe to repeat or that keep per-session state. This covers streamable HTTP. A dropped SSE connection or a stdio server process that exits is not reconnected; restart the client to bring it back. In `load_servers` config, set `"auto_reconnect": true` on the server entry.
+
 </Tab>
 <Tab label="TypeScript">
 
-TypeScript's `McpClient` supports tool filtering and name prefixing to manage tools from multiple servers.
+`McpClient` supports tool filtering and name prefixing to manage tools from
+multiple servers.
 
 **Tool Filtering**
 
@@ -346,6 +360,7 @@ Constructor defaults can be overridden per listing with
 defaults; `prefix: ''` disables a default prefix and `toolFilters: {}` disables
 default filters. Declarative `McpClient.loadServers()` config accepts `prefix`
 and `toolFilters` too, where filter strings are regexes.
+
 </Tab>
 <Tab label="Rust">
 
@@ -355,6 +370,7 @@ the agent-facing name without changing the server-side name:
 ```rust
 --8<-- "user-guide/sdk/tools/mcp-tools.rs:client_configuration"
 ```
+
 </Tab>
 </Tabs>
 
@@ -373,23 +389,26 @@ result = mcp_client.call_tool_sync(
 )
 print(f"Result: {result['content'][0]['text']}")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
 ```typescript
 // Get tools and find the target tool
 const tools = await mcpClient.listTools()
-const calcTool = tools.find(t => t.name === 'calculator')
+const calcTool = tools.find((t) => t.name === 'calculator')
 
 // Call directly through the client
 const result = await mcpClient.callTool(calcTool, { x: 10, y: 20 })
 ```
+
 </Tab>
 <Tab label="Rust">
 
 ```rust
 --8<-- "user-guide/sdk/tools/mcp-tools.rs:direct_invocation"
 ```
+
 </Tab>
 </Tabs>
 
@@ -414,16 +433,18 @@ def calculator(x: int, y: int) -> int:
 # Run the server with SSE transport
 mcp.run(transport="sse")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
 ```typescript
 --8<-- "user-guide/sdk/tools/mcp-tools.ts:mcp_server"
 ```
+
 </Tab>
 <Tab label="Rust">
 
-The Rust SDK provides MCP clients. Build a Rust MCP server with the
+The SDK provides MCP clients. Build an MCP server with the
 [`rmcp`](https://docs.rs/rmcp/) crate.
 
 </Tab>
@@ -493,6 +514,7 @@ with client:
     agent = Agent(tools=client.list_tools_sync())
     result = agent("Delete 'a/b/c.txt' and share the name of the approver")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -501,6 +523,7 @@ Pass an `elicitationCallback` when constructing the client. The callback receive
 ```typescript
 --8<-- "user-guide/sdk/tools/mcp-tools.ts:elicitation"
 ```
+
 </Tab>
 <Tab label="Rust">
 
@@ -509,6 +532,7 @@ Register an async callback that returns an accepted, declined, or cancelled resu
 ```rust
 --8<-- "user-guide/sdk/tools/mcp-tools.rs:elicitation"
 ```
+
 </Tab>
 </Tabs>
 
@@ -545,11 +569,11 @@ with client:
 
 The callback receives three arguments:
 
-| Argument | Type | Description |
-|---|---|---|
-| `progress` | `float` | Current progress value reported by the server |
-| `total` | `float \| None` | Total value (may be `None` if the server doesn't report it) |
-| `message` | `str \| None` | Optional human-readable status message from the server |
+| Argument   | Type            | Description                                                 |
+| ---------- | --------------- | ----------------------------------------------------------- |
+| `progress` | `float`         | Current progress value reported by the server               |
+| `total`    | `float \| None` | Total value (may be `None` if the server doesn't report it) |
+| `message`  | `str \| None`   | Optional human-readable status message from the server      |
 
 You can also pass a `progress_callback` directly to `call_tool_sync` or `call_tool_async` to override the instance-level callback for a single call:
 
@@ -565,7 +589,7 @@ result = client.call_tool_sync(
 </Tab>
 <Tab label="TypeScript">
 
-Progress notifications are not yet supported in the TypeScript SDK.
+Progress notifications are not yet supported.
 
 </Tab>
 <Tab label="Rust">

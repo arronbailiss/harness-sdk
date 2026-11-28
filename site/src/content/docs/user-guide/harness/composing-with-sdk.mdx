@@ -1,7 +1,6 @@
 ---
 title: Compose with the Strands Harness SDK
 description: "Strands harness is a thin composition layer over the Strands Harness SDK. Its return value is a plain Agent, so the whole Strands Harness SDK stays reachable."
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-ts/src/agent.ts
@@ -25,9 +24,8 @@ The factory does three things in order: it resolves your options into concrete S
 (a `Model` from a `provider/name` string, a memory manager, intervention handlers), it
 assembles the built-in tools, plugins, subagents, and behaviors, and it constructs a plain
 `Agent` from the result. Nothing wraps that agent afterward. The built-in tools are
-ordinary registered tools, the environment integration is an ordinary plugin, and
-sessions and memory use the Strands Harness SDK's own managers. Python and TypeScript
-keep a deprecated harness `todos` plugin; Rust uses the SDK's `Todos` plugin directly.
+ordinary registered tools, the built-in integrations are ordinary plugins, and sessions
+and memory use the Strands Harness SDK's own managers.
 
 ## The return value is a plain Agent
 
@@ -38,24 +36,21 @@ nothing about Strands harness blocks a feature the Strands Harness SDK offers.
 
 ## Compose Strands Harness SDK features alongside Strands harness's defaults
 
-Python forwards unnamed keyword arguments to the `Agent` constructor. TypeScript extends
-the SDK's agent configuration with the fields the harness owns, while Rust exposes the
-remaining typed `AgentConfig` fields on `HarnessAgentOptions`. In every language, an
-explicit SDK value wins over the harness default it replaces. Pass your own `plugins` or
-`interventions` alongside Strands harness's and they compose:
+SDK configuration fields pass through the harness factory, and an explicit value wins
+over the harness default it replaces. Pass your own `plugins` or `interventions`
+alongside Strands harness's and they compose:
 
 <Tabs>
   <Tab label="Python">
     ```python
     from strands_harness import create_harness
     from strands.vended_interventions.hitl import HumanInTheLoop
-
-    from my_plugins import MyMetricsPlugin  # your own Plugin subclass
+    from strands.vended_plugins.todos import Todos
 
     agent = create_harness(
         context_manager="agentic",
-        plugins=[MyMetricsPlugin()],       # runs next to Strands harness's built-in plugins
-        interventions=[HumanInTheLoop()],  # a Strands Harness SDK feature, wired straight through
+        plugins=[Todos()],
+        interventions=[HumanInTheLoop()],
     )
     ```
   </Tab>
@@ -63,13 +58,12 @@ explicit SDK value wins over the harness default it replaces. Pass your own `plu
     ```typescript
     import { createHarness } from '@strands-agents/harness'
     import { HumanInTheLoop } from '@strands-agents/sdk/vended-interventions/hitl'
-
-    import { MyMetricsPlugin } from './my-plugins' // your own Plugin implementation
+    import { Todos } from '@strands-agents/sdk/vended-plugins/todos'
 
     const agent = await createHarness({
       contextManager: 'agentic',
-      plugins: [new MyMetricsPlugin()], // runs next to Strands harness's built-in plugins
-      interventions: [new HumanInTheLoop()], // a Strands Harness SDK feature, wired through
+      plugins: [new Todos()],
+      interventions: [new HumanInTheLoop()],
     })
     ```
   </Tab>
@@ -111,15 +105,25 @@ field are yours to adjust:
 
 ## The building blocks are exported too
 
-Strands harness exports the pieces its factory composes, so you can reuse them without building the
-whole agent:
+Strands harness exports the pieces its factory composes, so you can reuse them without
+building the whole agent:
 
-- `HARNESS_CONTRACT`: the model-neutral behavioral contract, as a string.
-- `build_system_prompt` / `buildSystemPrompt`: concatenates the contract, your
-  instructions, and any request-scoped context.
-- `resolve_memory` (Python only): Strands harness's memory manager over a store.
-- `resolve_interventions` (Python only): the intervention sugar coerced into Strands Harness SDK
-  handlers.
+<Tabs>
+  <Tab label="Python">
+    `HARNESS_CONTRACT` contains the model-neutral behavioral contract.
+    `build_system_prompt` combines it with your instructions and request-scoped context.
+    `resolve_memory` and `resolve_interventions` expose the harness's memory and
+    intervention builders.
+  </Tab>
+  <Tab label="TypeScript">
+    `HARNESS_CONTRACT` contains the model-neutral behavioral contract.
+    `buildSystemPrompt` combines it with your instructions and request-scoped context.
+  </Tab>
+  <Tab label="Rust">
+    `HARNESS_CONTRACT` contains the model-neutral behavioral contract.
+    `build_system_prompt` combines it with your instructions and request-scoped context.
+  </Tab>
+</Tabs>
 
 If you build an agent from Strands Harness SDK building blocks directly, you can still borrow Strands harness's tuned
 prompt:

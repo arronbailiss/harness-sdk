@@ -36,7 +36,9 @@ The <Syntax py="retry_strategy" ts="retryStrategy" rs="retry_strategy" /> parame
 
 Renders as inline `<code>` by default. Pass `plain` for plain text. Reacts live to the global language toggle — no page reload.
 
-The `rs` prop is optional on the default Python-and-TypeScript pages and required on any page whose `languages` frontmatter includes Rust. Without `rs`, `<Syntax>` falls back to the default language when no Rust variant is present.
+Include `py`, `ts`, and `rs` on shared pages. A page with an explicit language
+subset may omit the variants it does not cover. Do not rely on fallback text for
+an SDK-specific identifier.
 
 **When to use `<Syntax>` vs `<Tabs>`:**
 - `<Syntax>`: single identifier or short expression that differs by language, embedded in a prose sentence.
@@ -110,8 +112,20 @@ page-specific snippet beside the page that includes it. The `site/rust-snippets`
 crate discovers and compiles every `.rs` file under `site/src/content/docs/`, so
 do not add documentation-only examples to a published SDK crate or register a
 Cargo example per page. Include the `use` declarations required by the rendered
-block inside its region. Every source file must compile through
-`npm run typecheck:snippets`.
+block inside its region. A sequence of examples may build on a helper or type
+that the page already showed, but it must not depend on setup that is hidden
+from the reader. Wrappers used only to give a focused fragment an async or
+fallible compilation context may stay outside the region. The Cargo gate
+compiles each complete sibling source file, not every extracted region as a
+standalone crate.
+
+Document every direct crate and optional Cargo feature used by a rendered Rust
+region in that page's Rust tab. Do not rely on the `rust-snippets` crate's
+dependency superset or on an SDK's transitive dependencies: those can make the
+site check pass while copied code fails in a reader's project. Verify a
+standalone example in a scratch crate containing only the dependencies and
+features the page tells readers to add. Every source file must also compile
+through `npm run typecheck:snippets`.
 
 ## Callout Syntax
 
@@ -157,7 +171,7 @@ Optional fields (validated by Zod in `site/src/content.config.ts`):
 
 | Field | Type | Purpose |
 |-------|------|---------|
-| `languages` | `string \| string[]` | SDK languages whose page content has been verified |
+| `languages` | `string \| string[]` | Explicit subset with documentation on this page |
 | `unsupportedLanguages` | `string \| string[]` | SDKs that do not implement the documented feature |
 | `community` | `boolean` | Marks page as community-contributed |
 | `experimental` | `boolean` | Marks feature as experimental |
@@ -170,22 +184,30 @@ Optional fields (validated by Zod in `site/src/content.config.ts`):
 
 The relevant fields render contextual banners automatically (experimental → external preview → community → languages); community pages suppress the separate language banner. Anything not in this table is silently stripped by Zod at build time, so don't invent fields like `contentType` or `lastReviewed` — add them to the schema first if they'd be useful.
 
-Omitting `languages` means the page has the site's default Python and TypeScript coverage. Explicitly list `Rust` only after its prose, links, and examples have been verified against the Rust SDK. A page that supports all three SDKs uses:
+Omitting `languages` means the page covers the default Python, TypeScript, and
+Rust SDKs. Do not add a redundant three-language list.
 
-```yaml
-languages: [Python, TypeScript, Rust]
-```
-
-Use a single value or a smaller list when the page applies to only those SDKs.
+Use a single value or a smaller list when documentation is available only for
+those SDKs.
 
 Use `unsupportedLanguages` only when the feature itself is unavailable in an
 SDK. A language omitted from both fields means the feature may exist, but that
-page has not been verified for the language yet:
+page has not been documented for the language yet:
 
 ```yaml
 languages: [Python, TypeScript]
 unsupportedLanguages: Rust
 ```
+
+The site must preserve the reader's global language selection on every page.
+For a language outside `languages`, show that documentation is not available
+yet. For a language in `unsupportedLanguages`, explain that the feature is not
+available. Render either message only when that language is selected. Never
+redirect to another language or tell readers that a page was "verified."
+
+Keep the same heading and paragraph structure across language tabs. Put
+language-specific prose, setup, and caveats in the matching `<Tab>` rather than
+adding a language-named section or comparing SDKs in shared prose.
 
 ## TypeScript Snippet Scoping
 
@@ -223,6 +245,9 @@ Link to generated API docs without fragile relative paths:
 [@api/typescript/Agent#constructor](Agent constructor)
 ```
 
+Rust guide pages link public items directly to their docs.rs item URL. Do not
+omit an API link merely because the Rust reference is not embedded in the site.
+
 ## Line Length
 
 90 characters maximum for files under `site/src/content/docs/`. Template literal contents in snippet files must also stay under 90 characters. Prettier does not enforce this automatically.
@@ -241,7 +266,7 @@ Run from `site/`:
 
 - **Snippet dedent**: Leading whitespace is automatically stripped from included snippets. If the snippet reference in markdown is indented, content indents to that level.
 - **Tab indentation**: Content inside `<Tab>` must not have leading blank lines or it may not render correctly.
-- **API docs differ by language**: `site/src/content/docs/api/python/_generated` and `typescript/_generated` are symlinks to `site/.build/api-docs/`. Never edit these directly — they are auto-generated. Rust uses a static `api/rust/index.mdx` landing page that links to docs.rs.
+- **API docs differ by language**: `site/src/content/docs/api/python/_generated` and `typescript/_generated` are symlinks to `site/.build/api-docs/`. Never edit these directly — they are auto-generated. Rust uses a static `api/rust/index.mdx` landing page and direct docs.rs item links. Embedding rustdoc is a separate site-design decision.
 - **No `TabItem`**: The auto-imported component is `Tab`, not `TabItem` (even though Starlight's native component is called TabItem).
 - **Code theme**: Uses GitHub Light/Dark themes. Follows Starlight's `[data-theme]` attribute.
 - **Formatting**: No semicolons, single quotes, 2-space indent, trailing commas ES5 style (enforced by Prettier).

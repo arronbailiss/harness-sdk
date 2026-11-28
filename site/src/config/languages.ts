@@ -1,7 +1,7 @@
 export const SDK_LANGUAGES = ['python', 'typescript', 'rust'] as const
 export type SdkLanguage = (typeof SDK_LANGUAGES)[number]
 
-export const DEFAULT_DOC_LANGUAGES = ['python', 'typescript'] as const satisfies readonly SdkLanguage[]
+export const DEFAULT_DOC_LANGUAGES = SDK_LANGUAGES
 
 export const SDK_LANGUAGE_LABELS = {
   python: 'Python',
@@ -48,7 +48,7 @@ export function sdkLanguageAvailability(
   unsupportedLanguages: readonly SdkLanguage[],
   hasSwitchTarget = false
 ): SdkLanguageAvailability {
-  if (documentedLanguages.includes(language) || hasSwitchTarget) return 'available'
   if (unsupportedLanguages.includes(language)) return 'unsupported'
+  if (documentedLanguages.includes(language) || hasSwitchTarget) return 'available'
   return 'undocumented'
 }

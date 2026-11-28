@@ -1,7 +1,6 @@
 ---
 title: Choose a model and reasoning
 description: "Point Strands harness at any model by provider name, a bare Bedrock id, or a Model instance, and set reasoning effort with a single thinking level."
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: harness-py/src/strands_harness/models.py
   - path: harness-ts/src/models.ts
@@ -11,23 +10,45 @@ sidebar:
   label: "Choose a model and reasoning"
 ---
 
-Strands harness runs on the latest models across Amazon Bedrock, Anthropic, OpenAI,
-and Google, and uses Amazon Bedrock by default. Rust currently supports Amazon Bedrock,
-Amazon Bedrock Mantle, Anthropic, and OpenAI. Pass `model` to pick another; pass
-`effort` to change how hard the agent reasons. Both are single arguments that work the
-same across every provider.
+Strands harness uses Amazon Bedrock by default. Pass `model` to pick another model, and
+pass `effort` to change how hard the agent reasons.
 
 ## Point Strands harness at a model
 
-You pick a model by passing `model`, which accepts three forms: a `provider/name`
-string, a bare Bedrock model id, or a ready-made Strands `Model` instance. The
-`provider/` prefix has aliases for `bedrock`, `bedrock-mantle`, `anthropic`, `openai`,
-`google`, `ollama`, and `litellm`. Rust accepts the first four prefixes; the other three
-fail with an unsupported-provider error. A string with no provider prefix is treated as
-a bare
-Amazon Bedrock id. On `bedrock`, Claude models run through the Anthropic Messages API with
-Anthropic's Bedrock client, so they get Anthropic API features that Converse doesn't expose;
-every other Bedrock model uses Converse.
+You pick a model by passing `model`, which accepts a `provider/name` string, a bare
+Amazon Bedrock model id, or a ready-made Strands `Model` instance.
+
+<Tabs>
+  <Tab label="Python">
+    Provider aliases include `bedrock`, `bedrock-mantle`, `anthropic`, `openai`,
+    `google`, `ollama`, and `litellm`.
+  </Tab>
+  <Tab label="TypeScript">
+    Provider aliases include `bedrock`, `bedrock-mantle`, `anthropic`, `openai`,
+    `google`, `ollama`, and `litellm`.
+  </Tab>
+  <Tab label="Rust">
+    Provider aliases include `bedrock`, `bedrock-mantle`, `anthropic`, and `openai`.
+    The default Cargo features enable all four providers, plus MCP, Cedar, and the
+    Monty worker.
+
+    Keep default features unless you are deliberately removing optional capabilities.
+    If you disable them, enable the provider and every harness capability your
+    application uses:
+
+    ```bash
+    cargo add strands-harness --no-default-features \
+      --features openai,mcp,cedar,monty-pool
+    ```
+
+    A model string whose provider feature is disabled fails during harness construction
+    and names the feature to enable. The `mantle` feature also enables `openai`.
+  </Tab>
+</Tabs>
+
+A string with no provider prefix is treated as a bare Amazon Bedrock id. On `bedrock`,
+Claude models run through the Anthropic Messages API with Anthropic's Bedrock client;
+every other Amazon Bedrock model uses Converse.
 
 <Tabs>
   <Tab label="Strands harness">
@@ -113,8 +134,7 @@ a typo surfaces immediately rather than as a request error later.
 
 ## Set reasoning effort
 
-`effort` maps one reasoning level onto whatever each provider's API expects. Python and
-TypeScript use string levels; Rust uses the matching `Effort` variants:
+`effort` maps one reasoning level onto whatever each provider's API expects:
 
 - `auto` (the default) uses the level the model's vendor runs it at in its own
   harness (Claude Code, Codex, or Gemini CLI), taken from the
@@ -186,31 +206,38 @@ TypeScript use string levels; Rust uses the matching `Effort` variants:
 </Tabs>
 
 A level a provider does not accept fails at construction rather than mid-request. Some
-providers accept finer levels (for example `minimal` or `xhigh`); Strands harness validates against
-the resolved provider's set, and the model's where levels differ by model (Bedrock, bedrock-mantle, Gemini), so use
-the levels the provider documents for your model.
+providers accept finer levels (for example `minimal` or `xhigh`). Strands harness
+validates against the resolved provider and model, so use the levels the provider
+documents for your model.
 
 Reasoning does not apply to a pre-built `Model` instance: configure reasoning on the
 instance itself when you pass one.
 
-### Choose Rust provider features
-
-The Rust crate enables `bedrock`, `anthropic`, `openai`, and `mantle` by default. To ship
-only one provider, disable default features and enable the provider you use:
-
-```bash
-cargo add strands-harness --no-default-features --features openai
-```
-
-A model string whose provider feature is disabled fails during harness construction and
-names the feature to enable. The `mantle` feature also enables `openai`.
-
 ## Note on web search and caching
 
-Two model-level features follow from the provider you pick. Native `web_search` works on
-OpenAI, Anthropic, Google, and GPT-5, GPT-6, and Daybreak models on
-`bedrock-mantle`; prompt caching is configured by Strands harness on Amazon Bedrock and
-Anthropic direct and is automatic elsewhere. Both are covered where you enable them:
+Two model-level features follow from the provider you pick.
+
+<Tabs>
+  <Tab label="Python">
+    Native `web_search` works on OpenAI, Anthropic, Google, and supported models on
+    `bedrock-mantle`. The harness configures prompt caching on Amazon Bedrock,
+    Anthropic, OpenAI, and `bedrock-mantle`. Google and LiteLLM cache
+    automatically; Ollama does not support prompt caching.
+  </Tab>
+  <Tab label="TypeScript">
+    Native `web_search` works on OpenAI, Anthropic, Google, and supported models on
+    `bedrock-mantle`. The harness configures prompt caching on Amazon Bedrock,
+    Anthropic, OpenAI, and `bedrock-mantle`. Google and LiteLLM cache
+    automatically; Ollama does not support prompt caching.
+  </Tab>
+  <Tab label="Rust">
+    Native `web_search` works on OpenAI, Anthropic, and supported models on
+    `bedrock-mantle`. The harness configures prompt caching for every supported
+    provider.
+  </Tab>
+</Tabs>
+
+Both are covered where you enable them:
 [web access](../../tools/web-access/) and
 [manage context and caching](../context-and-caching/).
 

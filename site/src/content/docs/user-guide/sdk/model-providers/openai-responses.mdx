@@ -1,7 +1,6 @@
 ---
 title: OpenAI Responses API
 description: 'Use the OpenAI Responses API with Strands agents for built-in tools like web search and code interpreter, plus server-side conversation state.'
-languages: [Python, TypeScript, Rust]
 tags: [mcp, state]
 integrationType: model-provider
 sourceLinks:
@@ -36,6 +35,7 @@ Enable the optional provider feature:
 
 ```bash
 cargo add strands --features openai
+cargo add serde_json
 cargo add tokio --features macros,rt-multi-thread
 ```
 
@@ -71,7 +71,9 @@ print(response)
 --8<-- "user-guide/sdk/model-providers/openai-responses.ts:basic_usage"
 ```
 
-In TypeScript, both the Responses API and Chat Completions API are available through a single `OpenAIModel` class. The Responses API is selected by default. Pass `api: 'chat'` to use [Chat Completions](./openai) instead.
+Both the Responses API and Chat Completions API are available through one
+`OpenAIModel` class. The Responses API is selected by default. Pass
+`api: 'chat'` to use [Chat Completions](./openai) instead.
 </Tab>
 <Tab label="Rust">
 
@@ -79,9 +81,8 @@ In TypeScript, both the Responses API and Chat Completions API are available thr
 --8<-- "user-guide/sdk/model-providers/openai-responses.rs:basic_usage"
 ```
 
-Rust also uses one `OpenAIModel` type for both APIs. The Responses API is the
-default. Pass `OpenAIApi::Chat` to use
-[Chat Completions](./openai) instead.
+One `OpenAIModel` type covers both APIs. The Responses API is the default. Pass
+`OpenAIApi::Chat` to use [Chat Completions](./openai) instead.
 
 </Tab>
 </Tabs>
@@ -488,13 +489,13 @@ When disabled (or if the API call fails), falls back to estimation with a charac
 </Tab>
 <Tab label="TypeScript">
 
-The OpenAI Responses provider does not currently implement native token counting in the TypeScript SDK. It uses estimation with a character-based heuristic (characters ÷ 4 for text, characters ÷ 2 for JSON).
+Native token counting is not implemented. The provider uses a character-based
+heuristic: characters divided by four for text and by two for JSON.
 </Tab>
 <Tab label="Rust">
 
-The Rust provider uses the character-based heuristic: characters divided by four
-for text and by two for JSON. It does not currently call OpenAI's native token
-counting API.
+The provider uses the character-based heuristic: characters divided by four for
+text and by two for JSON. It does not call OpenAI's native token counting API.
 
 </Tab>
 </Tabs>

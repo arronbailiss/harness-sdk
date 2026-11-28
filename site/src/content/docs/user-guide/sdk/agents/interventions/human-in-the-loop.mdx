@@ -2,7 +2,6 @@
 title: Human in the loop
 tags: [interventions, tool-execution]
 description: "Gate agent tool execution behind human approval. Configurable modes for CLI, web, and custom UIs with optional session trust."
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/vended_interventions/hitl/hitl.py
   - path: strands-py/src/strands/vended_interventions/hitl/classifier.py
@@ -231,7 +230,7 @@ To fix the criteria as well, pass your own prompt and model
   ts="LlmClassifierConfig"
   rs="LlmClassifierConfig"
 />)
-or your own classifier. Decision models are not available in Rust.
+or your own classifier.
 :::
 
 ### Risk Classifier
@@ -291,8 +290,8 @@ use another one, such as a local
 </Tab>
 <Tab label="Rust">
 
-Rust supports the built-in LLM classifier and custom async classifiers.
-Decision-model classifiers are not available in the Rust SDK.
+Use the built-in LLM classifier or a custom async classifier. Decision-model
+classifiers are not available.
 
 </Tab>
 </Tabs>

@@ -26,6 +26,8 @@ mod getting_started {
 
 mod every_turn {
     // --8<-- [start:every_turn]
+    use std::time::SystemTime;
+
     use strands::vended_plugins::context_injector::{
         ContextInjector,
         ContextInjectorConfig,
@@ -34,7 +36,7 @@ mod every_turn {
 
     fn clock() -> ContextInjector {
         let config = ContextInjectorConfig::new(|_context| async {
-            Ok(Some("<status>ready</status>".to_owned()))
+            Ok(Some(format!("<now>{:?}</now>", SystemTime::now())))
         })
         .with_name("clock")
         .with_trigger(InjectionTrigger::EveryTurn);
@@ -60,7 +62,7 @@ mod predicate {
         });
         let config = ContextInjectorConfig::new(|context| async move {
             Ok(Some(format!(
-                "<context>{} messages so far</context>",
+                "<context>{} turns so far</context>",
                 context.messages.len()
             )))
         })

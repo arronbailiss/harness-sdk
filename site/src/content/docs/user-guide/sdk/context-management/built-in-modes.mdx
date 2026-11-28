@@ -1,7 +1,6 @@
 ---
 title: Built-in Modes
-description: "Auto and agentic context management modes with tuned defaults for most agents."
-languages: [Python, TypeScript, Rust]
+description: 'Auto and agentic context management modes with tuned defaults for most agents.'
 tags: [conversation-management, token-management]
 sourceLinks:
   - path: strands-ts/src/agent/agent.ts
@@ -12,11 +11,24 @@ sourceLinks:
 addedDate: 2026-09-04
 ---
 
-:::caution[Experimental in Python]
-In Python, the `ContextManager` strategy API is still exported from
-`strands.experimental.context_manager` and may change in future versions. The
-TypeScript API is stable.
-:::
+<Tabs>
+<Tab label="Python">
+
+The `ContextManager` strategy API is exported from
+`strands.experimental.context_manager` and may change in future versions.
+
+</Tab>
+<Tab label="TypeScript">
+
+The `ContextManager` strategy API is stable.
+
+</Tab>
+<Tab label="Rust">
+
+Context management types are available from `strands::context_manager`.
+
+</Tab>
+</Tabs>
 
 The SDK ships two built-in context management modes that work out of the box. Both create a `ContextManager` with tuned `Offload` strategies internally, so you don't have to assemble strategies, thresholds, and storage by hand.
 
@@ -25,11 +37,8 @@ For full control over the strategy pipeline, see [Custom Strategies](./custom-st
 ## Automatic context management
 
 Pass
-<Syntax
-  py='context_manager="auto"'
-  ts='contextManager: "auto"'
-  rs=".context_manager(ContextManagerStrategy::Auto)"
-/>
+
+<Syntax py='context_manager="auto"' ts='contextManager: "auto"' rs=".context_manager(ContextManagerStrategy::Auto)" />
 and the SDK manages context in the background with no model involvement:
 
 <Tabs>
@@ -40,6 +49,7 @@ from strands import Agent
 
 agent = Agent(context_manager="auto")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -48,12 +58,14 @@ agent = Agent(context_manager="auto")
 
 --8<-- "user-guide/sdk/context-management/built-in-modes.ts:auto"
 ```
+
 </Tab>
 <Tab label="Rust">
 
 ```rust
 --8<-- "user-guide/sdk/context-management/built-in-modes.rs:automatic"
 ```
+
 </Tab>
 </Tabs>
 
@@ -63,9 +75,8 @@ Two strategies whose defaults scored highest across [ContextBench](https://arxiv
 
 - **Truncate tool results** (threshold: 1,500 tokens, preview: 750 tokens):
   intercepts large tool results at execution time, stores them in the
-  <Syntax py="stash" ts="archive" rs="archive" />, and keeps a truncated
-  preview in context. Registers a retrieval tool so the agent can fetch full
-  content on demand.
+  <Syntax py="stash" ts="archive" rs="archive" />, and keeps a truncated preview in context. Registers a retrieval tool
+  so the agent can fetch full content on demand.
 - **Summarize on pressure** (utilization: 85%): when the context window reaches 85% capacity, summarizes the oldest messages to free space, preserving the 4 most recent messages verbatim.
 
 On Claude models that preserve thinking, the truncation keeps thinking blocks valid, and so does the summary when the agent's model supports server-side summary. See [Models that preserve thinking](./custom-strategies#models-that-preserve-thinking).
@@ -78,13 +89,14 @@ Agentic context management is experimental and may change in future versions.
 
 Auto mode compresses on a fixed threshold the SDK controls. Agentic mode hands that
 control to the model. Pass
+
 <Syntax
   py='context_manager="agentic"'
   ts='contextManager: "agentic"'
   rs=".context_manager(ContextManagerStrategy::Agentic)"
 />
-and the model manages its own working memory: it sees how full the context window is
-and chooses when to compress, what to compress, and what to protect.
+and the model manages its own working memory: it sees how full the context window is and chooses when to compress, what
+to compress, and what to protect.
 
 <Tabs>
 <Tab label="Python">
@@ -94,6 +106,7 @@ from strands import Agent
 
 agent = Agent(context_manager="agentic")
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -102,12 +115,14 @@ agent = Agent(context_manager="agentic")
 
 --8<-- "user-guide/sdk/context-management/built-in-modes.ts:agentic"
 ```
+
 </Tab>
 <Tab label="Rust">
 
 ```rust
 --8<-- "user-guide/sdk/context-management/built-in-modes.rs:agentic"
 ```
+
 </Tab>
 </Tabs>
 
@@ -160,6 +175,7 @@ from strands import Agent
 
 agent = Agent(context_manager=False)
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -168,12 +184,14 @@ agent = Agent(context_manager=False)
 
 --8<-- "user-guide/sdk/context-management/built-in-modes.ts:disabled"
 ```
+
 </Tab>
 <Tab label="Rust">
 
 ```rust
 --8<-- "user-guide/sdk/context-management/built-in-modes.rs:disabled"
 ```
+
 </Tab>
 </Tabs>
 

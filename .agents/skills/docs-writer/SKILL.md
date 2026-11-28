@@ -55,7 +55,14 @@ Write each section following the outline.
 
 Apply MDX formatting patterns from `../../references/mdx-authoring.md` — especially Tabs/Tab syntax, the `<Syntax>` component for inline language-specific identifiers, snippet includes, and callout syntax (default to inline prose; callouts are rare).
 
-When shared prose needs to reference a language-specific identifier (method name, parameter, class, etc.), use `<Syntax py="..." ts="..." />`. This keeps prose clean and adapts to the reader's language selection. Never spell out both variants manually in prose.
+When shared prose needs to reference a language-specific identifier (method
+name, parameter, class, etc.), use
+`<Syntax py="..." ts="..." rs="..." />`. This keeps prose clean and adapts
+to the reader's language selection. Never spell out the variants manually.
+
+Keep the same conceptual headings and paragraph positions across language tabs.
+Put language-specific setup, defaults, and caveats in the selected tab. Never
+compare SDK implementations in prose shown to readers of another SDK.
 
 **TypeScript code is never inlined in MDX.** All TypeScript examples live in runnable `.ts` snippet files alongside the page and are included via `--8<--` directives. Two files per page:
 
@@ -67,6 +74,16 @@ In the MDX, each TypeScript code fence contains two `--8<--` includes (imports +
 Read `../../references/mdx-authoring.md` ("Snippet Inclusion" and "TypeScript Snippet Scoping") for the full specification. Look at any existing page with TypeScript tabs in the same directory for the concrete file layout.
 
 Python code may be inlined directly in the MDX since Python files in the docs tree don't go through a type-checker.
+
+Rust examples live in sibling `.rs` files and use named `--8<--` regions.
+Include every `use` declaration required by the rendered block inside that
+region. A sequence may build on helpers shown earlier on the page, and a hidden
+wrapper may provide only async or fallible compilation context. Do not depend
+on setup hidden from the reader. Compile the complete sibling source file with
+the exact direct dependencies and Cargo features documented in the page's Rust
+tab. The site-owned snippet crate has a dependency superset, so its passing
+check does not replace a scratch-crate check with only the documented
+dependencies.
 
 ### Step 4: Constrain
 
@@ -81,9 +98,15 @@ Then self-check against hard constraints:
 - Terminology matches the lock file
 - Code examples are contextually complete (imports present, runnable)
 - Code examples use proper backtick formatting
-- All prose outside a `<Tab>` is language-neutral. No Python or TypeScript parameter names, no language-specific syntax (e.g. `preserve_context=False` or `preserveContext: false`). Describe the concept in plain English; the code inside each tab shows the language-specific spelling.
+- All prose outside a `<Tab>` is language-neutral. No Python, TypeScript, or Rust parameter names or language-specific syntax. Describe the concept in plain English; the selected tab shows the language-specific spelling.
 - Headings describe the concept, never the API. No parameter names or syntax in headings.
 - Never name the language inside its own tab. The reader selected the tab; they already know.
+- Never silently change the reader's selected language. If a feature is
+  unavailable or the page is not documented yet, keep the selection and show a
+  concise state-specific explanation.
+- Preserve accurate existing content for every language. Adding a language does
+  not justify unrelated description changes, deleted API links, shortened
+  tables, or reworded model-visible prompts and tool descriptions.
 
 ### Step 4b: Verify code accuracy
 
@@ -110,7 +133,12 @@ description: "[140-160 char description for SEO]"
 ---
 ```
 
-Add optional fields (`languages`, `community`, `experimental`, `integrationType`, `category`, `redirectFrom`, `tags`, `sourceLinks`) only when applicable. Don't add fields the schema doesn't validate — Zod silently strips unknown keys at build time.
+Omit `languages` when the page covers Python, TypeScript, and Rust. Use an
+explicit subset for a documentation gap and `unsupportedLanguages` when the
+feature itself is unavailable. Add other optional fields (`community`,
+`experimental`, `integrationType`, `category`, `redirectFrom`, `tags`,
+`sourceLinks`) only when applicable. Don't add fields the schema doesn't
+validate — Zod silently strips unknown keys at build time.
 
 ### Step 7: Run docs-reviewer
 

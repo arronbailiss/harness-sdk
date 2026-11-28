@@ -2,7 +2,7 @@
 title: Agent-to-Agent (A2A) Protocol
 description: 'Connect Strands agents across platforms with the Agent-to-Agent (A2A) protocol. Serve agents over A2A and call remote agents from your own.'
 sidebar:
-  label: "Agent2Agent (A2A)"
+  label: 'Agent2Agent (A2A)'
 unsupportedLanguages: Rust
 tags: [multi-agent]
 sourceLinks:
@@ -105,13 +105,13 @@ The `A2AAgent` returns an `AgentResult`, the same type a local `Agent` returns, 
 
 The `A2AAgent` constructor accepts these parameters.
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `endpoint` | `str` | Required | Base URL of the remote A2A agent |
-| `name` | `str` | None | Agent name (auto-populated from agent card if not provided) |
-| `description` | `str` | None | Agent description (auto-populated from agent card if not provided) |
-| `timeout` | `int` | 300 | Timeout for HTTP operations in seconds |
-| `client_config` | `ClientConfig` | None | A2A client config for authenticated transport (SigV4, OAuth, bearer tokens); its `httpx_client` handles both card discovery and message sending |
+| Parameter       | Type           | Default  | Description                                                                                                                                     |
+| --------------- | -------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `endpoint`      | `str`          | Required | Base URL of the remote A2A agent                                                                                                                |
+| `name`          | `str`          | None     | Agent name (auto-populated from agent card if not provided)                                                                                     |
+| `description`   | `str`          | None     | Agent description (auto-populated from agent card if not provided)                                                                              |
+| `timeout`       | `int`          | 300      | Timeout for HTTP operations in seconds                                                                                                          |
+| `client_config` | `ClientConfig` | None     | A2A client config for authenticated transport (SigV4, OAuth, bearer tokens); its `httpx_client` handles both card discovery and message sending |
 
 To reach an authenticated endpoint, pass a `ClientConfig` with a configured `httpx_client`. The `a2a_client_factory` parameter is deprecated; use `client_config` instead.
 
@@ -120,14 +120,14 @@ To reach an authenticated endpoint, pass a `ClientConfig` with a configured `htt
 
 The `A2AAgent` constructor accepts a config object with these properties.
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `url` | `string` | Required | Base URL of the remote A2A agent |
-| `agentCardPath` | `string` | `/.well-known/agent-card.json` | Path to the agent card endpoint |
-| `id` | `string` | The `url` value | Unique identifier for the agent instance |
-| `name` | `string` | From agent card | Agent name (auto-populated from agent card if not provided) |
-| `description` | `string` | From agent card | Agent description (auto-populated from agent card if not provided) |
-| `clientFactory` | `ClientFactory` | None | Custom A2A client factory for authenticating requests (SigV4, bearer token) |
+| Property        | Type            | Default                        | Description                                                                 |
+| --------------- | --------------- | ------------------------------ | --------------------------------------------------------------------------- |
+| `url`           | `string`        | Required                       | Base URL of the remote A2A agent                                            |
+| `agentCardPath` | `string`        | `/.well-known/agent-card.json` | Path to the agent card endpoint                                             |
+| `id`            | `string`        | The `url` value                | Unique identifier for the agent instance                                    |
+| `name`          | `string`        | From agent card                | Agent name (auto-populated from agent card if not provided)                 |
+| `description`   | `string`        | From agent card                | Agent description (auto-populated from agent card if not provided)          |
+| `clientFactory` | `ClientFactory` | None                           | Custom A2A client factory for authenticating requests (SigV4, bearer token) |
 
 The agent card is fetched lazily on the first `invoke()` or `stream()` call.
 
@@ -156,7 +156,7 @@ asyncio.run(main())
 </Tab>
 <Tab label="TypeScript">
 
-In TypeScript, `invoke` is always async:
+`invoke` is always async:
 
 ```typescript
 import { A2AAgent } from '@strands-agents/sdk/a2a'
@@ -400,7 +400,7 @@ Each interrupt has a server-generated id, and an answer is bound to the id of th
       {
         "interruptId": "v1:tool_call:tu-1:a71adb48-e65d-55fa-b155-0359c9cd3b66",
         "name": "approve_campaign",
-        "reason": {"name": "spring-launch"}
+        "reason": { "name": "spring-launch" }
       }
     ]
   }
@@ -415,7 +415,7 @@ To answer, send a new message on the same `taskId` containing a `DataPart` that 
   "data": {
     "interruptResponse": {
       "interruptId": "v1:tool_call:tu-1:a71adb48-e65d-55fa-b155-0359c9cd3b66",
-      "response": {"approved": true}
+      "response": { "approved": true }
     }
   }
 }
@@ -459,7 +459,6 @@ A `DataPart` without an `interruptResponse` key is unaffected and continues to r
 ### Server Configuration and Deployment
 
 The `A2AServer` (Python) and `A2AExpressServer` (TypeScript) expose the full set of constructor options, custom task stores and request-handler components, and path-based mounting for load-balanced deployments. See [A2A Server Configuration](a2a-server-configuration.md) for the complete reference.
-
 
 ## Troubleshooting
 

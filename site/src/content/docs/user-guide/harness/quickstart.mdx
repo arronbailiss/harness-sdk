@@ -1,9 +1,6 @@
 ---
 title: Strands harness quickstart
-description: >-
-  Start a Strands harness agent with the CLI or SDK, then configure Python,
-  TypeScript, or Rust with your model provider, tools, memory, and sessions.
-languages: [Python, TypeScript, Rust]
+description: "Get a Strands harness agent running fast: build one in your terminal with the CLI, or install the library and write a few lines."
 sourceLinks:
   - path: harness-py/src/strands_harness/agent.py
   - path: harness-ts/src/agent.ts
@@ -14,22 +11,22 @@ sidebar:
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components'
 
-Strands harness is a fully assembled agent harness. You can get started in a few
-different ways:
+Strands harness is a state-of-the-art, fully assembled agent harness. You can get
+started in a few different ways:
 
 - **[Set up with your coding agent](#set-up-with-your-coding-agent)**: paste a prompt into
   Codex, Claude Code, or Kiro and let it guide you through the setup.
 - **[Build an agent with the CLI](#build-an-agent-with-the-cli)**: connect a model provider in
-  the terminal and start chatting, then export to Python or TypeScript when you're ready.
-- **[Use it as a library](#use-it-as-a-library)**: install the Python, TypeScript, or
-  Rust package and write a few lines yourself.
+  the terminal and start chatting, then export to code when you're ready.
+- **[Use it as a library](#use-it-as-a-library)**: install the package and write a few
+  lines yourself.
 
 Building with another Strands project? Each one has its own starting point.
 
 <CardGrid>
 <LinkCard
   title="Strands Harness SDK quickstart"
-  description="Build an agent harness from the ground up in Python, TypeScript, or Rust."
+  description="Build an agent harness from the ground up."
   href="../../sdk/quickstart/overview/"
 />
 <LinkCard
@@ -99,11 +96,22 @@ strands --model anthropic/claude-sonnet-5      # use a different model for this 
 
 ### Export it to code
 
-When you're ready to embed the agent in an application, run `/export` in a chat. The
-command writes a Python or TypeScript project with your choices passed to the
-harness factory. The project exports a ready-to-import `agent`, so the CLI is a
-fast on-ramp to those libraries. Rust projects currently start from the library
-example below.
+When you're ready to embed the agent in an application, run `/export` in a chat.
+
+<Tabs>
+  <Tab label="Python">
+    The command writes a project with your choices passed to `create_harness(...)`.
+    The project exports a ready-to-import `agent`.
+  </Tab>
+  <Tab label="TypeScript">
+    The command writes a project with your choices passed to `createHarness(...)`.
+    The project exports a ready-to-import `agent`.
+  </Tab>
+  <Tab label="Rust">
+    The command does not export this project type yet. Start from the library example
+    below.
+  </Tab>
+</Tabs>
 
 ## Use it as a library
 
@@ -156,9 +164,7 @@ Strands harness runs on the model of your choice. Amazon Bedrock is the default;
   py='model="provider/name"'
   ts="model: 'provider/name'"
   rs='.model("provider/name")'
-/> to pick another. The Rust developer preview supports Amazon Bedrock, Anthropic,
-OpenAI, and Amazon Bedrock Mantle. See [choose a model](../configure/model/) for
-provider setup and Rust Cargo features.
+/> to pick another. See [choose a model](../configure/model/) for provider setup.
 
 Even a one-line call has a shell, file tools, and web access working out of the box.
 Strands harness can search the web, compare what it finds, and save the results to a file.
@@ -284,7 +290,7 @@ Strands harness can search the web, compare what it finds, and save the results 
         ```
       </Tab>
       <Tab label="Rust">
-        This provider is not available in the developer preview.
+        This provider is not available.
       </Tab>
     </Tabs>
   </Tab>
@@ -314,7 +320,7 @@ Strands harness can search the web, compare what it finds, and save the results 
         ```
       </Tab>
       <Tab label="Rust">
-        This provider is not available in the developer preview.
+        This provider is not available.
       </Tab>
     </Tabs>
   </Tab>

@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 // --8<-- [start:basic_tool]
-#[strands::tool(description = "Get a weather forecast for a city.")]
+#[strands::tool(description = "Get weather forecast for a city.")]
 async fn weather_forecast(
     city: String,
     days: Option<u32>,
@@ -16,7 +16,7 @@ async fn weather_forecast(
 // --8<-- [start:override_tool]
 #[strands::tool(
     name = "get_weather",
-    description = "Retrieve a weather forecast for a location."
+    description = "Retrieves weather forecast for a specified location"
 )]
 async fn forecast(city: String) -> String {
     format!("Sunny in {city}")
@@ -184,8 +184,32 @@ fn database_agent() -> strands::Result<strands::Agent> {
 // --8<-- [end:class_tools]
 
 // --8<-- [start:effective_description]
-#[strands::tool(description = "Search the product catalog by keywords. \
-Return at most max_results matching product records.")]
+#[strands::tool(description = "Search the product database for items matching the query string.\n\
+\n\
+Use this tool when you need to find detailed product information based on keywords,\n\
+product names, or categories. The search is case-insensitive and supports fuzzy\n\
+matching to handle typos and variations in search terms.\n\
+\n\
+This tool connects to the enterprise product catalog database and performs a semantic\n\
+search across all product fields, providing comprehensive results with all available\n\
+product metadata.\n\
+\n\
+Example response:\n\
+[\n\
+  {\n\
+    \"id\": \"P12345\",\n\
+    \"name\": \"Ultra Comfort Running Shoes\",\n\
+    \"description\": \"Lightweight running shoes with...\",\n\
+    \"price\": 89.99,\n\
+    \"category\": [\"Footwear\", \"Athletic\", \"Running\"]\n\
+  }\n\
+]\n\
+\n\
+Notes:\n\
+- This tool only searches the product catalog and does not provide inventory or availability information\n\
+- Results are cached for 15 minutes to improve performance\n\
+- The search index updates every 6 hours, so very recent products may not appear\n\
+- For real-time inventory status, use a separate inventory check tool")]
 async fn search_database(query: String, max_results: Option<u32>) -> serde_json::Value {
     serde_json::json!({
         "query": query,

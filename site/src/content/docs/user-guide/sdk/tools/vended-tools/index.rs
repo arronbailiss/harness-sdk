@@ -32,7 +32,9 @@ mod multi_agent {
 
     fn agent() -> strands::Result<Agent> {
         let researcher = Preset::builder()
-            .instructions("Research topics and cite sources.")
+            .instructions(
+                "You research topics on the web and cite your sources.",
+            )
             .description("web research")
             .build();
         let delegate = make_subagent(

@@ -3,7 +3,7 @@
 This document provides guidance for AI agents working on the Strands Agents documentation site (the `site/` directory). For human contributor guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Purpose and Scope
-This directory contains the documentation site for Strands Agents, providing guides for the Python and TypeScript SDKs and verified developer-preview coverage for the Rust SDK.
+This directory contains the documentation site for Strands Agents, providing guides for the Python, TypeScript, and Rust SDKs.
 
 **AGENTS.md** contains agent-specific repository information including:
 - Directory structure with summaries of what is included in each directory

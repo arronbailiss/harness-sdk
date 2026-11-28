@@ -78,8 +78,10 @@ const example = "This code will be included"
 
 Rust `.rs` files use the same `// --8<--` region markers and live beside the
 page that includes them. The site-owned `rust-snippets` Cargo crate discovers
-and compiles them. TypeScript and Rust snippets are checked by
-`npm run typecheck:snippets`.
+and compiles them. Its dependency set is intentionally a superset for aggregate
+checking, so each page must still document the direct crates and optional
+features its rendered Rust regions use. TypeScript and Rust snippets are checked
+by `npm run typecheck:snippets`.
 
 ### 5. Relative Link Resolution (`src/util/links.ts`, `src/components/PageLink.astro`)
 
@@ -348,16 +350,34 @@ keeps the provenance without the caution.
 
 ### `languages`
 
-Declares the SDK languages whose content has been verified on a page. Omission means the site's default Python and TypeScript coverage. Rust is opt-in during developer preview.
+Declares an explicit subset of SDK languages documented on a page. Omission
+means the page covers Python, TypeScript, and Rust.
 
 ```yaml
 ---
 title: My Feature
-languages: [Python, TypeScript, Rust]
+languages: [Python, TypeScript]
 ---
 ```
 
-Pages that support only a subset use a single value or shorter list and render a language-support aside. A page that explicitly lists all three SDKs does not render the aside.
+Use this field for a documentation gap, not for an unavailable feature. The
+site preserves the reader's selected language and shows the gap only when that
+language is selected.
+
+### `unsupportedLanguages`
+
+Declares SDKs that do not implement the documented feature.
+
+```yaml
+---
+title: My Feature
+unsupportedLanguages: Rust
+---
+```
+
+An omitted `languages` field still covers every default language except those
+listed in `unsupportedLanguages`. The site preserves the reader's selected
+language and shows the unavailable state only for that language.
 
 ### `community`
 
@@ -459,7 +479,7 @@ Pass <Syntax py="context_manager" ts="contextManager" rs="context_manager" /> to
 Props:
 - `py` (required): Python syntax variant
 - `ts` (required): TypeScript syntax variant
-- `rs` (optional): Rust syntax variant; required on pages whose `languages` includes Rust
+- `rs` (optional): Rust syntax variant; include it on shared three-language pages
 - `plain` (default: `false`): Renders as plain text instead of `<code>`.
 
 The component reads the same `localStorage` key as the language toggle and swaps live without page reload.

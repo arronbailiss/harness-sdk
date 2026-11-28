@@ -22,7 +22,10 @@ mod custom_tool {
     // --8<-- [start:custom_tool]
     use strands::{Agent, ToolError, tool};
 
-    #[tool(description = "Count occurrences of a letter in a word.")]
+    #[tool(
+        description = "Count occurrences of a specific letter in a word. \
+                       Performs case-insensitive matching."
+    )]
     async fn letter_counter(word: String, letter: char) -> Result<usize, ToolError> {
         Ok(word
             .chars()

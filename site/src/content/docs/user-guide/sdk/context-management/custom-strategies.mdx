@@ -1,8 +1,7 @@
 ---
 title: Custom Strategies
-description: "Build custom context management strategies with the Offload builder API, conditions, targets, and storage of offloaded content."
+description: 'Build custom context management strategies with the Offload builder API, conditions, targets, and storage of offloaded content.'
 tags: [conversation-management, token-management]
-languages: [Python, TypeScript, Rust]
 sourceLinks:
   - path: strands-py/src/strands/_context_manager/strategies/offload/base.py
   - path: strands-py/src/strands/_context_manager/strategies/offload/truncate.py
@@ -20,11 +19,24 @@ sourceLinks:
 addedDate: 2026-09-14
 ---
 
-:::caution[Experimental in Python]
-In Python, the `ContextManager` strategy API is still exported from
-`strands.experimental.context_manager` and may change in future versions. The
-TypeScript API is stable.
-:::
+<Tabs>
+<Tab label="Python">
+
+The `ContextManager` strategy API is exported from
+`strands.experimental.context_manager` and may change in future versions.
+
+</Tab>
+<Tab label="TypeScript">
+
+The `ContextManager` strategy API is stable.
+
+</Tab>
+<Tab label="Rust">
+
+Context management types are available from `strands::context_manager`.
+
+</Tab>
+</Tabs>
 
 When the [built-in modes](./built-in-modes) don't fit, build a custom strategy pipeline. Define which content to reduce, how to reduce it, and when each strategy fires.
 
@@ -55,6 +67,7 @@ agent = Agent(
     },
 )
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -63,17 +76,20 @@ agent = Agent(
 
 --8<-- "user-guide/sdk/context-management/custom-strategies.ts:basic_config"
 ```
+
 </Tab>
 <Tab label="Rust">
 
 ```rust
 --8<-- "user-guide/sdk/context-management/custom-strategies.rs:basic_config"
 ```
+
 </Tab>
 </Tabs>
 
 :::note
 Each SDK accepts a config object with a
+
 <Syntax py="strategies" ts="strategies" rs="strategies" /> key. The SDK
 constructs the `ContextManager` internally.
 :::
@@ -82,6 +98,7 @@ constructs the `ContextManager` internally.
 
 The `Offload` namespace exposes three methods. Each returns a strategy builder
 that can be chained with
+
 <Syntax py=".when()" ts=".when()" rs=".when()" /> to add conditions.
 
 ### Truncate
@@ -101,6 +118,7 @@ Offload.truncate(
     {"preview_tokens": 750},
 ).when(threshold=1500)
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -109,12 +127,14 @@ Offload.truncate(
 
 --8<-- "user-guide/sdk/context-management/custom-strategies.ts:truncate"
 ```
+
 </Tab>
 <Tab label="Rust">
 
 ```rust
 --8<-- "user-guide/sdk/context-management/custom-strategies.rs:truncate"
 ```
+
 </Tab>
 </Tabs>
 
@@ -123,31 +143,32 @@ Offload.truncate(
 <Tabs>
 <Tab label="Python">
 
-| Parameter | Key | Default |
-|-----------|-----|---------|
-| Preview size | `preview_tokens` | 1,000 |
-| Preview mode | `preview` | `"head_tail"` |
+| Parameter    | Key              | Default       |
+| ------------ | ---------------- | ------------- |
+| Preview size | `preview_tokens` | 1,000         |
+| Preview mode | `preview`        | `"head_tail"` |
 
 </Tab>
 <Tab label="TypeScript">
 
-| Parameter | Key | Default |
-|-----------|-----|---------|
-| Preview size | `previewTokens` | 1,000 |
-| Preview mode | `preview` | `"headTail"` |
+| Parameter    | Key             | Default      |
+| ------------ | --------------- | ------------ |
+| Preview size | `previewTokens` | 1,000        |
+| Preview mode | `preview`       | `"headTail"` |
 
 </Tab>
 <Tab label="Rust">
 
-| Parameter | Key | Default |
-|-----------|-----|---------|
-| Preview size | `preview_tokens` | 1,000 |
-| Preview mode | `preview` | `PreviewMode::HeadTail` |
+| Parameter    | Key              | Default                 |
+| ------------ | ---------------- | ----------------------- |
+| Preview size | `preview_tokens` | 1,000                   |
+| Preview mode | `preview`        | `PreviewMode::HeadTail` |
 
 </Tab>
 </Tabs>
 
 Preview modes: `"head"`, `"tail"`,
+
 <Syntax py='"head_tail"' ts='"headTail"' rs="PreviewMode::HeadTail" />.
 
 ### Summarize
@@ -169,6 +190,7 @@ Offload.summarize("*").when(
     preserve_recent=4,
 )
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -177,12 +199,14 @@ Offload.summarize("*").when(
 
 --8<-- "user-guide/sdk/context-management/custom-strategies.ts:summarize"
 ```
+
 </Tab>
 <Tab label="Rust">
 
 ```rust
 --8<-- "user-guide/sdk/context-management/custom-strategies.rs:summarize"
 ```
+
 </Tab>
 </Tabs>
 
@@ -191,30 +215,30 @@ Offload.summarize("*").when(
 <Tabs>
 <Tab label="Python">
 
-| Parameter | Key | Default |
-|-----------|-----|---------|
-| Model | `model` | `agent.model` |
-| Summarization instructions | `system_prompt` | Built-in |
+| Parameter                  | Key             | Default       |
+| -------------------------- | --------------- | ------------- |
+| Model                      | `model`         | `agent.model` |
+| Summarization instructions | `system_prompt` | Built-in      |
 
 A batched summary resends the conversation with the agent's system prompt and tools, followed by the summarization instructions. When it runs on the agent's model, it can reuse the agent's prompt cache. If the summary leaves out messages it keeps, such as a pinned message or one under the `threshold`, it sends only the first message and the messages it replaces. Custom instructions replace the default guidance, but the client-side request always tells the model not to act on the conversation or call tools.
 
 </Tab>
 <Tab label="TypeScript">
 
-| Parameter | Key | Default |
-|-----------|-----|---------|
-| Model | `model` | `agent.model` |
-| Summarization instructions | `systemPrompt` | Built-in |
+| Parameter                  | Key            | Default       |
+| -------------------------- | -------------- | ------------- |
+| Model                      | `model`        | `agent.model` |
+| Summarization instructions | `systemPrompt` | Built-in      |
 
 A batched summary resends the conversation with the agent's system prompt and tools, followed by the summarization instructions. When it runs on the agent's model, it can reuse the agent's prompt cache. If the summary leaves out messages it keeps, such as a pinned message or one under the `threshold`, it sends only the first message and the messages it replaces. Custom instructions replace the default guidance, but the client-side request always tells the model not to act on the conversation or call tools.
 
 </Tab>
 <Tab label="Rust">
 
-| Parameter | Key | Default |
-|-----------|-----|---------|
-| Model | `model` | `agent.model()` |
-| Summarization instructions | `system_prompt` | Built-in |
+| Parameter                  | Key             | Default         |
+| -------------------------- | --------------- | --------------- |
+| Model                      | `model`         | `agent.model()` |
+| Summarization instructions | `system_prompt` | Built-in        |
 
 A batched summary resends the conversation with the agent's system prompt and
 tools, followed by the summarization instructions. When it runs on the agent's
@@ -228,6 +252,7 @@ on the conversation or call tools.
 ### Drop
 
 Removes matching content entirely. No preview, no
+
 <Syntax py="stash" ts="archive" rs="archive" /> entry.
 
 <Tabs>
@@ -238,6 +263,7 @@ from strands.experimental.context_manager import Offload
 
 Offload.drop("tool_results").when(preserve_recent=5)
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -246,12 +272,14 @@ Offload.drop("tool_results").when(preserve_recent=5)
 
 --8<-- "user-guide/sdk/context-management/custom-strategies.ts:drop"
 ```
+
 </Tab>
 <Tab label="Rust">
 
 ```rust
 --8<-- "user-guide/sdk/context-management/custom-strategies.rs:drop"
 ```
+
 </Tab>
 </Tabs>
 
@@ -260,20 +288,20 @@ Offload.drop("tool_results").when(preserve_recent=5)
 Chain <Syntax py=".when()" ts=".when()" rs=".when()" /> to control when a
 strategy fires.
 
-| Condition | Behavior |
-|-----------|----------|
-| Threshold | Minimum size to act on |
-| Utilization | Context usage that triggers it |
-| Preserve recent | Newest matches to skip |
+| Condition       | Behavior                       |
+| --------------- | ------------------------------ |
+| Threshold       | Minimum size to act on         |
+| Utilization     | Context usage that triggers it |
+| Preserve recent | Newest matches to skip         |
 
 The condition keys are
+
 <Syntax py="threshold" ts="blockThreshold" rs="block_threshold" />,
-<Syntax py="utilization" ts="contextUtilization"
-rs="context_utilization" />, and
+<Syntax py="utilization" ts="contextUtilization" rs="context_utilization" />, and
 <Syntax py="preserve_recent" ts="preserveRecent" rs="preserve_recent" />.
 
-Granularity — whether a strategy acts on whole messages or on individual
-blocks — is decided differently in each SDK.
+The selected implementation determines whether a strategy acts on whole
+messages or individual blocks.
 
 <Tabs>
 <Tab label="Python">
@@ -324,6 +352,7 @@ from strands.experimental.context_manager import Offload
 
 Offload.truncate("tool_results").when(threshold=2000)
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -332,12 +361,14 @@ Offload.truncate("tool_results").when(threshold=2000)
 
 --8<-- "user-guide/sdk/context-management/custom-strategies.ts:conditions_threshold"
 ```
+
 </Tab>
 <Tab label="Rust">
 
 ```rust
 --8<-- "user-guide/sdk/context-management/custom-strategies.rs:conditions_threshold"
 ```
+
 </Tab>
 </Tabs>
 
@@ -356,6 +387,7 @@ Offload.summarize("*").when(
     preserve_recent=4,
 )
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -364,12 +396,14 @@ Offload.summarize("*").when(
 
 --8<-- "user-guide/sdk/context-management/custom-strategies.ts:conditions_utilization"
 ```
+
 </Tab>
 <Tab label="Rust">
 
 ```rust
 --8<-- "user-guide/sdk/context-management/custom-strategies.rs:conditions_utilization"
 ```
+
 </Tab>
 </Tabs>
 
@@ -388,6 +422,7 @@ Offload.truncate("tool_results").when(
     utilization=0.9,
 )
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -396,12 +431,14 @@ Offload.truncate("tool_results").when(
 
 --8<-- "user-guide/sdk/context-management/custom-strategies.ts:conditions_both"
 ```
+
 </Tab>
 <Tab label="Rust">
 
 ```rust
 --8<-- "user-guide/sdk/context-management/custom-strategies.rs:conditions_both"
 ```
+
 </Tab>
 </Tabs>
 
@@ -412,46 +449,46 @@ Targets specify which content a strategy applies to.
 <Tabs>
 <Tab label="Python">
 
-| Target | Value |
-|--------|-------|
-| All content | `"*"` |
-| Tool results | `"tool_results"` |
-| Failed tool results | `"tool_result_errors"` |
-| Assistant text | `"assistant_text"` |
-| User text | `"user_text"` |
-| Specific tools | `["tool::bash", "tool::read_file"]` |
-| Exclude tools | `["!tool::bash"]` |
+| Target              | Value                               |
+| ------------------- | ----------------------------------- |
+| All content         | `"*"`                               |
+| Tool results        | `"tool_results"`                    |
+| Failed tool results | `"tool_result_errors"`              |
+| Assistant text      | `"assistant_text"`                  |
+| User text           | `"user_text"`                       |
+| Specific tools      | `["tool::bash", "tool::read_file"]` |
+| Exclude tools       | `["!tool::bash"]`                   |
 
 </Tab>
 <Tab label="TypeScript">
 
-| Target | Value |
-|--------|-------|
-| All content | `"*"` |
-| Tool results | `"toolResults"` |
-| Failed tool results | `"toolResultErrors"` |
-| Assistant text | `"assistantText"` |
-| User text | `"userText"` |
-| Specific tools | `["tool::bash", "tool::readFile"]` |
-| Exclude tools | `["!tool::bash"]` |
+| Target              | Value                              |
+| ------------------- | ---------------------------------- |
+| All content         | `"*"`                              |
+| Tool results        | `"toolResults"`                    |
+| Failed tool results | `"toolResultErrors"`               |
+| Assistant text      | `"assistantText"`                  |
+| User text           | `"userText"`                       |
+| Specific tools      | `["tool::bash", "tool::readFile"]` |
+| Exclude tools       | `["!tool::bash"]`                  |
 
 </Tab>
 <Tab label="Rust">
 
-| Target | Value |
-|--------|-------|
-| All content | `OffloadTarget::All` |
-| Tool results | `OffloadTarget::ToolResults` |
-| Failed tool results | `OffloadTarget::ToolResultErrors` |
-| Assistant text | `OffloadTarget::AssistantText` |
-| User text | `OffloadTarget::UserText` |
-| Specific tools | `OffloadTarget::tools(["bash", "read_file"])` |
-| Exclude tools | `OffloadTarget::tools(["!bash"])` |
+| Target              | Value                                         |
+| ------------------- | --------------------------------------------- |
+| All content         | `OffloadTarget::All`                          |
+| Tool results        | `OffloadTarget::ToolResults`                  |
+| Failed tool results | `OffloadTarget::ToolResultErrors`             |
+| Assistant text      | `OffloadTarget::AssistantText`                |
+| User text           | `OffloadTarget::UserText`                     |
+| Specific tools      | `OffloadTarget::tools(["bash", "read_file"])` |
+| Exclude tools       | `OffloadTarget::tools(["!bash"])`             |
 
 </Tab>
 </Tabs>
 
-Tool name lists use the `tool::` prefix. Prefix a name with `!` to exclude it (apply to all tools *except* the listed ones).
+Tool name lists use the `tool::` prefix. Prefix a name with `!` to exclude it (apply to all tools _except_ the listed ones).
 
 ## Storing originals
 
@@ -469,6 +506,7 @@ the SDK.
 
 The <Syntax py="stash" ts="archive" rs="archive" /> uses in-memory storage by
 default. Configure it through the
+
 <Syntax py="stash" ts="archive" rs="archive" /> key:
 
 - Omit or pass `true` for defaults (in-memory storage)
@@ -489,6 +527,7 @@ agent = Agent(
     },
 )
 ```
+
 </Tab>
 <Tab label="TypeScript">
 
@@ -497,12 +536,14 @@ agent = Agent(
 
 --8<-- "user-guide/sdk/context-management/custom-strategies.ts:archive_disabled"
 ```
+
 </Tab>
 <Tab label="Rust">
 
 ```rust
 --8<-- "user-guide/sdk/context-management/custom-strategies.rs:archive_disabled"
 ```
+
 </Tab>
 </Tabs>
 
@@ -524,14 +565,23 @@ Whether a strategy keeps thinking valid depends on its granularity:
   rs="server_side_summary" />, a message-level summary goes through the model
   provider's summarization API instead of a client-side summarization request.
   The provider returns the summary as a single block that stands in for the
-  start of the conversation, so the thinking after it stays valid.
+  start of the conversation, so the thinking after it stays valid. The
+  [Anthropic model provider](../model-providers/anthropic#server-side-summarization)
+  supports server-side summarization. The
+  [Amazon Bedrock model provider](../model-providers/amazon-bedrock)
+  (`BedrockModel`) does not, so its message-level summaries are always
+  client-side.
 - **Eager per-block strategies keep thinking.** A per-block strategy with only
   a <Syntax py="threshold" ts="blockThreshold" rs="block_threshold" /> acts on
-  each message as it is added, for any per-block [target](#targets).
+  each message as it is added, for any per-block [target](#targets). It rewrites
+  a tool result or user message before the model sees it, and an assistant
+  message before any later thinking exists, so no thinking block's prefix
+  changes.
 - **Other strategies drop thinking.** A per-block strategy with
-  <Syntax py="preserve_recent" ts="preserveRecent" rs="preserve_recent" />, or
-  a message-level truncate or drop strategy, rewrites older content that later
-  thinking blocks are bound to.
+  <Syntax py="preserve_recent" ts="preserveRecent" rs="preserve_recent" />, or a message-level truncate or drop
+  strategy, rewrites older content that later thinking blocks are bound to.
+  Claude skips those thinking blocks, and the prompt cache restarts at the
+  rewrite.
 - **Emergency truncation drops thinking.** It removes the oldest messages when the context still overflows, so the thinking after them goes stale.
 
 To keep thinking blocks on these models, summarize or truncate tool results eagerly and leave message-level summaries to models that support server-side summary. See [Server-side summarization](../model-providers/anthropic#server-side-summarization) for an example.

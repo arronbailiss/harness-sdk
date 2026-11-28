@@ -174,7 +174,9 @@ mod env_gating {
         let cedar = CedarAuthorization::new(CedarAuthorizationConfig {
             policies: r#"
                 permit(principal, action, resource) when {
-                    context.session.environment in ["dev", "staging"]
+                    ["dev", "staging"].contains(
+                        context.session.environment
+                    )
                 };
             "#
             .into(),

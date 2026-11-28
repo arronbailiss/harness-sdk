@@ -1,7 +1,6 @@
 ---
 title: Tool Executors
 description: 'Control whether Strands agents run tool calls concurrently or sequentially. Covers tool executors, event ordering, cancellation, and custom executors.'
-languages: [Python, TypeScript, Rust]
 sidebar:
   label: "Executors"
 tags: [tool-execution, event-loop]
@@ -150,6 +149,8 @@ through the agent's cancellation API.
 
 </Tab>
 <Tab label="TypeScript">
+
+Calling `agent.cancel()` flips `agent.cancelSignal`.
 
 - **Pre-launch cancel**: set `BeforeToolsEvent.cancel` on the batch-level hook, or call `agent.cancel()` before tools start, to produce error results for every tool in the batch.
 - **Mid-flight cancel** in sequential mode short-circuits not-yet-started tools. In concurrent mode, all tools have already launched, so each in-flight tool must cooperatively observe `context.cancelSignal` to stop early. In either mode, a tool still waiting on its `BeforeToolCallEvent` hooks when the cancel lands is skipped with an error result.
