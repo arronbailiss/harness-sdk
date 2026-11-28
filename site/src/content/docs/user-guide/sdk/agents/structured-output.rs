@@ -24,11 +24,11 @@ mod triage {
     #[derive(Debug, Deserialize, JsonSchema)]
     /// Routing decision for one customer support message.
     struct TicketTriage {
-        /// The team that should handle the message.
+        /// The team that should handle the message
         category: Category,
-        /// High when the customer is blocked or losing money.
+        /// high when the customer is blocked or losing money
         priority: Priority,
-        /// One sentence describing the problem.
+        /// One sentence describing the problem
         summary: String,
     }
 

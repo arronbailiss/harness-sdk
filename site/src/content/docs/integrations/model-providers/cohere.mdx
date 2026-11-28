@@ -1,8 +1,9 @@
 ---
 title: Cohere
-description: 'Use Cohere language models with Strands agents through the OpenAI compatibility layer for chat, tool calling, and streaming.'
+description: >-
+  Use Cohere language models with Strands agents through the OpenAI compatibility
+  layer for chat, tool calling, and streaming.
 integrationType: model-provider
-languages: Python
 redirectFrom:
   - docs/user-guide/concepts/model-providers/cohere
 ---
@@ -19,22 +20,43 @@ Compatible endpoints can have quirks that deviate from the exact OpenAI API spec
 some features may behave differently than they do against OpenAI itself.
 :::
 
-Cohere's Compatibility API rejects the `stream_options` request field. The Python
-provider lets you unset it (shown below); the TypeScript provider always sends it,
-so it does not work with Cohere.
+Cohere's Compatibility API rejects the `stream_options` request field. Set it to a
+null value in the OpenAI provider's parameters so the SDK omits it from the request.
 
 ## Installation
 
 The OpenAI provider is an optional dependency. To install, run:
 
+<Tabs>
+<Tab label="Python">
+
 ```bash
 pip install 'strands-agents[openai]'
 ```
+</Tab>
+<Tab label="TypeScript">
+
+```bash
+npm install @strands-agents/sdk openai
+```
+</Tab>
+<Tab label="Rust">
+
+```bash
+cargo add strands --features openai
+cargo add serde_json
+cargo add tokio --features macros,rt-multi-thread
+```
+</Tab>
+</Tabs>
 
 ## Usage
 
 Create an [API key](https://dashboard.cohere.com) in the Cohere Dashboard, export
 it as `COHERE_API_KEY`, and point the provider at the Compatibility API:
+
+<Tabs>
+<Tab label="Python">
 
 ```python
 import os
@@ -56,6 +78,22 @@ agent = Agent(model=model)
 response = agent("Explain tool calling in one sentence.")
 print(response)
 ```
+</Tab>
+<Tab label="TypeScript">
+
+```typescript
+--8<-- "integrations/model-providers/cohere_imports.ts:usage_imports"
+
+--8<-- "integrations/model-providers/cohere.ts:usage"
+```
+</Tab>
+<Tab label="Rust">
+
+```rust
+--8<-- "integrations/model-providers/cohere.rs:usage"
+```
+</Tab>
+</Tabs>
 
 ## Configuration
 
@@ -65,9 +103,9 @@ Two client settings connect the provider to Cohere:
 * **Base URL**: `https://api.cohere.ai/compatibility/v1`
 
 Model IDs come from the [Cohere model catalog](https://docs.cohere.com/docs/models),
-for example `command-a-03-2025` or `command-r-plus`. Keep
-`params={"stream_options": None}` in every configuration. For other provider
-options, see the
+for example `command-a-plus-05-2026` or `command-a-03-2025`. Keep the
+`stream_options` override from the usage example in every configuration. For other
+provider options, see the
 [OpenAI provider](../../user-guide/sdk/model-providers/openai.mdx) guide.
 
 ## References

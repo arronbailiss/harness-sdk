@@ -96,16 +96,13 @@ describe('Rust documentation language coverage', () => {
 
   it('distinguishes unsupported features from undocumented Rust pages', () => {
     const unsupported = parse(
-      readFileSync(new URL('../dist/docs/user-guide/sdk/multi-agent/graph/index.html', import.meta.url), 'utf8')
+      readFileSync(new URL('../dist/docs/integrations/model-providers/vllm/index.html', import.meta.url), 'utf8')
     )
     const undocumented = parse(
       readFileSync(
         new URL('../dist/docs/user-guide/sdk/streaming/streaming-to-the-browser-guide/index.html', import.meta.url),
         'utf8'
       )
-    )
-    const documented = parse(
-      readFileSync(new URL('../dist/docs/integrations/model-providers/vllm/index.html', import.meta.url), 'utf8')
     )
 
     const unsupportedRust = unsupported.querySelector<HTMLButtonElement>('language-toggle [data-lang="Rust"]')
@@ -124,15 +121,15 @@ describe('Rust documentation language coverage', () => {
       '[data-language-support-for="rust"] aside[aria-label="Rust availability"]'
     )
     expect(unsupportedRustAside?.textContent).toContain('The Rust SDK does not implement this feature.')
-    expect(unsupportedRustAside?.textContent).toContain('Choose Python or TypeScript in the language selector')
+    expect(unsupportedRustAside?.textContent).toContain('Choose Python in the language selector')
 
-    const documentedSupportAsides = documented.querySelectorAll('[data-language-support-for] aside')
-    expect(documentedSupportAsides).toHaveLength(2)
-    expect(documentedSupportAsides.every((aside) => !aside.textContent.includes('verified'))).toBe(true)
-    expect(documented.querySelector('[data-language-support-for="typescript"]')?.textContent).toContain(
-      'This page does not have TypeScript documentation yet.'
+    const undocumentedSupportAsides = undocumented.querySelectorAll('[data-language-support-for] aside')
+    expect(undocumentedSupportAsides).toHaveLength(2)
+    expect(undocumentedSupportAsides.every((aside) => !aside.textContent.includes('verified'))).toBe(true)
+    expect(undocumented.querySelector('[data-language-support-for="python"]')?.textContent).toContain(
+      'This page does not have Python documentation yet.'
     )
-    expect(documented.querySelector('[data-language-support-for="rust"]')?.textContent).toContain(
+    expect(undocumented.querySelector('[data-language-support-for="rust"]')?.textContent).toContain(
       'This page does not have Rust documentation yet.'
     )
   })
@@ -140,7 +137,7 @@ describe('Rust documentation language coverage', () => {
   it('preserves an unavailable stored language on ordinary docs pages', () => {
     const fixtures = [
       {
-        pathname: '/docs/user-guide/sdk/multi-agent/graph/',
+        pathname: '/docs/integrations/model-providers/vllm/',
         availability: 'unsupported',
       },
       {

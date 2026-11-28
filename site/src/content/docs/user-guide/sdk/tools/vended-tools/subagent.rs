@@ -26,18 +26,27 @@ mod custom {
 
     fn agent() -> strands::Result<Agent> {
         let researcher = Preset::builder()
-            .instructions("Research topics thoroughly.")
+            .instructions("You research topics thoroughly.")
             .description("deep research on a topic")
+            .build();
+        let reviewer = Preset::builder()
+            .instructions("You review code for correctness and style.")
+            .description("code review")
             .build();
         let models = Choice::new([
             ChoiceOption::new("fast")
-                .with_value("global.anthropic.claude-sonnet-4-6"),
+                .with_value("global.anthropic.claude-sonnet-4-6")
+                .with_description("quick tasks"),
             ChoiceOption::new("deep")
-                .with_value("global.anthropic.claude-opus-4-6-v1"),
+                .with_value("global.anthropic.claude-opus-4-6-v1")
+                .with_description("hard problems"),
         ]);
         let delegate = make_subagent(
             MakeSubagentOptions::builder()
-                .presets([("researcher", researcher)])
+                .presets([
+                    ("researcher", researcher),
+                    ("reviewer", reviewer),
+                ])
                 .model(Axis::Choice(models))
                 .context(Axis::Choice(Choice::new([
                     "none",
