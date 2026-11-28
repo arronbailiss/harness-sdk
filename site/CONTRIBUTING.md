@@ -38,6 +38,8 @@ npm run build      # generates static site
   its rendered snippets; the site-owned snippet crate intentionally has a
   broader dependency set
 - Omit `languages` frontmatter when a page covers Python, TypeScript, and Rust. Use an explicit subset for a documentation gap and `unsupportedLanguages` when the feature is unavailable in an SDK.
+- Spot-check unavailable selections: the state message should replace the page
+  body and table of contents, never expose another SDK's examples.
 - Relative file links (e.g. `../tools/index.md`) resolve automatically: no need to use slugs
 - Link to API reference pages with the `@api` shorthand: `[@api/python/strands.agent.agent](#Class)`
 

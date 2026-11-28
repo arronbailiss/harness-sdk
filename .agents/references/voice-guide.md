@@ -332,7 +332,9 @@ documented for every SDK. Omitted `languages` means Python, TypeScript, and Rust
 Keep the reader's selected language stable. Opening a page must never silently
 switch the global language. When the selected SDK does not implement a feature
 or the page is not documented for it yet, show a concise explanation for that
-selected SDK. Do not display internal verification status to readers.
+selected SDK. That unavailable state replaces the page body: never leave
+another SDK's examples, setup, or table of contents visible beneath it. Do not
+display internal verification status to readers.
 
 **API parity is a goal, not a guarantee.** The SDKs may have different parameter names, import paths, feature flags, or API surfaces for the same concept. Never translate an example mechanically. Verify each language independently against its own SDK source and compile every Rust example with the documented Cargo features.
 

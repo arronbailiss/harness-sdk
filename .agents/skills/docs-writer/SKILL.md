@@ -103,7 +103,8 @@ Then self-check against hard constraints:
 - Never name the language inside its own tab. The reader selected the tab; they already know.
 - Never silently change the reader's selected language. If a feature is
   unavailable or the page is not documented yet, keep the selection and show a
-  concise state-specific explanation.
+  concise state-specific explanation. Do not expose another SDK's page body,
+  examples, setup, or table of contents beneath that state.
 - Preserve accurate existing content for every language. Adding a language does
   not justify unrelated description changes, deleted API links, shortened
   tables, or reworded model-visible prompts and tool descriptions.

@@ -269,12 +269,22 @@ const languageOptions = [
       });
     }
 
-    /** Full UI sync: toggle state + inline tabs. */
-    function syncAll(lang) {
+    function syncRootState(lang) {
       var effective = effectiveLanguage(lang);
       var slug = effective.toLowerCase();
+      var selectedOption = document.querySelector(
+        'language-toggle .lang-option[data-lang="' + effective + '"]'
+      );
+      var availability = selectedOption && selectedOption.dataset.languageAvailability;
       document.documentElement.dataset.sdkLanguage = slug;
       document.documentElement.dataset.langPref = slug;
+      document.documentElement.dataset.sdkLanguageAvailability = availability || 'available';
+      return effective;
+    }
+
+    /** Full UI sync: toggle state + inline tabs. */
+    function syncAll(lang) {
+      var effective = syncRootState(lang);
       updateToggle(effective);
       syncStarlightTabs(effective);
       window.dispatchEvent(new CustomEvent('lang-effective-change', { detail: effective }));
@@ -298,6 +308,7 @@ const languageOptions = [
     }
 
     var current = getPreference();
+    syncRootState(current);
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function () { applyLanguage(current, false, false); });
     } else {

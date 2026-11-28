@@ -196,6 +196,11 @@ page has not been documented for the language yet:
 
 ```yaml
 languages: [Python, TypeScript]
+```
+
+When the feature is unavailable in an SDK, classify that separately:
+
+```yaml
 unsupportedLanguages: Rust
 ```
 
@@ -203,7 +208,9 @@ The site must preserve the reader's global language selection on every page.
 For a language outside `languages`, show that documentation is not available
 yet. For a language in `unsupportedLanguages`, explain that the feature is not
 available. Render either message only when that language is selected. Never
-redirect to another language or tell readers that a page was "verified."
+redirect to another language or tell readers that a page was "verified." While
+the unavailable state is active, hide the page body and table of contents so
+the reader never sees another SDK's examples under their selected language.
 
 Keep the same heading and paragraph structure across language tabs. Put
 language-specific prose, setup, and caveats in the matching `<Tab>` rather than

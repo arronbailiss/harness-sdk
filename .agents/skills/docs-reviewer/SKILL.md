@@ -46,6 +46,8 @@ For pages with multi-language SDK content:
 - Flag navigation that silently changes the global language, unsupported-state
   messages shown to other languages, and reader-facing "verified
   documentation" status.
+- Flag unavailable-language states that leave another SDK's page body, code
+  examples, setup, or table of contents visible.
 - Compare the draft with its base version. Adding a language must not delete or
   rewrite accurate existing descriptions, defaults, API links, tables, prompts,
   or tool descriptions without a separate reason.

@@ -44,7 +44,9 @@ claim but never replace reading the implementation.
 2. Read the page and its frontmatter (`languages`, `unsupportedLanguages`,
    `experimental`, `sourceLinks`). No `languages` field means the page covers
    Python, TypeScript, and Rust.
-3. Resolve every `--8<-- "path:region"` include (paths relative to `site/src/content/docs/`), including its `_imports` sibling, and confirm each region has a matching `[start:]` / `[end:]` pair.
+3. For each unavailable language, confirm the rendered state hides the page
+   body and table of contents instead of exposing another SDK's examples.
+4. Resolve every `--8<-- "path:region"` include (paths relative to `site/src/content/docs/`), including its `_imports` sibling, and confirm each region has a matching `[start:]` / `[end:]` pair.
 
 ### Step 2: Build the claim inventory
 
@@ -52,7 +54,8 @@ Before verifying anything, list every checkable claim, numbered, with its line (
 
 - **Code blocks**, per language tab: imports, calls, argument names and values, attributes read, shown output, install commands and install comments (a `# pip install …` comment claims it installs everything the block needs), and comments that assert something.
 - **Prose, tables, callouts:** names, signatures, defaults, numbers, behavior and ordering, error types, which language or provider supports what (all values of every `<Syntax py="…" ts="…" rs="…" />`), env vars, flags, and links.
-- **Frontmatter:** each `sourceLinks` path, `languages`, `experimental`.
+- **Frontmatter:** each `sourceLinks` path, `languages`,
+  `unsupportedLanguages`, `experimental`.
 
 List motivation and opinion sentences as "not claims" so the inventory is visibly complete.
 
@@ -64,7 +67,7 @@ Find the code that decides each claim and record `file:line`.
 - **Check each language separately.** Shared prose must hold in every SDK the page covers.
 - **Check it's public** (see the table). An unexported symbol gets the `internal` tag even if the example works.
 - **Check lifecycle:** compare deprecation markers and experimental namespaces with the page's frontmatter and wording.
-- **Check it's released.** Find the commit that added the export (`git log -S '<symbol>' --oneline -- <index.ts or __init__.py>`), then the first release with it: `git tag --contains <commit> | grep -E '^<prefix>/v[0-9]' | sort -V | head -1`, where `<prefix>` is `python`, `typescript`, `harness-python`, `harness-typescript`, `harness-cli`, or `mcp`. Harnesses depend on the published SDK (ranges in `harness-py/pyproject.toml` and `harness-ts/package.json`), so SDK behavior a harness page relies on must be inside that range.
+- **Check it's released.** Find the commit that added the export (`git log -S '<symbol>' --oneline -- <index.ts, __init__.py, or lib.rs>`), then the first release with it: `git tag --contains <commit> | grep -E '^<prefix>/v[0-9]' | sort -V | head -1`, where `<prefix>` is `python`, `typescript`, `rust`, `harness-python`, `harness-typescript`, `harness-rust`, `harness-cli`, or `mcp`. If no matching `rust/v*` or `harness-rust/v*` tag contains a Rust API, classify it as `unreleased`. Harnesses depend on the published SDK (ranges in `harness-py/pyproject.toml`, `harness-ts/package.json`, and the Rust release workflow's `strands_version` input), so SDK behavior a harness page relies on must be inside that range.
 - **Check `sourceLinks`:** each path exists and implements what the page describes.
 - **Check model-visible parity:** prompts, tool names, tool descriptions, and
   policy strings match across SDK examples unless the page explains a

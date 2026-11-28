@@ -72,6 +72,8 @@ Specific checks:
 - Are language-specific identifiers in shared prose using the `<Syntax>` component rather than being spelled out manually with language labels?
 - Does the page preserve the reader's selected language, render unavailable
   states only for that language, and avoid reader-facing verification status?
+- When the selected language is unavailable, are the other SDKs' page body,
+  examples, and table of contents hidden?
 - Does each language see the same conceptual structure without prose comparing
   it to another SDK?
 

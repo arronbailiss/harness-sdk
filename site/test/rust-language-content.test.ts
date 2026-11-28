@@ -139,11 +139,17 @@ describe('Rust documentation language coverage', () => {
 
   it('preserves an unavailable stored language on ordinary docs pages', () => {
     const fixtures = [
-      '/docs/user-guide/sdk/multi-agent/graph/',
-      '/docs/user-guide/sdk/streaming/streaming-to-the-browser-guide/',
+      {
+        pathname: '/docs/user-guide/sdk/multi-agent/graph/',
+        availability: 'unsupported',
+      },
+      {
+        pathname: '/docs/user-guide/sdk/streaming/streaming-to-the-browser-guide/',
+        availability: 'undocumented',
+      },
     ]
 
-    for (const pathname of fixtures) {
+    for (const { pathname, availability } of fixtures) {
       const html = readFileSync(new URL(`../dist${pathname}index.html`, import.meta.url), 'utf8')
       const dom = new JSDOM(html, {
         runScripts: 'outside-only',
@@ -157,16 +163,33 @@ describe('Rust documentation language coverage', () => {
       expect(script, `${pathname}: language toggle script is missing`).toBeDefined()
       window.localStorage.setItem(LANGUAGE_STORAGE_KEY, 'Rust')
       window.eval(script!.textContent)
+
+      expect(window.document.documentElement.dataset.sdkLanguage).toBe('rust')
+      expect(window.document.documentElement.dataset.sdkLanguageAvailability).toBe(availability)
+
       window.document.dispatchEvent(new window.Event('DOMContentLoaded'))
 
       expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe('Rust')
       expect(window.document.documentElement.dataset.sdkLanguage).toBe('rust')
+      expect(window.document.documentElement.dataset.sdkLanguageAvailability).toBe(availability)
       expect(
         [...window.document.querySelectorAll<HTMLButtonElement>('language-toggle [data-lang="Rust"]')].every(
           (button) => button.disabled === false && button.getAttribute('aria-checked') === 'true'
         )
       ).toBe(true)
+      expect(window.document.querySelector('[data-language-page-content]')).not.toBeNull()
+      expect(
+        window.document.querySelector('[data-language-support-for="rust"]')?.closest('[data-language-page-content]')
+      ).toBeNull()
     }
+
+    const markdownContentSource = readFileSync(
+      new URL('../src/components/overrides/MarkdownContent.astro', import.meta.url),
+      'utf8'
+    )
+    expect(markdownContentSource).toContain("html[data-sdk-language-availability='unsupported']")
+    expect(markdownContentSource).toContain("html[data-sdk-language-availability='undocumented']")
+    expect(markdownContentSource).toContain('[data-language-page-content]')
   })
 
   it('preserves the stored language when opening a language-specific route', () => {

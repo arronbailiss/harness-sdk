@@ -33,6 +33,19 @@ const isIntegrationsPage =
       <LanguageSupportAside languages={languages} unsupportedLanguages={unsupportedLanguages} />
     )
   }
-  <slot />
-  <PageTags />
+  <div data-language-page-content>
+    <slot />
+    <PageTags />
+  </div>
 </div>
+
+<style is:global>
+  html[data-sdk-language-availability='unsupported'] [data-language-page-content],
+  html[data-sdk-language-availability='undocumented'] [data-language-page-content],
+  html[data-sdk-language-availability='unsupported'] starlight-toc,
+  html[data-sdk-language-availability='undocumented'] starlight-toc,
+  html[data-sdk-language-availability='unsupported'] mobile-starlight-toc,
+  html[data-sdk-language-availability='undocumented'] mobile-starlight-toc {
+    display: none;
+  }
+</style>

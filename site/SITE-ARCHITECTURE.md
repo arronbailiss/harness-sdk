@@ -362,7 +362,8 @@ languages: [Python, TypeScript]
 
 Use this field for a documentation gap, not for an unavailable feature. The
 site preserves the reader's selected language and shows the gap only when that
-language is selected.
+language is selected. The unavailable state replaces the page body and table
+of contents so another SDK's examples are never shown under that selection.
 
 ### `unsupportedLanguages`
 
@@ -377,7 +378,9 @@ unsupportedLanguages: Rust
 
 An omitted `languages` field still covers every default language except those
 listed in `unsupportedLanguages`. The site preserves the reader's selected
-language and shows the unavailable state only for that language.
+language and shows the unavailable state only for that language. The other
+SDKs' page body and table of contents remain hidden until the reader selects an
+available language.
 
 ### `community`
 
