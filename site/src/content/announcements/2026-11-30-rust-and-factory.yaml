@@ -1,0 +1,8 @@
+# Rust harness and SDK launch, plus the Strands Factory post; both launched on 2026-11-30.
+title: "The Strands harness and Harness SDK now support Rust, built with Strands Factory"
+links:
+  - title: "The Strands harness and Harness SDK now support Rust"
+    href: "/blog/strands-agents-rust-harness-sdk/"
+  - title: "Strands Factory, the software factory that built it"
+    href: "/blog/introducing-strands-factory/"
+date: 2026-11-30

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 316" width="720" height="316">
+  <!-- Type: Fan-out. Story: one orchestrator fans work out to subagents that are built the same way, each on the model tier the task needs. -->
+  <defs>
+    <marker id="arrow" viewBox="0 0 8 6" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+      <path class="dg-head" d="M0,0 L8,3 L0,6 Z"/>
+    </marker>
+  </defs>
+
+  <!-- Zones -->
+  <rect class="dg-zone" x="296" y="16" width="408" height="264" rx="8"/>
+  <text class="dg-eyebrow" x="312" y="36">SUBAGENTS, RUNNING IN PARALLEL</text>
+
+  <!-- Edges -->
+  <path class="dg-edge" d="M216,136 H256 Q264,136 264,128 V84 Q264,76 272,76 H310" marker-end="url(#arrow)"/>
+  <path class="dg-edge" d="M216,156 H310" marker-end="url(#arrow)"/>
+  <path class="dg-edge" d="M216,176 H256 Q264,176 264,184 V228 Q264,236 272,236 H310" marker-end="url(#arrow)"/>
+
+  <!-- Nodes -->
+  <rect class="dg-node is-focal" x="16" y="116" width="200" height="80" rx="6"/>
+  <text class="dg-name is-focal-text" x="116" y="153" text-anchor="middle">Orchestrator</text>
+  <text class="dg-sub" x="116" y="171" text-anchor="middle">plans and synthesizes</text>
+
+  <rect class="dg-node" x="312" y="48" width="376" height="56" rx="6"/>
+  <text class="dg-name" x="500" y="73" text-anchor="middle">Explore the codebase</text>
+  <text class="dg-sub" x="500" y="91" text-anchor="middle">fast tier: a small, quick model</text>
+
+  <rect class="dg-node" x="312" y="128" width="376" height="56" rx="6"/>
+  <text class="dg-name" x="500" y="153" text-anchor="middle">Implement the fix</text>
+  <text class="dg-sub" x="500" y="171" text-anchor="middle">default tier: the orchestrator's own model</text>
+
+  <rect class="dg-node" x="312" y="208" width="376" height="56" rx="6"/>
+  <text class="dg-name" x="500" y="233" text-anchor="middle">Reproduce the bug</text>
+  <text class="dg-sub" x="500" y="251" text-anchor="middle">advanced tier: the strongest model, maximum effort</text>
+
+  <!-- Note -->
+  <text class="dg-note" x="16" y="304">Every subagent is built by the same code as the orchestrator, one level deep.</text>
+</svg>

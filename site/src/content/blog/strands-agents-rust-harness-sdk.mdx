@@ -1,0 +1,280 @@
+---
+title: "The Strands harness and Harness SDK now support Rust"
+date: 2026-11-30
+description: "The Strands harness and Harness SDK are now available in Rust as a v0.1.0 developer preview. We built them with Strands Factory."
+authors:
+  - arron-bailiss
+tags:
+  - Announcement
+  - Open Source
+  - Rust
+  - Strands harness
+  - Harness SDK
+draft: false
+---
+
+import Diagram from '@components/Diagram.astro'
+
+The [Strands harness](/docs/user-guide/harness/) is a fully assembled agent you can start with a few lines of code, and the [Strands Harness SDK](/docs/user-guide/sdk/) is the agent loop, tools and model providers underneath it. When we [ran 94,000 benchmark trials](/blog/we-ran-94000-trials-to-measure-the-cost-of-harness-choice/), Strands harness had the highest accuracy and the lowest estimated cost in both the Anthropic and OpenAI comparisons, with estimated costs 34% lower at the median.
+
+Today we're releasing both in Rust as a v0.1.0 developer preview: the [`strands-harness`](https://crates.io/crates/strands-harness) and [`strands`](https://crates.io/crates/strands) crates. It's the same agent you get in Python and TypeScript, with the same system prompt, built-in tools and context management.
+
+We built the Rust harness and SDK with [Strands Factory](/blog/introducing-strands-factory/), the software factory we're open sourcing this week. More on that below.
+
+## Why Rust
+
+Agents are showing up in places where startup time, memory and concurrency really matter. Think serverless functions that scale to zero, services holding thousands of concurrent sessions, and edge devices and robots with tight memory budgets. Rust compiles to a native binary with no runtime to boot, manages memory without a garbage collector, and runs async work across every core with [Tokio](https://tokio.rs).
+
+To see what that means for an agent, we ran the same Strands harness agent in all three languages on AWS Lambda (arm64, 1,024 MB, Amazon Nova on Amazon Bedrock):
+
+| | Rust | TypeScript | Python |
+|---|---|---|---|
+| Cold start (median of 100) | 50 ms | 635 ms | 2,428 ms |
+| Peak memory (median of 100) | 48 MB | 195 MB | 192 MB |
+
+Rust stands out in how quickly an agent starts and how little memory it needs while it runs. A 50 ms cold start makes scale-to-zero practical even for interactive requests, and at 48 MB you can fit many more agents into the same memory.
+
+Rust's async model can take this much further. [Infinity](https://infinity.hydro.run/), a [research runtime](https://aws.amazon.com/blogs/opensource/introducing-infinity-a-runtime-for-extreme-agent-concurrency/) from the Hydro project, a collaboration between AWS and UC Berkeley, treats an agent the way Rust treats an async function. While the agent waits on a tool, the runtime saves its conversation and suspends it, so an idle agent costs about as much memory as its history. That fits 75,000 concurrent agents in the 8 GB of a Raspberry Pi 5, and a serverless function can exit while a tool call runs for hours. We're experimenting with integrating Infinity into the Strands Rust harness and SDK, and we'll share more on that soon.
+
+The second reason is that Rust is a great language for agents to write. The compiler checks types, ownership and thread safety before anything runs, and its error messages explain what went wrong and usually how to fix it. Here's a classic concurrency mistake, moving a map into a background thread and then reading it:
+
+```rust
+use std::collections::HashMap;
+
+fn main() {
+    let mut sessions: HashMap<String, Vec<String>> = HashMap::new();
+    let worker = std::thread::spawn(move || {
+        sessions.insert("s1".into(), vec![]);
+    });
+    println!("{} sessions", sessions.len());
+    worker.join().unwrap();
+}
+```
+
+It doesn't build. The compiler says why, and suggests a fix:
+
+```text
+error[E0382]: borrow of moved value: `sessions`
+ --> main.rs:8:29
+  |
+5 |     let worker = std::thread::spawn(move || {
+  |                                     ------- value moved into closure here
+6 |         sessions.insert("s1".into(), vec![]);
+  |         -------- variable moved due to use in closure
+7 |     });
+8 |     println!("{} sessions", sessions.len());
+  |                             ^^^^^^^^ value borrowed here after move
+  |
+help: consider cloning the value before moving it into the closure
+```
+
+A coding agent reads that, makes the change, and builds again. Whole classes of bugs get caught in seconds, with instructions attached. Once the code builds, the tests run, and any failures go back to the agent as more context for the next attempt. That tight loop is a big part of how Strands Factory could build this SDK, and you get the same benefit whenever your own agents write Rust.
+
+<Diagram
+  name="rust-compile-loop"
+  alt="The agent feedback loop. A coding agent writes code and sends it to the Rust compiler. The compiler checks it before it runs and sends back an error with a hint, and the agent fixes the code and tries again. Once the code builds, the tests check its behavior, and test failures go back to the agent for another pass."
+/>
+
+## Your first Rust agent
+
+Add the crates and Tokio:
+
+```bash
+cargo add strands-harness strands
+cargo add tokio --features macros,rt-multi-thread
+```
+
+Then create a harness and give it a task:
+
+```rust
+use strands_harness::{HarnessAgentOptions, create_harness};
+
+#[tokio::main]
+async fn main() -> strands::Result<()> {
+    let mut agent = create_harness(
+        HarnessAgentOptions::builder().model("bedrock/global.anthropic.claude-opus-5-5").build(),
+    )
+    .await?;
+    agent
+        .invoke("Research the top three vector databases, compare pricing and limits, and write it up in comparison.md")
+        .await?;
+    agent.shutdown().await
+}
+```
+
+Run it with `cargo run` and the reply streams to your terminal. The model string picks the provider: `bedrock/`, `anthropic/`, `openai/`, or `bedrock-mantle/` for OpenAI-compatible models on Amazon Bedrock. Bedrock uses your usual AWS credentials, and the others read `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`.
+
+`create_harness` returns a `strands::Agent` with everything set up:
+
+- A tuned system prompt on a frontier model, with reasoning on and prompt caching wherever the provider supports it.
+- Shell, file (read, write, edit), web fetch and web search tools.
+- Programmatic tool calling: a sandboxed Python interpreter where the agent writes code that chains, loops over and parallelizes its other tools.
+- Subagents that take on open-ended subtasks in the background.
+- Context management that offloads large tool results and summarizes older turns as the context window fills.
+- Sessions saved to disk and resumable by id, and long-term memory across conversations.
+- Skills, a to-do list for multi-step work, and context about its environment.
+- MCP servers, tool approval (from a human, a model or Cedar policies) and OpenTelemetry tracing, ready to turn on.
+
+Every default can be overridden, and you can build directly on the `strands` SDK when you want full control.
+
+<Diagram
+  name="rust-harness-layers"
+  alt="A layer stack. At the top is your Rust application, such as a service, a CLI, an edge device or a robot. Below it is the Strands harness, the strands-harness crate, which adds a tuned prompt, built-in tools, context management, sessions, memory, skills and subagents. Below that is the Strands SDK, the strands crate, with the agent loop, tools, hooks, MCP, streaming and structured output. At the bottom are the model providers: Amazon Bedrock, Anthropic, OpenAI, and your own model."
+/>
+
+## Tools are async functions
+
+To give the agent a tool, write an async function and add `#[tool]`. The macro builds the schema the model sees from the parameters and doc comments, so the description lives right next to the code:
+
+```rust
+use strands::{ToolError, tool};
+use strands_harness::{HarnessAgentOptions, create_harness};
+
+/// Fetch a support ticket by id.
+#[tool]
+async fn get_ticket(
+    /// The ticket id, such as "T-1042".
+    ticket_id: String,
+) -> Result<String, ToolError> {
+    Ok(format!("Ticket {ticket_id}: the printer is on fire"))
+}
+
+#[tokio::main]
+async fn main() -> strands::Result<()> {
+    let mut agent = create_harness(
+        HarnessAgentOptions::builder()
+            .model("anthropic/claude-opus-5-5")
+            .instructions("You are a support assistant. Always link the ticket you're working on.")
+            .tools([GetTicket])
+            .build(),
+    )
+    .await?;
+    agent.invoke("What's going on with ticket T-1042?").await?;
+    agent.shutdown().await
+}
+```
+
+## Watch the agent work
+
+`invoke` waits for the final answer. `stream` hands you each event as it happens: text as the model writes it, every tool call, and the final result. That's what you need for a UI or an audit log:
+
+```rust
+use futures::StreamExt;
+use strands::AgentStreamEvent;
+use strands_harness::{HarnessAgentOptions, create_harness};
+
+#[tokio::main]
+async fn main() -> strands::Result<()> {
+    let mut agent = create_harness(HarnessAgentOptions::builder().printer(false).build()).await?;
+    {
+        let mut stream = agent.stream("Find the slowest test in this repo and explain why it's slow");
+        while let Some(event) = stream.next().await {
+            match event? {
+                AgentStreamEvent::ModelStreamUpdate(update) => {
+                    if let Some(text) = update.text_delta() {
+                        print!("{text}");
+                    }
+                }
+                AgentStreamEvent::BeforeToolCall(call) => println!("\n[calling {}]", call.tool_use.name),
+                AgentStreamEvent::AgentResult(result) => println!("\n[done: {}]", result.stop_reason()),
+                _ => {}
+            }
+        }
+    }
+    agent.shutdown().await
+}
+```
+
+
+## Structured output
+
+When your code needs data rather than prose, ask for a type. Derive `Deserialize` and `JsonSchema` on a struct and the agent fills it in. The SDK validates the answer against the schema and asks the model to fix anything that doesn't match:
+
+```rust
+use schemars::JsonSchema;
+use serde::Deserialize;
+use strands::InvokeOptions;
+use strands_harness::{HarnessAgentOptions, create_harness};
+
+/// One vector database in the comparison.
+#[derive(Deserialize, JsonSchema)]
+struct VectorDb {
+    /// Product name.
+    name: String,
+    /// Starting price per month in USD, if published.
+    starting_price_usd: Option<f64>,
+    /// The most important limit, in one sentence.
+    key_limit: String,
+}
+
+/// The finished comparison.
+#[derive(Deserialize, JsonSchema)]
+struct Comparison {
+    databases: Vec<VectorDb>,
+    recommendation: String,
+}
+
+#[tokio::main]
+async fn main() -> strands::Result<()> {
+    let mut agent = create_harness(HarnessAgentOptions::builder().printer(false).build()).await?;
+    let comparison: Comparison = agent
+        .invoke_with(
+            "Research the top three vector databases and compare pricing and limits",
+            InvokeOptions::default().structured_output_schema::<Comparison>(),
+        )
+        .await?
+        .structured_output()?;
+    for db in &comparison.databases {
+        let price = db.starting_price_usd.map_or("unpublished".to_owned(), |p| format!("${p}/mo"));
+        println!("{}: {price}, {}", db.name, db.key_limit);
+    }
+    println!("Pick: {}", comparison.recommendation);
+    agent.shutdown().await
+}
+```
+
+## What's in the developer preview
+
+Version 0.1.0 includes:
+
+- The complete Strands harness, with everything listed in [Your first Rust agent](#your-first-rust-agent), plus portable configuration.
+- The agent loop, with streaming, structured output, cancellation and interrupts.
+- Amazon Bedrock, Anthropic, OpenAI and Bedrock Mantle models, your own models, and model routing with fallback and classifier strategies.
+- Custom tools, agents as tools, MCP over stdio, streamable HTTP and SSE, and more built-in tools: bash, HTTP requests, notebooks, a Python REPL, sleep, stop, handoff to a user and an MCP router.
+- Hooks, plugins and middleware.
+- Conversation managers and pluggable storage.
+- A pluggable sandbox for where tools run commands.
+
+As a developer preview, the API will keep improving based on your feedback. We follow semver: while the version starts with 0, breaking changes come in minor releases (0.2.0, 0.3.0) and patch releases never break your code. The crates need Rust 1.96 or later.
+
+## How we built it
+
+A senior software engineer and I spent several days designing the Rust harness and SDK with the Strands Factory agent, running on Claude Opus 5.5 and Claude Fable 5.2. It was a collaborative session over those days, with the two of us and both models reviewing and iterating on the spec several times. We gave the agent two human-written Strands Rust SDKs from inside Amazon and several AI-written ones, internal and external, as references. The result was a spec of nearly 20,000 words with 77 binding design decisions, the architecture, a 14-phase plan, and the process the factory had to follow.
+
+From there we used spec-driven development: the factory built the first version from the spec autonomously, and the spec also told it how to work:
+
+- **Check its own work.** Every change went through formatting, strict lints, the full test suite with and without optional features, and doc builds. Each phase also checked the minimum supported Rust version and audited dependencies for advisories and licenses.
+- **Review every phase.** Three independent reviewer agents checked each phase: one for correctness (concurrency, cancellation, error paths, resource cleanup), one for API design, and one for behavior against the spec. The factory fixed every verified finding before moving on.
+- **Test against real models.** Live tests ran against Amazon Bedrock, Bedrock Mantle, Anthropic and OpenAI.
+- **Decide, log and keep going.** When the spec didn't cover something, it made a call, logged the context, options and reasoning, and moved on. Anything that needed our judgment it logged as a question for later.
+- **Delegate.** It split independent modules across subagents working in parallel, and reran the checks itself before accepting their work.
+
+<Diagram
+  name="rust-sdk-factory-pipeline"
+  alt="A five-stage pipeline. People and the factory agent spend several days on the design. The factory builds the first version autonomously. People review all 291 logged decisions, and revisions go back to the factory for another run. The result is validated in real products, and what we learn there goes back to the factory too. Then it's released as open source."
+/>
+
+I then spent a couple of days reviewing all 291 logged decisions, focusing on everything that touches the public API. We revised 24 of them, about 8%, mostly API naming and design choices that shape how the SDK feels to use, and ran the factory again with the changes. We validated the result in our own products and fed what we found back into the factory before releasing it. We use Strands Factory to build Strands itself, which powers agents for many of our customers as well as many of AWS's own AI agents.
+
+The [Strands Factory post](/blog/introducing-strands-factory/) goes deeper on what made this work, and how to run the factory on your own repositories.
+
+## Try it
+
+```bash
+cargo add strands-harness strands
+cargo add tokio --features macros,rt-multi-thread
+```
+
+Start with the [harness quickstart](/docs/user-guide/harness/quickstart/) or the [Rust SDK quickstart](/docs/user-guide/sdk/quickstart/rust/), and use the [Rust API reference](/docs/api/rust/) as you go. The crates are on crates.io ([`strands-harness`](https://crates.io/crates/strands-harness), [`strands`](https://crates.io/crates/strands)), and the source lives in the [harness-sdk repository](https://github.com/strands-agents/harness-sdk) next to Python and TypeScript.
+
+We'd love your feedback on the developer preview. [Open an issue](https://github.com/strands-agents/harness-sdk/issues) or come say hi on [Discord](https://discord.gg/strands). We can't wait to see what you build!

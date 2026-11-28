@@ -40,7 +40,7 @@
 
 - id: james-hood
   name: James Hood
-  role: "Principal Software Engineer, Amazon"
+  role: "Principal Software Engineer, AWS"
   bio: James is a Principal Software Engineer and 16-year Amazon veteran with experience across AWS and Stores. He founded Amazon's internal AI "power user" community and now focuses on integrating AI into internal builder tools as part of the Amazon software builder experience organization.
 
 - id: nicholas-clegg
@@ -60,7 +60,7 @@
 
 - id: vadim-omeltchenko
   name: Vadim Omeltchenko
-  role: "Sr. AI/ML Solutions Architect, AWS"
+  role: "Senior AI/ML Solutions Architect, AWS"
   bio: Vadim Omeltchenko is a Sr. AI/ML Solutions Architect who is passionate about helping AWS customers innovate in the cloud.
 
 - id: albert-zhao
@@ -71,7 +71,7 @@
 - id: strands-team
   name: Strands Team
   role: Core Team
-  bio: The team behind the Strands Harness SDK.
+  bio: The team behind Strands.
 
 - id: cagatay-cali
   name: Cagatay Cali
@@ -90,12 +90,12 @@
 
 - id: pgrayy
   name: Patrick Gray
-  role: "Software Engineer, AWS Agentic AI"
+  role: "Senior Software Engineer, AWS Agentic AI"
   bio: Patrick is a Senior Software Engineer at AWS Agentic AI working on the Strands Harness SDK.
 
 - id: ishan-singh
   name: Ishan Singh
-  role: "Sr. Applied Scientist, AWS"
+  role: "Senior Applied Scientist, AWS"
   bio: Ishan Singh is a Sr. Applied Scientist at Amazon Web Services, helping customers build generative AI solutions with expertise in building innovative and responsible AI products.
 
 - id: abhishek-kumar
@@ -105,12 +105,12 @@
 
 - id: jonathan-buck
   name: Jonathan Buck
-  role: "Senior Software Engineer, AWS"
-  bio: Jonathan Buck is a Senior Software Engineer at Amazon Web Services focused on building agent environments, evaluation infrastructure, and systems to support productization of agentic AI.
+  role: "Principal Research Engineer, AWS"
+  bio: Jonathan Buck is a Principal Research Engineer at Amazon Web Services focused on building agent environments, evaluation infrastructure, and systems to support productization of agentic AI.
 
 - id: vinayak-arannil
   name: Vinayak Arannil
-  role: "Sr. Applied Scientist, AWS"
+  role: "Senior Applied Scientist, AWS"
   bio: Vinayak Arannil is a Sr. Applied Scientist at Amazon Web Services helping build capabilities on AgentCore and Strands to enable customers to evaluate agentic applications.
 
 - id: akarsha-sehwag
@@ -125,7 +125,7 @@
 
 - id: smeet-dhakecha
   name: Smeet Dhakecha
-  role: "Research Engineer, Amazon"
+  role: "Research Engineer, AWS"
   bio: Smeet Dhakecha is a Research Engineer at Amazon within the Agentic AI Science team, working on agent simulation, evaluation systems, and data transformation pipeline infrastructure.
 
 - id: darren-wang
@@ -145,22 +145,22 @@
 
 - id: sungyeon-kim
   name: Sungyeon Kim
-  role: "Applied Scientist, Amazon"
-  bio: Sungyeon Kim is an Applied Scientist at Amazon Agentic AI with a research background in computer vision, multimodal learning, and retrieval systems, currently focused on multimodal understanding and evaluation frameworks for AI agents.
+  role: "Applied Scientist, AWS"
+  bio: Sungyeon Kim is an Applied Scientist at AWS Agentic AI with a research background in computer vision, multimodal learning, and retrieval systems, currently focused on multimodal understanding and evaluation frameworks for AI agents.
 
 - id: haibo-ding
   name: Haibo Ding
-  role: "Principal Applied Scientist, Amazon"
-  bio: Haibo Ding is a Principal Applied Scientist at Amazon Agentic AI working on agent evaluation, tool optimization, and foundation model evaluation and critic models. He holds a Ph.D. from the University of Utah and has served as an area chair for AAAI and ACL.
+  role: "Principal Applied Scientist, AWS"
+  bio: Haibo Ding is a Principal Applied Scientist at AWS Agentic AI working on agent evaluation, tool optimization, and foundation model evaluation and critic models. He holds a Ph.D. from the University of Utah and has served as an area chair for AAAI and ACL.
 
 - id: ian-holtz
   name: Ian Holtz
-  role: "Sr. GTM Specialist, Agentic Coding, AWS"
+  role: "Senior GTM Specialist, Agentic Coding, AWS"
   bio: Ian Holtz is a Sr. GTM Specialist for Agentic Coding at AWS, helping developers discover and adopt AI-powered development tools and agentic frameworks.
 
 - id: ed-fraga
   name: Ed Fraga
-  role: "Sr. Specialist SA, Bedrock, AWS"
+  role: "Senior Specialist SA, Bedrock, AWS"
   bio: Ed Fraga is a Sr. Specialist Solutions Architect for Amazon Bedrock at AWS, helping customers design and build generative AI solutions with foundation models.
 
 - id: guande-wu
@@ -190,7 +190,7 @@
 
 - id: tim-moreton
   name: Tim Moreton
-  role: "Sr. Technical Content Creator, AWS"
+  role: "Senior Technical Content Creator, AWS"
   bio: Tim Moreton is a Sr. Technical Content Creator at AWS working on Strands and agentic AI.
 
 - id: fernando-dingler
@@ -229,8 +229,8 @@
 
 - id: murat-kaan-meral
   name: Murat Kaan Meral
-  role: "Software Engineer, AWS Agentic AI"
-  bio: Murat is a software engineer at AWS Agentic AI working on the Strands Harness SDK.
+  role: "Senior Software Engineer, AWS Agentic AI"
+  bio: Murat is a Senior Software Engineer at AWS Agentic AI working on Strands.
 
 - id: gautam-sirdeshmukh
   name: Gautam Sirdeshmukh
@@ -264,8 +264,8 @@
 
 - id: abhishek-padmavathi
   name: Abhishek Srinivasa Raju Padmavathi
-  role: "Senior Software Development Engineer, AWS"
-  bio: Abhishek Srinivasa Raju Padmavathi is a Senior Software Development Engineer at AWS working on Strands Box.
+  role: "Senior Software Engineer, AWS"
+  bio: Abhishek Srinivasa Raju Padmavathi is a Senior Software Engineer at AWS working on Strands Box.
 
 - id: chris-smith
   name: Chris Smith
@@ -304,8 +304,8 @@
 
 - id: arnaud-jean
   name: Arnaud Jean
-  role: "Developer Advocate, AWS"
-  bio: Arnaud Jean is a Developer Advocate at AWS working with developers building agents on Strands.
+  role: "Senior Developer Advocate, AWS"
+  bio: Arnaud Jean is a Senior Developer Advocate at AWS working with developers building agents on Strands.
 
 - id: kevin-orellana
   name: Kevin Orellana

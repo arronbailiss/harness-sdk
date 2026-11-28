@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strandly's work on GitHub, cumulative</title>
+<style>
+  :root {
+    --ink: #ffffff; --muted: #c3c2b7; --dim: #9aa1ab; --grid: #2b2f37; --axis: #3a3f48; --card: #0a0b0d;
+    --brand: #00FF77;
+    --mono: "SF Mono", "JetBrains Mono", "Roboto Mono", "Space Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: #000; color: var(--ink); font-family: var(--mono); -webkit-font-smoothing: antialiased; }
+  .wrap { background: var(--card); border: 1px solid #33373f; border-radius: 14px; padding: 28px 32px 22px; }
+  h1 { font-size: 26px; margin: 0 0 6px; font-weight: 700; }
+  h1 .g { color: var(--brand); }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 18px; }
+  .stats { display: flex; gap: 32px; flex-wrap: wrap; margin-bottom: 14px; }
+  .stat .big { font-size: 30px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .stat .cap { font-size: 13px; color: var(--muted); margin-top: 4px; display: flex; align-items: center; gap: 8px; }
+  .key { width: 18px; height: 0; border-top: 2px solid; display: inline-block; }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .gridline { stroke: var(--grid); stroke-width: 1; shape-rendering: crispEdges; }
+  .axisline { stroke: var(--axis); stroke-width: 1; shape-rendering: crispEdges; }
+  .tick { fill: var(--dim); font-size: 12px; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .endlabel { fill: var(--ink); font-size: 12px; font-family: var(--mono); }
+  .cross { stroke: var(--dim); stroke-width: 1; opacity: 0; }
+  .dot { stroke: var(--card); stroke-width: 2; opacity: 0; }
+  .tip { position: absolute; pointer-events: none; background: #15171b; border: 1px solid #33373f; border-radius: 8px;
+    padding: 8px 10px; font-size: 12px; color: var(--ink); opacity: 0; white-space: nowrap; }
+  .tip .row { display: flex; align-items: center; gap: 8px; margin-top: 3px; color: var(--muted); }
+  .tip .row b { color: var(--ink); font-variant-numeric: tabular-nums; margin-left: auto; padding-left: 12px; }
+  .foot { color: var(--dim); font-size: 12px; margin-top: 10px; line-height: 1.5; }
+  details { margin-top: 8px; color: var(--muted); font-size: 12px; }
+  table { border-collapse: collapse; margin-top: 6px; }
+  td, th { padding: 2px 10px 2px 0; text-align: right; font-variant-numeric: tabular-nums; }
+  th:first-child, td:first-child { text-align: left; }
+  #plot { position: relative; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Strandly's work on <span class="g">GitHub</span></h1>
+  <p class="sub">Cumulative, across the strands-agents organization since June 29, 2026</p>
+  <div class="stats" id="stats"></div>
+  <div id="plot"><svg id="svg" viewBox="0 0 1000 380" role="img" aria-label="Line chart of cumulative pull requests reviewed, issues opened and pull requests merged by Strandly, by week"></svg><div class="tip" id="tip"></div></div>
+</div>
+<script>
+const DATA = {"weeks": ["2026-06-29", "2026-07-06", "2026-07-13", "2026-07-20", "2026-07-27", "2026-08-03", "2026-08-10", "2026-08-17", "2026-08-24", "2026-08-31", "2026-09-07", "2026-09-14", "2026-09-21", "2026-09-28", "2026-10-05", "2026-10-12", "2026-10-19", "2026-10-26", "2026-11-02", "2026-11-09", "2026-11-16", "2026-11-23"], "series": [{"key": "prs_reviewed", "label": "PRs reviewed", "color": "#3987e5", "values": [7, 15, 39, 93, 118, 152, 165, 175, 197, 228, 249, 272, 290, 328, 369, 404, 452, 515, 598, 725, 866, 933]}, {"key": "issues_opened", "label": "Issues opened", "color": "#d95926", "values": [2, 21, 22, 22, 23, 37, 45, 49, 66, 79, 82, 82, 83, 84, 90, 93, 145, 170, 201, 240, 370, 383]}, {"key": "prs_merged", "label": "PRs merged", "color": "#199e70", "values": [0, 0, 1, 4, 6, 11, 11, 12, 13, 15, 25, 42, 46, 55, 58, 61, 90, 106, 121, 145, 172, 178]}]};
+const W = 1000, H = 380, PL = 52, PR = 120, PT = 12, PB = 34;
+const svg = document.getElementById('svg'), tip = document.getElementById('tip');
+const n = DATA.weeks.length;
+const maxV = Math.max(...DATA.series.flatMap(s => s.values));
+const step = maxV > 800 ? 200 : maxV > 400 ? 100 : 50;
+const yMax = Math.ceil(maxV / step) * step;
+const x = i => PL + (W - PL - PR) * (n === 1 ? 0 : i / (n - 1));
+const y = v => PT + (H - PT - PB) * (1 - v / yMax);
+const NS = 'http://www.w3.org/2000/svg';
+const el = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; };
+const fmtDate = s => new Date(s + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+for (let v = 0; v <= yMax; v += step) {
+  el('line', { class: v === 0 ? 'axisline' : 'gridline', x1: PL, x2: W - PR, y1: y(v), y2: y(v) });
+  el('text', { class: 'tick', x: PL - 8, y: y(v) + 4, 'text-anchor': 'end' }).textContent = v.toLocaleString('en-US');
+}
+DATA.weeks.forEach((w, i) => {
+  if (w.slice(8) <= '07') el('text', { class: 'tick', x: x(i), y: H - 10, 'text-anchor': 'middle' }).textContent = new Date(w + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+});
+const ends = [];
+DATA.series.forEach(s => {
+  el('path', { class: 'line', stroke: s.color, d: s.values.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v).toFixed(1)).join(' ') });
+  ends.push({ s, y: y(s.values[n - 1]) });
+});
+ends.sort((a, b) => a.y - b.y);
+for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 16) ends[i].y = ends[i - 1].y + 16;
+ends.forEach(e => { el('text', { class: 'endlabel', x: W - PR + 10, y: e.y + 4 }).textContent = e.s.label; });
+const stats = document.getElementById('stats');
+DATA.series.forEach(s => {
+  const d = document.createElement('div'); d.className = 'stat';
+  d.innerHTML = `<div class="big">${s.values[n - 1].toLocaleString('en-US')}</div><div class="cap"><span class="key" style="border-color:${s.color}"></span>${s.label}</div>`;
+  stats.appendChild(d);
+});
+const cross = el('line', { class: 'cross', y1: PT, y2: H - PB });
+const dots = DATA.series.map(s => el('circle', { class: 'dot', r: 5, fill: s.color }));
+const hit = el('rect', { x: PL, y: PT, width: W - PL - PR, height: H - PT - PB, fill: 'transparent' });
+const show = i => {
+  cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.style.opacity = 1;
+  DATA.series.forEach((s, k) => { dots[k].setAttribute('cx', x(i)); dots[k].setAttribute('cy', y(s.values[i])); dots[k].style.opacity = 1; });
+  tip.innerHTML = `Week of ${fmtDate(DATA.weeks[i])}` + DATA.series.map(s => `<div class="row"><span class="key" style="border-color:${s.color}"></span>${s.label}<b>${s.values[i].toLocaleString('en-US')}</b></div>`).join('');
+  const r = svg.getBoundingClientRect(), sx = r.width / W;
+  let left = x(i) * sx + 14; if (left + 220 > r.width) left = x(i) * sx - 234;
+  tip.style.left = left + 'px'; tip.style.top = (PT * sx + 8) + 'px'; tip.style.opacity = 1;
+};
+const hide = () => { cross.style.opacity = 0; dots.forEach(d => d.style.opacity = 0); tip.style.opacity = 0; };
+hit.addEventListener('pointermove', ev => {
+  const r = svg.getBoundingClientRect(); const px = (ev.clientX - r.left) * W / r.width;
+  show(Math.max(0, Math.min(n - 1, Math.round((px - PL) / ((W - PL - PR) / (n - 1))))));
+});
+hit.addEventListener('pointerleave', hide);
+</script>
+</body>
+</html>

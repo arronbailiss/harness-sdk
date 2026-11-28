@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 232" width="720" height="232">
+  <!-- Type: Loop. Story: a coding agent and the Rust compiler go back and forth until the code builds, then test failures send the agent round again. -->
+  <defs>
+    <marker id="arrow" viewBox="0 0 8 6" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+      <path class="dg-head" d="M0,0 L8,3 L0,6 Z"/>
+    </marker>
+    <marker id="arrow-accent" viewBox="0 0 8 6" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+      <path class="dg-head is-accent" d="M0,0 L8,3 L0,6 Z"/>
+    </marker>
+  </defs>
+
+  <!-- Zones -->
+  <rect class="dg-zone" x="16" y="16" width="688" height="200" rx="8"/>
+  <text class="dg-eyebrow" x="32" y="36">AGENT FEEDBACK LOOP</text>
+
+  <!-- Edges -->
+  <path class="dg-edge" d="M200,88 H310" marker-end="url(#arrow)"/>
+  <path class="dg-edge is-accent" d="M312,120 H202" marker-end="url(#arrow-accent)"/>
+  <path class="dg-edge" d="M488,104 H546" marker-end="url(#arrow)"/>
+  <path class="dg-edge is-dashed" d="M616,144 V176 Q616,184 608,184 H128 Q120,184 120,176 V146" marker-end="url(#arrow)"/>
+
+  <!-- Edge labels -->
+  <rect class="dg-mask is-on-zone" x="234" y="68" width="44" height="12" rx="2"/>
+  <text class="dg-label" x="256" y="77" text-anchor="middle">CODE</text>
+  <rect class="dg-mask is-on-zone" x="208" y="100" width="96" height="12" rx="2"/>
+  <text class="dg-label is-accent" x="256" y="109" text-anchor="middle">ERROR + HINT</text>
+  <text class="dg-label" x="517" y="94" text-anchor="middle">BUILDS</text>
+  <rect class="dg-mask is-on-zone" x="316" y="164" width="104" height="12" rx="2"/>
+  <text class="dg-label" x="368" y="173" text-anchor="middle">TEST FAILURES</text>
+
+  <!-- Nodes -->
+  <rect class="dg-node is-input" x="40" y="64" width="160" height="80" rx="6"/>
+  <text class="dg-name" x="120" y="101" text-anchor="middle">Coding agent</text>
+  <text class="dg-sub" x="120" y="119" text-anchor="middle">writes and fixes</text>
+
+  <rect class="dg-node is-focal" x="312" y="64" width="176" height="80" rx="6"/>
+  <text class="dg-name is-focal-text" x="400" y="101" text-anchor="middle">Rust compiler</text>
+  <text class="dg-sub" x="400" y="119" text-anchor="middle">checks before it runs</text>
+
+  <rect class="dg-node" x="548" y="72" width="136" height="72" rx="6"/>
+  <text class="dg-name" x="616" y="105" text-anchor="middle">Tests</text>
+  <text class="dg-sub" x="616" y="123" text-anchor="middle">check behavior</text>
+</svg>

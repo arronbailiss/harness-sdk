@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 344" width="720" height="344">
+  <!-- Type: Layer stack. Story: create_harness assembles a ready agent on the Strands SDK, which talks to your model provider. -->
+
+  <!-- Nodes -->
+  <rect class="dg-node is-input" x="16" y="16" width="688" height="48" rx="6"/>
+  <text class="dg-name" x="360" y="37" text-anchor="middle">Your Rust application</text>
+  <text class="dg-sub" x="360" y="55" text-anchor="middle">a service, a CLI, an edge device, a robot</text>
+
+  <rect class="dg-node is-focal" x="16" y="88" width="688" height="80" rx="6"/>
+  <text class="dg-name is-focal-text" x="360" y="117" text-anchor="middle">Strands harness</text>
+  <text class="dg-sub" x="360" y="135" text-anchor="middle">Tuned prompt, built-in tools, context management, sessions, memory, skills, subagents</text>
+  <text class="dg-code" x="360" y="151" text-anchor="middle">strands-harness</text>
+
+  <rect class="dg-node" x="16" y="192" width="688" height="64" rx="6"/>
+  <text class="dg-name" x="360" y="213" text-anchor="middle">Strands SDK</text>
+  <text class="dg-sub" x="360" y="231" text-anchor="middle">Agent loop, tools, hooks, MCP, streaming, structured output</text>
+  <text class="dg-code" x="360" y="247" text-anchor="middle">strands</text>
+
+  <rect class="dg-node is-input" x="20" y="280" width="152" height="48" rx="6"/>
+  <text class="dg-name" x="96" y="309" text-anchor="middle">Amazon Bedrock</text>
+
+  <rect class="dg-node is-input" x="196" y="280" width="152" height="48" rx="6"/>
+  <text class="dg-name" x="272" y="309" text-anchor="middle">Anthropic</text>
+
+  <rect class="dg-node is-input" x="372" y="280" width="152" height="48" rx="6"/>
+  <text class="dg-name" x="448" y="309" text-anchor="middle">OpenAI</text>
+
+  <rect class="dg-node is-input is-optional" x="548" y="280" width="152" height="48" rx="6"/>
+  <text class="dg-name" x="624" y="309" text-anchor="middle">Your own model</text>
+</svg>

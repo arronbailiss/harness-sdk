@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 176" width="720" height="176">
+  <!-- Type: Pipeline with two feedback edges. Story: two engineers design the spec with the factory agent, the factory builds and logs its decisions, the engineers review every decision and rerun, real products validate the result and feed back into the build, and then it's released as open source. -->
+  <defs>
+    <marker id="arrow" viewBox="0 0 8 6" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+      <path class="dg-head" d="M0,0 L8,3 L0,6 Z"/>
+    </marker>
+  </defs>
+
+  <!-- Edges -->
+  <path class="dg-edge" d="M128,72 H158" marker-end="url(#arrow)"/>
+  <path class="dg-edge" d="M272,72 H302" marker-end="url(#arrow)"/>
+  <path class="dg-edge" d="M416,72 H446" marker-end="url(#arrow)"/>
+  <path class="dg-edge" d="M560,72 H590" marker-end="url(#arrow)"/>
+  <path class="dg-edge is-dashed" d="M360,104 V128 Q360,136 352,136 H236 Q228,136 228,128 V106" marker-end="url(#arrow)"/>
+  <path class="dg-edge is-dashed" d="M504,104 V152 Q504,160 496,160 H212 Q204,160 204,152 V106" marker-end="url(#arrow)"/>
+
+  <!-- Edge labels and tags -->
+  <rect class="dg-mask" x="242" y="116" width="104" height="12" rx="2"/>
+  <text class="dg-label" x="294" y="125" text-anchor="middle">REVISE, RERUN</text>
+  <rect class="dg-mask" x="400" y="140" width="72" height="12" rx="2"/>
+  <text class="dg-label" x="436" y="149" text-anchor="middle">FEEDBACK</text>
+  <text class="dg-label" x="72" y="30" text-anchor="middle">PEOPLE + AGENT</text>
+  <text class="dg-label" x="216" y="30" text-anchor="middle">FACTORY</text>
+  <text class="dg-label" x="360" y="30" text-anchor="middle">PEOPLE</text>
+
+  <!-- Nodes -->
+  <rect class="dg-node" x="16" y="40" width="112" height="64" rx="6"/>
+  <text class="dg-name" x="72" y="69" text-anchor="middle">Design</text>
+  <text class="dg-sub" x="72" y="87" text-anchor="middle">several days</text>
+
+  <rect class="dg-node is-focal" x="160" y="40" width="112" height="64" rx="6"/>
+  <text class="dg-name is-focal-text" x="216" y="69" text-anchor="middle">Build</text>
+  <text class="dg-sub" x="216" y="87" text-anchor="middle">autonomously</text>
+
+  <rect class="dg-node" x="304" y="40" width="112" height="64" rx="6"/>
+  <text class="dg-name" x="360" y="69" text-anchor="middle">Review</text>
+  <text class="dg-sub" x="360" y="87" text-anchor="middle">291 decisions</text>
+
+  <rect class="dg-node" x="448" y="40" width="112" height="64" rx="6"/>
+  <text class="dg-name" x="504" y="69" text-anchor="middle">Validate</text>
+  <text class="dg-sub" x="504" y="87" text-anchor="middle">real products</text>
+
+  <rect class="dg-node" x="592" y="40" width="112" height="64" rx="6"/>
+  <text class="dg-name" x="648" y="69" text-anchor="middle">Release</text>
+  <text class="dg-sub" x="648" y="87" text-anchor="middle">open source</text>
+</svg>
